@@ -26,6 +26,7 @@ export class UIManager {
   private saveManager: SaveManager;
   private audioManager: AudioManager;
   private toastTimeout?: number;
+  private dialogueKeyHandler?: (event: KeyboardEvent) => void;
 
   constructor(saveManager: SaveManager, audioManager: AudioManager) {
     const root = document.getElementById('ui-root');
@@ -207,6 +208,14 @@ export class UIManager {
         <span>${state.levelTitle}</span>
         <small data-hud="checkpoint">${state.checkpoint}</small>
       </div>
+      <div class="control-strip" aria-label="Core controls">
+        <span><kbd>Q</kbd> cycle time</span>
+        <span><kbd>1</kbd> Past</span>
+        <span><kbd>2</kbd> Present</span>
+        <span><kbd>3</kbd> Future</span>
+        <span><kbd>G</kbd> Echo</span>
+        <span><kbd>R</kbd> Rewind</span>
+      </div>
     `;
   }
 
@@ -233,10 +242,13 @@ export class UIManager {
 
   showDialogue(lines: string[], onDone: () => void): void {
     let index = 0;
+    let finished = false;
+    this.clearDialogueKeyHandler();
     const render = () => {
       this.setOverlay(`
         <div class="dialogue-panel">
           <p>${lines[index]}</p>
+          <small>${index === lines.length - 1 ? 'Close to move' : 'Continue'}</small>
           <button data-action="next">${index === lines.length - 1 ? 'Close' : 'Continue'}</button>
         </div>
       `);
@@ -249,16 +261,21 @@ export class UIManager {
       }
     };
     const next = () => {
+      if (finished) {
+        return;
+      }
       this.audioManager.playSfx('click');
       index += 1;
       if (index >= lines.length) {
-        window.removeEventListener('keydown', keyHandler);
+        finished = true;
+        this.clearDialogueKeyHandler();
         this.clearOverlay();
         onDone();
         return;
       }
       render();
     };
+    this.dialogueKeyHandler = keyHandler;
     window.addEventListener('keydown', keyHandler);
     render();
   }
@@ -310,6 +327,7 @@ export class UIManager {
   }
 
   clearOverlay(): void {
+    this.clearDialogueKeyHandler();
     this.overlayLayer.innerHTML = '';
     this.overlayLayer.classList.remove('is-active');
   }
@@ -321,6 +339,14 @@ export class UIManager {
   private setOverlay(html: string): void {
     this.overlayLayer.innerHTML = html;
     this.overlayLayer.classList.add('is-active');
+  }
+
+  private clearDialogueKeyHandler(): void {
+    if (!this.dialogueKeyHandler) {
+      return;
+    }
+    window.removeEventListener('keydown', this.dialogueKeyHandler);
+    this.dialogueKeyHandler = undefined;
   }
 
   private updateSettings(settings: Partial<SettingsState>): void {

@@ -160,6 +160,41 @@ button:disabled {
   color: var(--muted);
 }
 
+.control-strip {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  max-width: min(42rem, calc(100vw - 2rem));
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(7, 10, 16, 0.72);
+  color: var(--muted);
+  font-size: 0.78rem;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+
+.control-strip span {
+  white-space: nowrap;
+}
+
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.55rem;
+  height: 1.35rem;
+  margin-right: 0.18rem;
+  border: 1px solid rgba(110, 231, 242, 0.36);
+  border-radius: 4px;
+  background: rgba(23, 36, 48, 0.92);
+  color: var(--ink);
+  font-size: 0.7rem;
+}
+
 .menu-shell,
 .story-screen {
   min-height: 100%;
@@ -270,6 +305,15 @@ input[type="checkbox"] {
   margin-bottom: 0.9rem;
 }
 
+.dialogue-panel small {
+  display: block;
+  margin-bottom: 0.6rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
 .controls-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -309,6 +353,14 @@ input[type="checkbox"] {
 
   .level-chip {
     display: none;
+  }
+
+  .control-strip {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    max-width: none;
+    justify-content: center;
   }
 
   h1 {

@@ -58,6 +58,7 @@ export class GameScene extends Phaser.Scene {
     this.saveManager = this.registry.get('saveManager') as SaveManager;
     this.audioManager = this.registry.get('audioManager') as AudioManager;
     this.uiManager = this.registry.get('uiManager') as UIManager;
+    this.resetRuntimeState();
     this.level = getLevel(data.levelId ?? 'tutorial');
     this.timelineManager = new TimelineManager(data.timeline ?? this.level.startTimeline);
     this.dialogueManager = new DialogueManager();
@@ -66,8 +67,10 @@ export class GameScene extends Phaser.Scene {
     this.solidGroup = this.physics.add.staticGroup();
 
     this.physics.world.setBounds(0, 0, this.level.width, this.level.height + 120);
+    this.physics.resume();
     this.cameras.main.setBounds(0, 0, this.level.width, this.level.height);
     this.cameras.main.setBackgroundColor('#070910');
+    this.cameras.main.fadeIn(260, 5, 8, 13);
 
     this.drawBackground();
     this.buildLevel();
@@ -158,6 +161,27 @@ export class GameScene extends Phaser.Scene {
     if (this.level.id === 'level-2') {
       this.add.sprite(530, 637, TextureKeys.girl).setDepth(10).setAlpha(0.82);
     }
+  }
+
+  private resetRuntimeState(): void {
+    this.timelineBlocks = [];
+    this.doors = [];
+    this.plates = [];
+    this.switches = [];
+    this.checkpoints = [];
+    this.enemies = [];
+    this.ghost = undefined;
+    this.exitZone = undefined;
+    this.timelineTint = undefined;
+    this.activeCheckpoint = undefined;
+    this.checkpointTimeline = undefined;
+    this.latchedFlags.clear();
+    this.heldFlags.clear();
+    this.storyTriggered.clear();
+    this.isPaused = false;
+    this.isRespawning = false;
+    this.levelComplete = false;
+    this.exitBlockedToastAt = 0;
   }
 
   private configurePhysics(): void {

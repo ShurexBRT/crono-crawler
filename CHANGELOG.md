@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed level transitions by resetting recycled Phaser scene runtime state before every level load.
+- Added persistent in-game control strip for timeline, echo, and rewind controls.
+- Improved dialogue cleanup so keyboard listeners cannot survive replaced overlays.
+- Added level fade-in polish after transitions.
+
 ## 0.1.0 - 2026-06-16
 
 - Created the Chrono Crawler browser vertical slice with Phaser, TypeScript, and Vite.

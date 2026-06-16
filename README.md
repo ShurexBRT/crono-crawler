@@ -69,6 +69,8 @@ npm run preview
 
 Time shifting changes which objects are solid, visible, broken, overgrown, destroyed, or active. Some bridges only exist in the past, some doors are destroyed in the ruined future, and some platforms only have power in the present.
 
+The in-game HUD also shows the key timeline controls during play: `Q` cycles between timelines, while `1`, `2`, and `3` jump directly to Past, Present, and Ruined Future.
+
 The echo system records up to eight seconds of Elias's movement and interactions. When replayed, the echo can stand on pressure plates or repeat an interaction near a switch. If the recording finishes while the echo is standing on a plate, it keeps holding that plate.
 
 Checkpoint rewind returns Elias to the last stabilized beacon, clears the current echo, and restores the saved checkpoint timeline.
