@@ -193,6 +193,7 @@ export class UIManager {
         <div>
           <span class="hud-label">Timeline</span>
           <strong data-hud="timeline">${this.timelineName(state.timeline)}</strong>
+          <span class="timeline-help"><kbd>Q</kbd> cycle <kbd>1</kbd> Past <kbd>2</kbd> Present <kbd>3</kbd> Future</span>
         </div>
         <div>
           <span class="hud-label">Objective</span>
@@ -207,14 +208,6 @@ export class UIManager {
       <div class="level-chip">
         <span>${state.levelTitle}</span>
         <small data-hud="checkpoint">${state.checkpoint}</small>
-      </div>
-      <div class="control-strip" aria-label="Core controls">
-        <span><kbd>Q</kbd> cycle time</span>
-        <span><kbd>1</kbd> Past</span>
-        <span><kbd>2</kbd> Present</span>
-        <span><kbd>3</kbd> Future</span>
-        <span><kbd>G</kbd> Echo</span>
-        <span><kbd>R</kbd> Rewind</span>
       </div>
     `;
   }

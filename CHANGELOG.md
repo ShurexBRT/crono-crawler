@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Fixed level transitions by resetting recycled Phaser scene runtime state before every level load.
-- Added persistent in-game control strip for timeline, echo, and rewind controls.
+- Moved timeline controls into the top timeline panel and removed the separate bottom control strip.
 - Improved dialogue cleanup so keyboard listeners cannot survive replaced overlays.
 - Added level fade-in polish after transitions.
 
