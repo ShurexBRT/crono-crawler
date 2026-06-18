@@ -6,6 +6,7 @@ import { GameScene } from './scenes/GameScene';
 type PatchedGameScene = Phaser.Scene & {
   level: LevelData;
   player?: { playTimeShift?: () => void };
+  timelineTint?: Phaser.GameObjects.Rectangle;
 };
 
 type SignSpec = {
@@ -24,6 +25,14 @@ const backdropByBackground: Record<LevelData['background'], string> = {
   greenhouse: TextureKeys.backdropGreenhouse,
   station: TextureKeys.backdropStation,
   core: TextureKeys.backdropCore,
+};
+
+const backdropTintByBackground: Record<LevelData['background'], number> = {
+  reactor: 0x08070b,
+  streets: 0x05070c,
+  greenhouse: 0x06100b,
+  station: 0x07090f,
+  core: 0x09070d,
 };
 
 const signsByLevel: Record<string, SignSpec[]> = {
@@ -56,12 +65,10 @@ const signsByLevel: Record<string, SignSpec[]> = {
 };
 
 const proto = GameScene.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
-const originalDrawBackground = proto.drawBackground;
 const originalBuildLevel = proto.buildLevel;
 const originalOnTimelineChanged = proto.onTimelineChanged;
 
-proto.drawBackground = function drawBackgroundWithBackdrop(this: PatchedGameScene): void {
-  originalDrawBackground.call(this);
+proto.drawBackground = function drawBackgroundWithExternalBackdrop(this: PatchedGameScene): void {
   drawExternalBackdrop(this);
 };
 
@@ -77,21 +84,27 @@ proto.onTimelineChanged = function onTimelineChangedWithAnimation(this: PatchedG
 
 function drawExternalBackdrop(scene: PatchedGameScene): void {
   const backdropKey = backdropByBackground[scene.level.background];
-  if (!scene.textures.exists(backdropKey)) {
-    return;
+  const tint = backdropTintByBackground[scene.level.background];
+
+  scene.add.rectangle(scene.level.width / 2, 360, scene.level.width + 640, 760, tint, 1).setDepth(-32);
+
+  if (scene.textures.exists(backdropKey)) {
+    const backdrop = scene.add.image(scene.level.width / 2, 360, backdropKey);
+    backdrop.setOrigin(0.5);
+    backdrop.setDepth(-31);
+    backdrop.setAlpha(0.95);
+    backdrop.setScrollFactor(0.12, 0.04);
+    backdrop.setDisplaySize(Math.max(scene.level.width + 900, 2200), 780);
   }
 
-  const backdrop = scene.add.image(scene.level.width / 2, 360, backdropKey);
-  backdrop.setOrigin(0.5);
-  backdrop.setDepth(-22.5);
-  backdrop.setAlpha(scene.level.background === 'core' ? 0.72 : 0.58);
-  backdrop.setScrollFactor(0.18, 0.08);
-  backdrop.setDisplaySize(Math.max(scene.level.width + 640, 1920), 760);
+  scene.add.rectangle(scene.level.width / 2, 360, scene.level.width + 900, 780, 0x05070c, 0.22).setDepth(-30).setScrollFactor(0.12, 0.04);
+  scene.add.rectangle(scene.level.width / 2, 704, scene.level.width, 54, 0x05060a, 0.82).setDepth(-7);
+  scene.add.rectangle(scene.level.width / 2, 675, scene.level.width, 4, 0x6ee7f2, 0.16).setDepth(-6);
 
-  scene.add
-    .rectangle(scene.level.width / 2, 360, scene.level.width + 640, 760, 0x05070c, scene.level.background === 'core' ? 0.24 : 0.34)
-    .setDepth(-22.4)
-    .setScrollFactor(0.18, 0.08);
+  scene.timelineTint = scene.add.rectangle(640, 360, 1280, 720, 0x000000, 0.06);
+  scene.timelineTint.setScrollFactor(0);
+  scene.timelineTint.setDepth(30);
+  scene.timelineTint.setBlendMode(Phaser.BlendModes.ADD);
 }
 
 function drawLevelSignage(scene: PatchedGameScene): void {
