@@ -26,12 +26,12 @@
 
 .painted-menu-hotspots {
   position: absolute;
-  left: 45.7%;
-  top: 66.6%;
+  left: 50.3%;
+  top: 72.1%;
   display: grid;
-  width: min(18vw, 250px);
-  min-width: 190px;
-  gap: clamp(0.72rem, 2.25vh, 1.45rem);
+  width: min(15.6vw, 182px);
+  min-width: 156px;
+  gap: clamp(0.36rem, 1.35vh, 0.72rem);
   transform: translate(-50%, -50%);
   z-index: 2;
 }
@@ -39,7 +39,7 @@
 .painted-menu-hotspot {
   width: 100%;
   min-width: 0;
-  height: clamp(2.4rem, 6.7vh, 4.35rem);
+  height: clamp(1.85rem, 5.45vh, 2.7rem);
   padding: 0;
   border: 1px solid transparent;
   border-radius: 2px;
