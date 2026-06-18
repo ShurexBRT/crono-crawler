@@ -47,11 +47,11 @@ export class BootScenePolished extends BootScene {
 
   create(): void {
     (this as unknown as { createGeneratedTextures: () => void }).createGeneratedTextures();
-    this.registerEliasAnimationFrames();
+    this.registerExternalEliasAnimationFrames();
     this.scene.start('MainMenuScene');
   }
 
-  private registerEliasAnimationFrames(): void {
+  private registerExternalEliasAnimationFrames(): void {
     if (!this.textures.exists(TextureKeys.eliasSheet)) {
       return;
     }
@@ -67,10 +67,10 @@ export class BootScenePolished extends BootScene {
       });
     }
 
-    this.createAnimation(AnimationKeys.eliasIdle, 'idle-', 0, 2, 3, -1);
-    this.createAnimation(AnimationKeys.eliasWalk, 'run-', 0, 5, 7, -1);
-    this.createAnimation(AnimationKeys.eliasRun, 'run-', 0, 5, 11, -1);
-    this.createAnimation(AnimationKeys.eliasJump, 'jump-', 0, 2, 8, 0);
+    this.createExternalAnimation(AnimationKeys.eliasIdle, 'idle-', 0, 2, 3, -1);
+    this.createExternalAnimation(AnimationKeys.eliasWalk, 'run-', 0, 5, 7, -1);
+    this.createExternalAnimation(AnimationKeys.eliasRun, 'run-', 0, 5, 11, -1);
+    this.createExternalAnimation(AnimationKeys.eliasJump, 'jump-', 0, 2, 8, 0);
 
     this.anims.create({
       key: AnimationKeys.eliasFall,
@@ -79,10 +79,10 @@ export class BootScenePolished extends BootScene {
       repeat: 0,
     });
 
-    this.createAnimation(AnimationKeys.eliasTimeShift, 'shift-', 0, 5, 12, 0);
+    this.createExternalAnimation(AnimationKeys.eliasTimeShift, 'shift-', 0, 5, 12, 0);
   }
 
-  private createAnimation(key: string, prefix: string, start: number, end: number, frameRate: number, repeat: number): void {
+  private createExternalAnimation(key: string, prefix: string, start: number, end: number, frameRate: number, repeat: number): void {
     this.anims.create({
       key,
       frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix, start, end }),
