@@ -109,7 +109,6 @@ function drawLevelSignage(scene: PatchedGameScene): void {
         fontFamily: 'Trebuchet MS, Segoe UI, sans-serif',
         fontSize: sign.height > 40 ? '12px' : '11px',
         fontStyle: 'bold',
-        letterSpacing: 1,
       })
       .setOrigin(0.5)
       .setDepth(9)
