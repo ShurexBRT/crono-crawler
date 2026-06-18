@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Started the first hands-on polish pass focused on player feel before adding more levels.
 - Polished movement feel with acceleration/deceleration, jump/landing squash, and footfall dust feedback.
 - Added stronger timeline identity through HUD accent states, timeline pulses, and timeline-colored object trim.
 - Added echo recording/replay feedback with start/stop SFX, recording aura, and ghost afterimage trails.
