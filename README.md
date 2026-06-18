@@ -97,17 +97,6 @@ src/
   styles.css         Game UI styling
 ```
 
-## GitHub Pages Deployment
-
-The repository includes `.github/workflows/pages.yml`. After pushing to GitHub, enable GitHub Pages with GitHub Actions as the source:
-
-1. Open the repository on GitHub.
-2. Go to Settings -> Pages.
-3. Set Source to GitHub Actions.
-4. Push to `main` or `master`, or run the workflow manually.
-
-Vite is configured with relative asset paths, so the build can run from a project-site subdirectory.
-
 ## Current Limitations
 
 - Art and audio are generated placeholders, not production assets.
