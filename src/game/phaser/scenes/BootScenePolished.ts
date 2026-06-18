@@ -1,16 +1,7 @@
-import type Phaser from 'phaser';
 import { AnimationKeys, TextureKeys } from '../../assets/manifest';
 import { BootScene } from './BootScene';
 
-const externalAssetUrls = {
-  eliasSheet: new URL('../../../../assets/Elias char sprite.png', import.meta.url).href,
-  titleBackdrop: new URL('../../../../assets/chrono_crawler_title_screen_concept.png', import.meta.url).href,
-  reactorBackdrop: new URL('../../../../assets/gloomy_industrial_nightscape_with_steam_and_lights.png', import.meta.url).href,
-  streetsBackdrop: new URL('../../../../assets/misty_alley_in_a_futuristic_city.png', import.meta.url).href,
-  greenhouseBackdrop: new URL('../../../../assets/steampunk_observatory_with_glowing_machinery.png', import.meta.url).href,
-  stationBackdrop: new URL('../../../../assets/fading_clockwork_city_in_ruins.png', import.meta.url).href,
-  coreBackdrop: new URL('../../../../assets/ruins_of_a_fractured_city_skyline.png', import.meta.url).href,
-};
+const assetPath = (fileName: string): string => `assets/${fileName}`;
 
 const eliasFrameSets = {
   idle: [
@@ -45,13 +36,13 @@ const eliasFrameSets = {
 
 export class BootScenePolished extends BootScene {
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, externalAssetUrls.eliasSheet);
-    this.load.image(TextureKeys.titleBackdrop, externalAssetUrls.titleBackdrop);
-    this.load.image(TextureKeys.backdropReactor, externalAssetUrls.reactorBackdrop);
-    this.load.image(TextureKeys.backdropStreets, externalAssetUrls.streetsBackdrop);
-    this.load.image(TextureKeys.backdropGreenhouse, externalAssetUrls.greenhouseBackdrop);
-    this.load.image(TextureKeys.backdropStation, externalAssetUrls.stationBackdrop);
-    this.load.image(TextureKeys.backdropCore, externalAssetUrls.coreBackdrop);
+    this.load.image(TextureKeys.eliasSheet, assetPath('Elias char sprite.png'));
+    this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
+    this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
+    this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
+    this.load.image(TextureKeys.backdropGreenhouse, assetPath('steampunk_observatory_with_glowing_machinery.png'));
+    this.load.image(TextureKeys.backdropStation, assetPath('fading_clockwork_city_in_ruins.png'));
+    this.load.image(TextureKeys.backdropCore, assetPath('ruins_of_a_fractured_city_skyline.png'));
   }
 
   create(): void {
