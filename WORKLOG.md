@@ -45,10 +45,9 @@ U root `assets/` folder dodati su:
 ## Title screen
 
 - Prvi pokusaj je bio los jer je DOM naslov i meni bio renderovan preko nove title slike.
-- To je zamenjeno u `src/ui/uiPolish.ts`.
-- Sada title art slika sluzi kao glavni meni.
-- Dodati su transparentni klik hotspotovi preko nacrtanih Start/Continue/Options zona.
-- Dodat je `src/ui/titleArt.css` i importovan u `src/main.ts`.
+- Drugi pokusaj je takodje bio los jer je title art bio postavljen kao CSS background, ali se nije ucitao pouzdano na GitHub Pages, pa su se videli samo transparentni hotspotovi preko starog Phaser canvas backgrounda.
+- To je ispravljeno tako sto `src/ui/uiPolish.ts` sada renderuje pravi `<img src="assets/chrono_crawler_title_screen_concept.png">` element preko celog title screena.
+- `src/ui/titleArt.css` sada stilizuje taj image element sa `object-fit: cover` i drzi transparentne klik hotspotove preko nacrtanih Start/Continue/Options zona.
 - Credits je ostavljen kao malo odvojeno dugme jer na slici nema ocigledan Credits item.
 
 ## Backdropovi u levelima
@@ -84,7 +83,8 @@ U root `assets/` folder dodati su:
 ## Sledeci koraci
 
 1. Sacekati novi GitHub Pages deploy.
-2. Proveriti alignment title screen hotspotova.
-3. Proveriti da li Elias izgleda prihvatljivo sa trenutnim blend mode resenjem.
-4. Ako ne izgleda dobro, napraviti pravi transparentni Elias atlas.
-5. Proveriti sve levele i po potrebi promeniti backdrop mapping.
+2. Proveriti da li title screen sada stvarno prikazuje sliku, a ne samo hotspotove.
+3. Proveriti alignment title screen hotspotova.
+4. Proveriti da li Elias izgleda prihvatljivo sa trenutnim blend mode resenjem.
+5. Ako ne izgleda dobro, napraviti pravi transparentni Elias atlas.
+6. Proveriti sve levele i po potrebi promeniti backdrop mapping.
