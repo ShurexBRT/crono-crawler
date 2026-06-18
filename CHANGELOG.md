@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Integrated the external Elias character sprite sheet as player idle, walk, run, jump, fall, and time-shift animations.
+- Loaded the new backdrop assets and mapped them into the playable levels through a scene polish layer.
+- Added environmental signage and Keeper-style messages across the reactor, streets, station, and boss arena.
+- Rewrote level subtitles, objectives, intro lines, and story-zone hints to be shorter and more atmospheric.
+- Sharpened the main menu, intro, credits, and ending copy.
 - Started the first hands-on polish pass focused on player feel before adding more levels.
 - Polished movement feel with acceleration/deceleration, jump/landing squash, and footfall dust feedback.
 - Added stronger timeline identity through HUD accent states, timeline pulses, and timeline-colored object trim.
