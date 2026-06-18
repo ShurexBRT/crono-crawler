@@ -19,6 +19,8 @@ Ovaj dokument belezi stvarno odradjene izmene u repozitorijumu, bez ulepsavanja.
 U root `assets/` folder dodati su:
 
 - `Elias char sprite.png`
+- `Elias char sprite transparent.png`
+- `platform assets.png`
 - `chrono_crawler_title_screen_concept.png`
 - `fading_clockwork_city_in_ruins.png`
 - `gloomy_industrial_nightscape_with_steam_and_lights.png`
@@ -31,7 +33,7 @@ U root `assets/` folder dodati su:
 
 ## Asset loading i deployment
 
-- Dodati su texture kljucevi za Elias sprite sheet i backdrop slike u `src/game/assets/manifest.ts`.
+- Dodati su texture kljucevi za Elias sprite sheet, platform atlas i backdrop slike u `src/game/assets/manifest.ts`.
 - Dodat je `BootScenePolished` i Phaser config sada koristi njega.
 - GitHub Pages workflow je promenjen tako da posle `npm run build` kopira root `assets/` u `dist/assets/`.
 - Time je ispravljen problem gde kod referencira slike, ali ih browser na GitHub Pages ne vidi.
@@ -65,26 +67,42 @@ U root `assets/` folder dodati su:
 
 ## Elias animacije
 
-- `Elias char sprite.png` se koristi kao grubi sprite sheet.
+- Prvo je koriscen `Elias char sprite.png`, ali taj fajl je bio concept sheet sa tamnom pozadinom.
+- Nakon toga je dodat `Elias char sprite transparent.png` i `BootScenePolished` sada ucitava transparentni sheet umesto starog concept sheeta.
+- Transparentni sheet se dinamicki sece kao grid od 6 kolona i 5 redova.
 - Registrovane su animacije za idle, walk, run, jump, fall i time-shift.
-- `Player.ts` koristi te animacije kada je sheet ucitan.
-- Time-shift animacija se pokrece kada se promeni timeline.
-- Idle je stabilizovan tako sto koristi samo prvi idle frame, jer vise idle frameova iz concept sheeta prave jitter.
-- Dodato je blend mode resenje da se umanji vidljiva tamna kocka oko Eliasa.
+- `Player.ts` koristi transparentni Elias atlas kada je ucitan.
+- Uklonjen je stari blend-mode workaround za crnu kocku jer transparentni atlas vise ne zahteva taj hack.
+- Player scale se racuna iz visine idle frame-a da se manje oslanja na hardkodovanu velicinu starog concept sheeta.
+
+## Echo / clone
+
+- `GhostClone.ts` sada koristi isti transparentni Elias atlas kada je dostupan.
+- Echo koristi oko 80% providnosti i plavi tint.
+- Echo bira idle/run/jump/fall animaciju na osnovu replay pokreta.
+- Echo trail sada koristi trenutni Elias frame umesto starog generickog ghost placeholdera, kada je transparentni atlas ucitan.
+
+## Timeline platforme
+
+- Dodat je `platform assets.png` kao platform atlas.
+- `BootScenePolished` registruje tri platform frame-a: `past`, `present`, `future`.
+- `TimelineBlock` sada koristi platform atlas kao visual layer kada je atlas ucitan.
+- Pri promeni timeline-a, timeline block menja frame na osnovu trenutnog vremena.
+- Collision logika ostaje na nevidljivom/static rectangle body-ju, tako da gameplay ostaje stabilan dok se vizuelni layer menja.
 
 ## Poznata ogranicenja
 
-- `Elias char sprite.png` nije pravi transparentni production atlas nego concept sheet.
-- Tamna kocka oko Eliasa je samo ublazena, nije resena savrseno.
-- Pravo resenje je transparentni sprite atlas ili pouzdano runtime ciscenje backgrounda.
+- Pretpostavljeno je da `Elias char sprite transparent.png` ima 6 kolona i 5 redova.
+- Pretpostavljeno je da `platform assets.png` ima 3 horizontalna reda: past, present, future.
+- Ako layout asseta nije takav, frame slicing treba rucno podesiti.
 - Hotspot pozicije na title screenu mozda treba jos rucno namestati.
 - Treba proveriti da li svaki backdrop stvarno najbolje odgovara svom nivou.
 
 ## Sledeci koraci
 
 1. Sacekati novi GitHub Pages deploy.
-2. Proveriti da li title screen sada stvarno prikazuje sliku, a ne samo hotspotove.
-3. Proveriti alignment title screen hotspotova.
-4. Proveriti da li Elias izgleda prihvatljivo sa trenutnim blend mode resenjem.
-5. Ako ne izgleda dobro, napraviti pravi transparentni Elias atlas.
-6. Proveriti sve levele i po potrebi promeniti backdrop mapping.
+2. Proveriti da li se transparentni Elias renderuje bez crne kocke.
+3. Proveriti da li echo koristi Elias sprite sa providnoscu.
+4. Proveriti da li timeline platforme menjaju vizuelni state za past/present/future.
+5. Ako Elias ili platforme izgledaju iseceno, podesiti grid slicing u `BootScenePolished`.
+6. Proveriti alignment title screen hotspotova.
