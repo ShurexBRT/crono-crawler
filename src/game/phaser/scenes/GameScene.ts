@@ -337,11 +337,28 @@ export class GameScene extends Phaser.Scene {
 
   private onTimelineChanged(timeline: TimelineKey): void {
     this.applyTimeline();
+    this.stabilizePlayerAfterTimelineShift();
     this.audioManager.playTimelineTone(timeline);
     this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
     this.emitTimelinePulse(timeline);
     this.saveManager.saveProgress(this.level.id, timeline, this.activeCheckpoint?.id);
     this.uiManager.updateHud({ timeline });
+  }
+
+  private stabilizePlayerAfterTimelineShift(): void {
+    const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+    const previousVelocityY = body.velocity.y;
+    this.physics.world.collide(this.player.sprite, this.solidGroup);
+    if (body.blocked.down || body.touching.down) {
+      body.setVelocityY(Math.min(0, previousVelocityY));
+    }
+
+    this.time.delayedCall(0, () => {
+      if (!this.player || this.levelComplete) {
+        return;
+      }
+      this.physics.world.collide(this.player.sprite, this.solidGroup);
+    });
   }
 
   private applyTimeline(): void {

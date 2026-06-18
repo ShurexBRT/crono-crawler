@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { AnimationKeys, TextureKeys } from '../../assets/manifest';
 
-const assetPath = (fileName: string): string => `assets/${fileName}`;
+const assetUrl = (fileName: string): string => new URL(`../../../../assets/${fileName}`, import.meta.url).href;
+const PLATFORM_COLUMNS = 3;
+const PLATFORM_ROWS = 7;
 
 const eliasFrameSets = {
   idle: [
@@ -40,19 +42,75 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, assetPath('Elias%20char%20sprite.png'));
-    this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
-    this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
-    this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
-    this.load.image(TextureKeys.backdropGreenhouse, assetPath('steampunk_observatory_with_glowing_machinery.png'));
-    this.load.image(TextureKeys.backdropStation, assetPath('fading_clockwork_city_in_ruins.png'));
-    this.load.image(TextureKeys.backdropCore, assetPath('ruins_of_a_fractured_city_skyline.png'));
+    this.load.image(TextureKeys.eliasSheet, assetUrl('Elias char sprite transparent.png'));
+    this.load.image(TextureKeys.platformSheet, assetUrl('platform assets.png'));
+    this.load.image(TextureKeys.titleBackdrop, assetUrl('chrono_crawler_title_screen_concept.png'));
+    this.load.image(TextureKeys.backdropReactor, assetUrl('gloomy_industrial_nightscape_with_steam_and_lights.png'));
+    this.load.image(TextureKeys.backdropStreets, assetUrl('misty_alley_in_a_futuristic_city.png'));
+    this.load.image(TextureKeys.backdropGreenhouse, assetUrl('steampunk_observatory_with_glowing_machinery.png'));
+    this.load.image(TextureKeys.backdropStation, assetUrl('fading_clockwork_city_in_ruins.png'));
+    this.load.image(TextureKeys.backdropCore, assetUrl('ruins_of_a_fractured_city_skyline.png'));
   }
 
   create(): void {
     this.createGeneratedTextures();
+    this.replaceCheckerboardWithAlpha(TextureKeys.eliasSheet);
+    this.replaceCheckerboardWithAlpha(TextureKeys.platformSheet);
     this.registerEliasAnimationFrames();
+    this.registerTimelinePlatformFrames();
     this.scene.start('MainMenuScene');
+  }
+
+  private replaceCheckerboardWithAlpha(textureKey: string): void {
+    if (!this.textures.exists(textureKey)) {
+      return;
+    }
+
+    const texture = this.textures.get(textureKey);
+    const source = texture.getSourceImage() as HTMLImageElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = source.width;
+    canvas.height = source.height;
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) {
+      return;
+    }
+
+    context.drawImage(source, 0, 0);
+    const image = context.getImageData(0, 0, canvas.width, canvas.height);
+    for (let index = 0; index < image.data.length; index += 4) {
+      const red = image.data[index];
+      const green = image.data[index + 1];
+      const blue = image.data[index + 2];
+      const max = Math.max(red, green, blue);
+      const min = Math.min(red, green, blue);
+      if (min >= 224 && max - min <= 10) {
+        image.data[index + 3] = 0;
+      }
+    }
+    context.putImageData(image, 0, 0);
+
+    this.textures.remove(textureKey);
+    this.textures.addCanvas(textureKey, canvas);
+  }
+
+  private registerTimelinePlatformFrames(): void {
+    if (!this.textures.exists(TextureKeys.platformSheet)) {
+      return;
+    }
+
+    const texture = this.textures.get(TextureKeys.platformSheet);
+    if (texture.has('past')) {
+      return;
+    }
+
+    const source = texture.getSourceImage() as HTMLImageElement;
+    const frameWidth = Math.floor(source.width / PLATFORM_COLUMNS);
+    const frameHeight = Math.floor(source.height / PLATFORM_ROWS);
+    texture.add('past', 0, 0, 0, frameWidth, frameHeight);
+    texture.add('present', 0, frameWidth, 0, frameWidth, frameHeight);
+    texture.add('future', 0, frameWidth * 2, 0, frameWidth, frameHeight);
   }
 
   private registerEliasAnimationFrames(): void {

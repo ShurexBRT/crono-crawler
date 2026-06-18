@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Replaced painted-menu hotspots with visible art-matched title buttons.
+- Added runtime checkerboard-to-alpha cleanup for the Elias and platform atlases.
+- Corrected timeline platform atlas slicing to use Past/Present/Future columns.
+- Added a timeline-shift collision stabilization pass so Elias does not drop through solid timeline platforms.
+- Tuned echo clones to reuse the Elias atlas at 70% opacity with cyan tint.
 - Fixed local Vite dev/build asset serving so root `assets/` files are available in local preview, not only GitHub Pages.
 - Integrated the external Elias character sprite sheet as player idle, walk, run, jump, fall, and time-shift animations.
 - Loaded the new backdrop assets and mapped them into the playable levels through a scene polish layer.

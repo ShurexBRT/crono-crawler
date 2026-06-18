@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import './scenePolish';
-import { BootScenePolished } from './scenes/BootScenePolished';
+import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';
 import { IntroScene } from './scenes/IntroScene';
@@ -41,7 +41,7 @@ export function gameConfig({
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScenePolished, MainMenuScene, IntroScene, GameScene, EndingScene],
+    scene: [BootScene, MainMenuScene, IntroScene, GameScene, EndingScene],
     callbacks: {
       postBoot: (game) => {
         game.registry.set('saveManager', saveManager);

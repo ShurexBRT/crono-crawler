@@ -26,7 +26,7 @@ export class GhostClone {
       this.hasEliasAnimations ? TextureKeys.eliasSheet : TextureKeys.ghost,
       this.hasEliasAnimations ? 'idle-0' : undefined,
     );
-    this.sprite.setAlpha(0.8);
+    this.sprite.setAlpha(0.7);
     this.sprite.setTint(0x86f7ff);
     this.sprite.setDepth(18);
     this.sprite.setScale(this.baseScale);
