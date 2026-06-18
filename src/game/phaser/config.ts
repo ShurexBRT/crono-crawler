@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import './scenePolish';
 import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';
