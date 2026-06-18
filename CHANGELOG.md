@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added LEARNINGS.md to capture accumulated design, platformer, puzzle, visual, UI, technical, and production principles.
 - Added a noir-deco city backdrop pass with layered skyline silhouettes, searchlights, rain streaks, and warmer menu atmosphere.
 - Fixed level transitions by resetting recycled Phaser scene runtime state before every level load.
 - Moved timeline controls into the top timeline panel and removed the separate bottom control strip.

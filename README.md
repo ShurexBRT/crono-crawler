@@ -76,6 +76,10 @@ The echo system records up to eight seconds of Elias's movement and interactions
 
 Checkpoint rewind returns Elias to the last stabilized beacon, clears the current echo, and restores the saved checkpoint timeline.
 
+## Design Notes
+
+See [LEARNINGS.md](LEARNINGS.md) for the game design, platformer, puzzle, visual, UI, technical, and production skills learned so far.
+
 ## Folder Structure
 
 ```text
