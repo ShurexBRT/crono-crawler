@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../assets/manifest';
+import { AnimationKeys, TextureKeys } from '../assets/manifest';
 import type { GhostFrame } from '../systems/GhostRecorder';
 
 export class GhostClone {
@@ -10,19 +10,41 @@ export class GhostClone {
   private replayDone = false;
   private interactUntil = 0;
   private lastTrailAt = 0;
+  private hasEliasAnimations = false;
+  private baseScale = 1;
 
   constructor(scene: Phaser.Scene, frames: GhostFrame[]) {
     this.scene = scene;
     this.frames = frames;
     const first = frames[0];
-    this.sprite = scene.physics.add.sprite(first.x, first.y, TextureKeys.ghost);
-    this.sprite.setAlpha(0.58);
+    this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
+    const idleFrame = this.hasEliasAnimations ? scene.textures.getFrame(TextureKeys.eliasSheet, 'idle-0') : undefined;
+    this.baseScale = idleFrame ? 58 / idleFrame.height : 1;
+    this.sprite = scene.physics.add.sprite(
+      first.x,
+      first.y,
+      this.hasEliasAnimations ? TextureKeys.eliasSheet : TextureKeys.ghost,
+      this.hasEliasAnimations ? 'idle-0' : undefined,
+    );
+    this.sprite.setAlpha(0.8);
     this.sprite.setTint(0x86f7ff);
     this.sprite.setDepth(18);
+    this.sprite.setScale(this.baseScale);
+    if (this.hasEliasAnimations) {
+      this.sprite.play(AnimationKeys.eliasIdle);
+    }
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
     body.setImmovable(true);
-    body.setSize(18, 34).setOffset(7, 5);
+    if (this.hasEliasAnimations && idleFrame) {
+      const bodyWidth = Math.round(24 / this.baseScale);
+      const bodyHeight = Math.round(44 / this.baseScale);
+      const bodyOffsetX = Math.round((idleFrame.width - bodyWidth) / 2);
+      const bodyOffsetY = Math.max(0, Math.round(idleFrame.height - bodyHeight - 3 / this.baseScale));
+      body.setSize(bodyWidth, bodyHeight).setOffset(bodyOffsetX, bodyOffsetY);
+    } else {
+      body.setSize(18, 34).setOffset(7, 5);
+    }
   }
 
   get isInteracting(): boolean {
@@ -45,6 +67,7 @@ export class GhostClone {
       this.replayDone = true;
       this.sprite.setPosition(last.x, last.y);
       this.sprite.setFlipX(last.flipX);
+      this.playMovementAnimation(0, 0);
       (this.sprite.body as Phaser.Physics.Arcade.Body).reset(last.x, last.y);
       return;
     }
@@ -63,6 +86,7 @@ export class GhostClone {
 
     this.sprite.setPosition(x, y);
     this.sprite.setFlipX(next.flipX);
+    this.playMovementAnimation(next.x - previous.x, next.y - previous.y);
     (this.sprite.body as Phaser.Physics.Arcade.Body).reset(x, y);
     this.emitTrail();
   }
@@ -71,22 +95,51 @@ export class GhostClone {
     this.sprite.destroy();
   }
 
+  private playMovementAnimation(deltaX: number, deltaY: number): void {
+    if (!this.hasEliasAnimations) {
+      return;
+    }
+
+    if (deltaY < -0.5) {
+      this.sprite.play(AnimationKeys.eliasJump, true);
+      return;
+    }
+
+    if (deltaY > 0.5) {
+      this.sprite.play(AnimationKeys.eliasFall, true);
+      return;
+    }
+
+    if (Math.abs(deltaX) > 0.4) {
+      this.sprite.play(AnimationKeys.eliasRun, true);
+      return;
+    }
+
+    this.sprite.play(AnimationKeys.eliasIdle, true);
+  }
+
   private emitTrail(): void {
     if (this.elapsed - this.lastTrailAt < 120) {
       return;
     }
 
     this.lastTrailAt = this.elapsed;
-    const afterimage = this.scene.add.image(this.sprite.x, this.sprite.y, TextureKeys.ghost);
+    const afterimage = this.scene.add.image(
+      this.sprite.x,
+      this.sprite.y,
+      this.sprite.texture.key,
+      this.hasEliasAnimations ? this.sprite.frame.name : undefined,
+    );
     afterimage.setDepth(16);
     afterimage.setFlipX(this.sprite.flipX);
     afterimage.setAlpha(0.22);
+    afterimage.setScale(this.sprite.scaleX, this.sprite.scaleY);
     afterimage.setTint(0x86f7ff);
     this.scene.tweens.add({
       targets: afterimage,
       alpha: 0,
-      scaleX: 1.08,
-      scaleY: 1.08,
+      scaleX: this.sprite.scaleX * 1.08,
+      scaleY: this.sprite.scaleY * 1.08,
       duration: 360,
       ease: 'Sine.easeOut',
       onComplete: () => afterimage.destroy(),
