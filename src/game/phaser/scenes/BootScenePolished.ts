@@ -3,36 +3,14 @@ import { BootScene } from './BootScene';
 
 const assetPath = (fileName: string): string => `assets/${fileName}`;
 
-const eliasFrameSets = {
-  idle: [{ x: 168, y: 16, width: 172, height: 198 }],
-  run: [
-    { x: 164, y: 232, width: 184, height: 176 },
-    { x: 372, y: 232, width: 184, height: 176 },
-    { x: 582, y: 232, width: 196, height: 176 },
-    { x: 804, y: 232, width: 184, height: 176 },
-    { x: 1010, y: 232, width: 188, height: 176 },
-    { x: 1222, y: 232, width: 198, height: 176 },
-  ],
-  jump: [
-    { x: 164, y: 616, width: 190, height: 176 },
-    { x: 370, y: 616, width: 190, height: 176 },
-    { x: 580, y: 616, width: 196, height: 176 },
-    { x: 806, y: 616, width: 188, height: 176 },
-    { x: 1050, y: 616, width: 206, height: 176 },
-  ],
-  shift: [
-    { x: 164, y: 812, width: 178, height: 250 },
-    { x: 356, y: 812, width: 188, height: 250 },
-    { x: 558, y: 812, width: 176, height: 250 },
-    { x: 746, y: 812, width: 196, height: 250 },
-    { x: 954, y: 812, width: 244, height: 250 },
-    { x: 1220, y: 812, width: 198, height: 250 },
-  ],
-};
+const ELIAS_COLUMNS = 6;
+const ELIAS_ROWS = 5;
+const PLATFORM_ROWS = 3;
 
 export class BootScenePolished extends BootScene {
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, assetPath('Elias char sprite.png'));
+    this.load.image(TextureKeys.eliasSheet, assetPath('Elias char sprite transparent.png'));
+    this.load.image(TextureKeys.platformSheet, assetPath('platform assets.png'));
     this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
     this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
     this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
@@ -44,6 +22,7 @@ export class BootScenePolished extends BootScene {
   create(): void {
     (this as unknown as { createGeneratedTextures: () => void }).createGeneratedTextures();
     this.registerExternalEliasAnimationFrames();
+    this.registerTimelinePlatformFrames();
     this.scene.start('MainMenuScene');
   }
 
@@ -57,11 +36,15 @@ export class BootScenePolished extends BootScene {
       return;
     }
 
-    for (const [setName, frames] of Object.entries(eliasFrameSets)) {
-      frames.forEach((frame, index) => {
-        texture.add(`${setName}-${index}`, 0, frame.x, frame.y, frame.width, frame.height);
-      });
-    }
+    const source = texture.getSourceImage() as HTMLImageElement;
+    const frameWidth = Math.floor(source.width / ELIAS_COLUMNS);
+    const frameHeight = Math.floor(source.height / ELIAS_ROWS);
+
+    this.addGridFrames(texture, 'idle', 0, frameWidth, frameHeight, ELIAS_COLUMNS);
+    this.addGridFrames(texture, 'run', 1, frameWidth, frameHeight, ELIAS_COLUMNS);
+    this.addGridFrames(texture, 'run-left', 2, frameWidth, frameHeight, ELIAS_COLUMNS);
+    this.addGridFrames(texture, 'jump', 3, frameWidth, frameHeight, ELIAS_COLUMNS);
+    this.addGridFrames(texture, 'shift', 4, frameWidth, frameHeight, ELIAS_COLUMNS);
 
     this.createExternalAnimation(AnimationKeys.eliasIdle, 'idle-', 0, 0, 1, -1);
     this.createExternalAnimation(AnimationKeys.eliasWalk, 'run-', 0, 5, 7, -1);
@@ -78,7 +61,41 @@ export class BootScenePolished extends BootScene {
     this.createExternalAnimation(AnimationKeys.eliasTimeShift, 'shift-', 0, 5, 12, 0);
   }
 
+  private registerTimelinePlatformFrames(): void {
+    if (!this.textures.exists(TextureKeys.platformSheet)) {
+      return;
+    }
+
+    const texture = this.textures.get(TextureKeys.platformSheet);
+    if (texture.has('past')) {
+      return;
+    }
+
+    const source = texture.getSourceImage() as HTMLImageElement;
+    const frameHeight = Math.floor(source.height / PLATFORM_ROWS);
+    texture.add('past', 0, 0, 0, source.width, frameHeight);
+    texture.add('present', 0, 0, frameHeight, source.width, frameHeight);
+    texture.add('future', 0, 0, frameHeight * 2, source.width, frameHeight);
+  }
+
+  private addGridFrames(
+    texture: Phaser.Textures.Texture,
+    prefix: string,
+    row: number,
+    frameWidth: number,
+    frameHeight: number,
+    count: number,
+  ): void {
+    for (let index = 0; index < count; index += 1) {
+      texture.add(`${prefix}-${index}`, 0, index * frameWidth, row * frameHeight, frameWidth, frameHeight);
+    }
+  }
+
   private createExternalAnimation(key: string, prefix: string, start: number, end: number, frameRate: number, repeat: number): void {
+    if (this.anims.exists(key)) {
+      return;
+    }
+
     this.anims.create({
       key,
       frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix, start, end }),
