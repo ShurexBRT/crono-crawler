@@ -1,6 +1,6 @@
 import { UIManager } from './UIManager';
 
-const titleScreenBackdropUrl = new URL('../../assets/chrono_crawler_title_screen_concept.png', import.meta.url).href;
+const titleScreenBackdropUrl = 'assets/chrono_crawler_title_screen_concept.png';
 
 type MainMenuActions = {
   onNewGame: () => void;
