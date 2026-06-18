@@ -4,12 +4,15 @@ import type { GhostFrame } from '../systems/GhostRecorder';
 
 export class GhostClone {
   readonly sprite: Phaser.Physics.Arcade.Sprite;
+  private scene: Phaser.Scene;
   private frames: GhostFrame[];
   private elapsed = 0;
   private replayDone = false;
   private interactUntil = 0;
+  private lastTrailAt = 0;
 
   constructor(scene: Phaser.Scene, frames: GhostFrame[]) {
+    this.scene = scene;
     this.frames = frames;
     const first = frames[0];
     this.sprite = scene.physics.add.sprite(first.x, first.y, TextureKeys.ghost);
@@ -61,9 +64,32 @@ export class GhostClone {
     this.sprite.setPosition(x, y);
     this.sprite.setFlipX(next.flipX);
     (this.sprite.body as Phaser.Physics.Arcade.Body).reset(x, y);
+    this.emitTrail();
   }
 
   destroy(): void {
     this.sprite.destroy();
+  }
+
+  private emitTrail(): void {
+    if (this.elapsed - this.lastTrailAt < 120) {
+      return;
+    }
+
+    this.lastTrailAt = this.elapsed;
+    const afterimage = this.scene.add.image(this.sprite.x, this.sprite.y, TextureKeys.ghost);
+    afterimage.setDepth(16);
+    afterimage.setFlipX(this.sprite.flipX);
+    afterimage.setAlpha(0.22);
+    afterimage.setTint(0x86f7ff);
+    this.scene.tweens.add({
+      targets: afterimage,
+      alpha: 0,
+      scaleX: 1.08,
+      scaleY: 1.08,
+      duration: 360,
+      ease: 'Sine.easeOut',
+      onComplete: () => afterimage.destroy(),
+    });
   }
 }

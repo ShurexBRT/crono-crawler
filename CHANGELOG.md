@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Polished movement feel with acceleration/deceleration, jump/landing squash, and footfall dust feedback.
+- Added stronger timeline identity through HUD accent states, timeline pulses, and timeline-colored object trim.
+- Added echo recording/replay feedback with start/stop SFX, recording aura, and ghost afterimage trails.
+- Clarified tutorial and final Keeper puzzle objectives with shorter, more actionable in-game text.
+- Restyled generated placeholder sprites and rectangle objects toward a darker noir-deco pixel-art direction.
 - Added LEARNINGS.md to capture accumulated design, platformer, puzzle, visual, UI, technical, and production principles.
 - Added a noir-deco city backdrop pass with layered skyline silhouettes, searchlights, rain streaks, and warmer menu atmosphere.
 - Fixed level transitions by resetting recycled Phaser scene runtime state before every level load.

@@ -3,6 +3,9 @@
 ## Next Playable Expansion
 
 - Replace generated placeholder sprites with authored pixel art sprite sheets.
+- Define a Batman: The Animated Series-inspired art bible: angular silhouettes, noir city shapes, limited accent colors, and readable gameplay contrast.
+- Produce first real sprite sheet set for Elias, Keeper, rustmite enemy, pressure plate, switch, door, and three timeline platform variants.
+- Add foreground silhouettes, parallax smoke/rain layers, and reusable city facade tiles for each level theme.
 - Add walk, run, jump, echo, death, and timeline-shift animations.
 - Build tilemap-authored levels instead of rectangle-authored prototype geometry.
 - Add gamepad support and optional mobile touch controls.

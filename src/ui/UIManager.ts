@@ -190,7 +190,7 @@ export class UIManager {
   showHud(state: HudState): void {
     this.hudLayer.innerHTML = `
       <div class="hud-status">
-        <div>
+        <div data-hud="timeline-card" class="timeline-card timeline-${state.timeline}">
           <span class="hud-label">Timeline</span>
           <strong data-hud="timeline">${this.timelineName(state.timeline)}</strong>
           <span class="timeline-help"><kbd>Q</kbd> cycle <kbd>1</kbd> Past <kbd>2</kbd> Present <kbd>3</kbd> Future</span>
@@ -215,6 +215,11 @@ export class UIManager {
   updateHud(state: Partial<HudState>): void {
     if (state.timeline) {
       this.setText('[data-hud="timeline"]', this.timelineName(state.timeline));
+      const card = this.hudLayer.querySelector<HTMLElement>('[data-hud="timeline-card"]');
+      if (card) {
+        card.classList.remove('timeline-past', 'timeline-present', 'timeline-future');
+        card.classList.add(`timeline-${state.timeline}`);
+      }
     }
     if (state.objective) {
       this.setText('[data-hud="objective"]', state.objective);

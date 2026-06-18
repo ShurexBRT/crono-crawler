@@ -16,8 +16,10 @@ export class StaticPlatform {
 
   constructor(scene: Phaser.Scene, spec: PlatformSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.color ?? 0x222a31);
-    this.rectangle.setStrokeStyle(1, 0x44525f, 0.8);
+    this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.95);
     this.rectangle.setDepth(8);
+    scene.add.rectangle(spec.x, spec.y - spec.height / 2 + 4, spec.width - 12, 3, 0xe0a04f, 0.22).setDepth(8.1);
+    scene.add.rectangle(spec.x, spec.y + spec.height / 2 - 8, spec.width - 24, 2, 0x6ee7f2, 0.12).setDepth(8.1);
     scene.physics.add.existing(this.rectangle, true);
     group.add(this.rectangle);
   }
@@ -27,6 +29,8 @@ export class TimelineBlock {
   readonly id: string;
   readonly rectangle: Phaser.GameObjects.Rectangle;
   private spec: TimelineBlockSpec;
+  private accent: Phaser.GameObjects.Rectangle;
+  private ember: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene, spec: TimelineBlockSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.id = spec.id;
@@ -34,6 +38,10 @@ export class TimelineBlock {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.states.present.color);
     this.rectangle.setDepth(9);
     this.rectangle.setStrokeStyle(1, 0x6c7f86, 0.8);
+    this.accent = scene.add.rectangle(spec.x, spec.y - spec.height / 2 + 4, Math.max(10, spec.width - 14), 3, 0x6ee7f2, 0.8);
+    this.accent.setDepth(9.2);
+    this.ember = scene.add.rectangle(spec.x, spec.y + spec.height / 2 - 4, Math.max(10, spec.width - 28), 2, 0xe0a04f, 0.28);
+    this.ember.setDepth(9.1);
     scene.physics.add.existing(this.rectangle, true);
     group.add(this.rectangle);
   }
@@ -44,6 +52,13 @@ export class TimelineBlock {
     this.rectangle.setVisible(state.visible);
     this.rectangle.setAlpha(state.alpha ?? 1);
     this.rectangle.setFillStyle(state.color);
+    this.rectangle.setStrokeStyle(state.solid ? 2 : 1, timelineAccent(timeline), state.solid ? 0.85 : 0.45);
+    this.accent.setVisible(state.visible);
+    this.accent.setAlpha(state.solid ? 0.82 : 0.28);
+    this.accent.setFillStyle(timelineAccent(timeline), state.solid ? 0.82 : 0.28);
+    this.ember.setVisible(state.visible);
+    this.ember.setAlpha(timeline === 'past' ? 0.48 : 0.18);
+    this.ember.setFillStyle(timeline === 'past' ? 0xf0a64d : 0x101820, timeline === 'past' ? 0.48 : 0.18);
     body.enable = state.solid;
     body.checkCollision.none = !state.solid;
     body.updateFromGameObject();
@@ -55,6 +70,7 @@ export class TimelineDoor {
   readonly rectangle: Phaser.GameObjects.Rectangle;
   private spec: DoorSpec;
   private wasOpen = false;
+  private lockLine: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene, spec: DoorSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.id = spec.id;
@@ -62,6 +78,8 @@ export class TimelineDoor {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.states.present.color);
     this.rectangle.setDepth(12);
     this.rectangle.setStrokeStyle(2, 0x1b2028, 0.95);
+    this.lockLine = scene.add.rectangle(spec.x, spec.y, 6, spec.height - 18, 0x6ee7f2, 0.48);
+    this.lockLine.setDepth(12.2);
     scene.physics.add.existing(this.rectangle, true);
     group.add(this.rectangle);
   }
@@ -75,6 +93,10 @@ export class TimelineDoor {
     this.rectangle.setVisible(state.visible);
     this.rectangle.setAlpha(isUnlocked ? 0.18 : state.alpha ?? 1);
     this.rectangle.setFillStyle(isUnlocked ? 0x73f2b2 : state.color);
+    this.rectangle.setStrokeStyle(2, isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.42 : 0.85);
+    this.lockLine.setVisible(state.visible);
+    this.lockLine.setAlpha(isUnlocked ? 0.18 : 0.62);
+    this.lockLine.setFillStyle(isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.18 : 0.62);
     body.enable = solid;
     body.checkCollision.none = !solid;
     body.updateFromGameObject();
@@ -91,6 +113,7 @@ export class PressurePlate {
   readonly rectangle: Phaser.GameObjects.Rectangle;
   private spec: PressurePlateSpec;
   private active = false;
+  private signal: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene, spec: PressurePlateSpec) {
     this.id = spec.id;
@@ -98,7 +121,9 @@ export class PressurePlate {
     this.spec = spec;
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, 0x4a3648);
     this.rectangle.setDepth(11);
-    this.rectangle.setStrokeStyle(1, 0xc46cff, 0.65);
+    this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.9);
+    this.signal = scene.add.rectangle(spec.x, spec.y - 7, spec.width - 14, 3, 0xc46cff, 0.58);
+    this.signal.setDepth(11.1);
     scene.physics.add.existing(this.rectangle, true);
   }
 
@@ -108,6 +133,8 @@ export class PressurePlate {
     this.active = occupied;
     this.rectangle.setAlpha(available ? 1 : 0.22);
     this.rectangle.setFillStyle(occupied ? 0xdbb3ff : 0x4a3648);
+    this.signal.setAlpha(available ? (occupied ? 0.95 : 0.42) : 0.16);
+    this.signal.setFillStyle(occupied ? 0xffffff : timelineAccent(timeline), occupied ? 0.85 : 0.42);
     return occupied;
   }
 }
@@ -118,6 +145,7 @@ export class LeverSwitch {
   readonly rectangle: Phaser.GameObjects.Rectangle;
   private spec: SwitchSpec;
   private toggled = false;
+  private handle: Phaser.GameObjects.Rectangle;
 
   constructor(scene: Phaser.Scene, spec: SwitchSpec) {
     this.id = spec.id;
@@ -125,7 +153,10 @@ export class LeverSwitch {
     this.spec = spec;
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, 0x67452c);
     this.rectangle.setDepth(11);
-    this.rectangle.setStrokeStyle(1, 0xefb14d, 0.8);
+    this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.9);
+    this.handle = scene.add.rectangle(spec.x + 3, spec.y - 10, 6, 22, 0xefb14d, 0.88);
+    this.handle.setAngle(-16);
+    this.handle.setDepth(11.2);
     scene.physics.add.existing(this.rectangle, true);
   }
 
@@ -135,6 +166,9 @@ export class LeverSwitch {
     const ghostUses = available && ghostInteract && ghost && boundsOverlap(this.rectangle, ghost, 24, 28);
 
     this.rectangle.setAlpha(available ? 1 : 0.28);
+    this.handle.setAlpha(available ? 0.9 : 0.22);
+    this.handle.setFillStyle(this.toggled ? 0x73f2b2 : timelineAccent(timeline), this.toggled ? 0.95 : 0.82);
+    this.handle.setAngle(this.toggled ? 18 : -16);
     if (!this.toggled && (playerUses || ghostUses)) {
       this.toggled = true;
       this.rectangle.setFillStyle(0xe6c36a);
@@ -190,4 +224,14 @@ function boundsOverlap(
   boundsA.width += inflateX * 2;
   boundsA.height += inflateY * 2;
   return Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB);
+}
+
+function timelineAccent(timeline: TimelineKey): number {
+  if (timeline === 'past') {
+    return 0xf0a64d;
+  }
+  if (timeline === 'present') {
+    return 0x6ee7f2;
+  }
+  return 0xe0618a;
 }

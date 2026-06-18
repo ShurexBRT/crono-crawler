@@ -49,6 +49,7 @@ export class GameScene extends Phaser.Scene {
   private ghost?: GhostClone;
   private exitZone?: Phaser.GameObjects.Rectangle;
   private timelineTint?: Phaser.GameObjects.Rectangle;
+  private recordingAura?: Phaser.GameObjects.Arc;
   private activeCheckpoint?: CheckpointSpec;
   private checkpointTimeline?: TimelineKey;
   private latchedFlags = new Set<string>();
@@ -122,10 +123,16 @@ export class GameScene extends Phaser.Scene {
 
     this.handleTimelineInput();
 
-    const jumped = this.player.update(this.inputController, delta, false);
-    if (jumped) {
+    const playerStep = this.player.update(this.inputController, delta, false);
+    if (playerStep.jumped) {
       this.audioManager.playSfx('jump');
+      this.emitFootfallDust(0x6ee7f2, 5);
     }
+    if (playerStep.landed) {
+      this.audioManager.playSfx('land');
+      this.emitFootfallDust(0xf0a64d, 7);
+    }
+    this.updateRecordingAura();
 
     if (recordPressed) {
       this.toggleRecording();
@@ -182,6 +189,7 @@ export class GameScene extends Phaser.Scene {
     this.ghost = undefined;
     this.exitZone = undefined;
     this.timelineTint = undefined;
+    this.recordingAura = undefined;
     this.activeCheckpoint = undefined;
     this.checkpointTimeline = undefined;
     this.latchedFlags.clear();
@@ -331,6 +339,7 @@ export class GameScene extends Phaser.Scene {
     this.applyTimeline();
     this.audioManager.playTimelineTone(timeline);
     this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
+    this.emitTimelinePulse(timeline);
     this.saveManager.saveProgress(this.level.id, timeline, this.activeCheckpoint?.id);
     this.uiManager.updateHud({ timeline });
   }
@@ -471,7 +480,8 @@ export class GameScene extends Phaser.Scene {
     this.ghost?.destroy();
     this.ghost = undefined;
     this.ghostRecorder.start();
-    this.audioManager.playSfx('shift');
+    this.audioManager.playSfx('echoStart');
+    this.createRecordingAura();
     this.uiManager.showToast('Echo recording started.');
   }
 
@@ -494,7 +504,8 @@ export class GameScene extends Phaser.Scene {
 
     this.ghost?.destroy();
     this.ghost = new GhostClone(this, frames);
-    this.audioManager.playSfx('checkpoint');
+    this.destroyRecordingAura();
+    this.audioManager.playSfx('echoStop');
     this.uiManager.showToast('Echo replay anchored.');
   }
 
@@ -506,6 +517,7 @@ export class GameScene extends Phaser.Scene {
     if (this.ghostRecorder.isRecording) {
       this.ghostRecorder.stop();
     }
+    this.destroyRecordingAura();
 
     const spawn = this.activeCheckpoint
       ? { x: this.activeCheckpoint.x, y: this.activeCheckpoint.y - 24 }
@@ -595,5 +607,73 @@ export class GameScene extends Phaser.Scene {
     const bounds = object.getBounds();
     const target = new Phaser.Geom.Rectangle(rect.x - rect.width / 2, rect.y - rect.height / 2, rect.width, rect.height);
     return Phaser.Geom.Intersects.RectangleToRectangle(bounds, target);
+  }
+
+  private emitFootfallDust(color: number, count: number): void {
+    const emitter = this.add.particles(this.player.sprite.x, this.player.sprite.y + 18, TextureKeys.particle, {
+      lifespan: 260,
+      speed: { min: 20, max: 80 },
+      angle: { min: 190, max: 350 },
+      scale: { start: 0.65, end: 0 },
+      alpha: { start: 0.42, end: 0 },
+      tint: color,
+      quantity: count,
+      emitting: false,
+    });
+    emitter.setDepth(19);
+    emitter.explode(count);
+    this.time.delayedCall(300, () => emitter.destroy());
+  }
+
+  private emitTimelinePulse(timeline: TimelineKey): void {
+    const color: Record<TimelineKey, number> = {
+      past: 0xf0a64d,
+      present: 0x6ee7f2,
+      future: 0xe0618a,
+    };
+    const ring = this.add.circle(this.player.sprite.x, this.player.sprite.y, 24, color[timeline], 0);
+    ring.setStrokeStyle(3, color[timeline], 0.8);
+    ring.setDepth(21);
+    this.tweens.add({
+      targets: ring,
+      radius: 90,
+      alpha: 0,
+      duration: 360,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  private createRecordingAura(): void {
+    this.destroyRecordingAura();
+    this.recordingAura = this.add.circle(this.player.sprite.x, this.player.sprite.y, 30, 0x6ee7f2, 0.08);
+    this.recordingAura.setStrokeStyle(2, 0x6ee7f2, 0.72);
+    this.recordingAura.setDepth(19);
+    this.tweens.add({
+      targets: this.recordingAura,
+      scaleX: 1.25,
+      scaleY: 1.25,
+      alpha: 0.18,
+      yoyo: true,
+      repeat: -1,
+      duration: 520,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private updateRecordingAura(): void {
+    if (!this.recordingAura) {
+      return;
+    }
+    this.recordingAura.setPosition(this.player.sprite.x, this.player.sprite.y);
+  }
+
+  private destroyRecordingAura(): void {
+    if (!this.recordingAura) {
+      return;
+    }
+    this.tweens.killTweensOf(this.recordingAura);
+    this.recordingAura.destroy();
+    this.recordingAura = undefined;
   }
 }

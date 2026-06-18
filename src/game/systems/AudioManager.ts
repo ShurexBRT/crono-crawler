@@ -1,6 +1,17 @@
 import type { SettingsState, TimelineKey } from '../types';
 
-type SfxName = 'click' | 'jump' | 'shift' | 'switch' | 'rewind' | 'death' | 'checkpoint' | 'door';
+type SfxName =
+  | 'click'
+  | 'jump'
+  | 'land'
+  | 'shift'
+  | 'echoStart'
+  | 'echoStop'
+  | 'switch'
+  | 'rewind'
+  | 'death'
+  | 'checkpoint'
+  | 'door';
 
 export class AudioManager {
   private audioContext?: AudioContext;
@@ -50,7 +61,10 @@ export class AudioManager {
     const table: Record<SfxName, [number, number, OscillatorType]> = {
       click: [330, 0.06, 'triangle'],
       jump: [520, 0.08, 'square'],
+      land: [145, 0.055, 'triangle'],
       shift: [160, 0.16, 'sawtooth'],
+      echoStart: [700, 0.12, 'sine'],
+      echoStop: [480, 0.16, 'triangle'],
       switch: [780, 0.08, 'triangle'],
       rewind: [120, 0.22, 'sine'],
       death: [90, 0.25, 'sawtooth'],

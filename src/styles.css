@@ -112,6 +112,34 @@ button:disabled {
   padding: 0.58rem 0.75rem;
 }
 
+.timeline-card {
+  box-shadow: inset 0 0 0 1px rgba(110, 231, 242, 0.1), 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.timeline-card.timeline-past {
+  border-color: rgba(240, 166, 77, 0.48);
+}
+
+.timeline-card.timeline-present {
+  border-color: rgba(110, 231, 242, 0.5);
+}
+
+.timeline-card.timeline-future {
+  border-color: rgba(224, 97, 138, 0.52);
+}
+
+.timeline-card.timeline-past [data-hud="timeline"] {
+  color: var(--amber);
+}
+
+.timeline-card.timeline-present [data-hud="timeline"] {
+  color: var(--cyan);
+}
+
+.timeline-card.timeline-future [data-hud="timeline"] {
+  color: #e0618a;
+}
+
 .hud-label,
 .title-kicker {
   display: block;
