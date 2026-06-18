@@ -12,6 +12,7 @@ export const TextureKeys = {
   switchOn: 'environment.switch-on',
   plate: 'environment.pressure-plate',
   exit: 'environment.exit',
+  platformSheet: 'environment.platform-sheet',
   titleBackdrop: 'backdrop.title',
   backdropReactor: 'backdrop.reactor',
   backdropStreets: 'backdrop.streets',
