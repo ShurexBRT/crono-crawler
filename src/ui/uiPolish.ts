@@ -22,6 +22,7 @@ type PatchedUIManager = {
   this.clearHud();
   this.setOverlay(`
     <div class="title-art-screen" aria-label="Chrono Crawler title screen">
+      <img class="title-art-image" src="assets/chrono_crawler_title_screen_concept.png" alt="Chrono Crawler title screen" />
       <nav class="painted-menu-hotspots" aria-label="Main menu">
         <button class="painted-menu-hotspot painted-menu-start" data-action="new" aria-label="Start Game">
           <span>Start Game</span>
