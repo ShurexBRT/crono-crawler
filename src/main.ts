@@ -5,6 +5,7 @@ import { AudioManager } from './game/systems/AudioManager';
 import { UIManager } from './ui/UIManager';
 import './ui/uiPolish';
 import './styles.css';
+import './ui/titleArt.css';
 
 const saveManager = new SaveManager();
 const audioManager = new AudioManager(saveManager.getSettings());
