@@ -14,6 +14,15 @@ import { TimelineManager } from '../../systems/TimelineManager';
 import type { CheckpointSpec, LevelData, Point, RectSpec, StoryZoneSpec, TimelineKey } from '../../types';
 import type { UIManager } from '../../../ui/UIManager';
 
+type NoirPalette = {
+  sky: number;
+  horizon: number;
+  far: number;
+  mid: number;
+  near: number;
+  accent: number;
+};
+
 interface GameSceneData {
   levelId?: string;
   checkpointId?: string;
@@ -200,33 +209,103 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawBackground(): void {
-    const palette = {
-      reactor: [0x081019, 0x12202b, 0x263743],
-      streets: [0x080b12, 0x111923, 0x2a333b],
-      greenhouse: [0x09100e, 0x173028, 0x38533d],
-      station: [0x080d13, 0x18222c, 0x34404a],
-      core: [0x09070e, 0x201622, 0x2d4050],
-    }[this.level.background];
+    const palettes: Record<LevelData['background'], NoirPalette> = {
+      reactor: { sky: 0x08070b, horizon: 0x51311d, far: 0x10131b, mid: 0x151b25, near: 0x080a10, accent: 0xe19a46 },
+      streets: { sky: 0x07080d, horizon: 0x5b351e, far: 0x11131c, mid: 0x171d29, near: 0x08090f, accent: 0xf0a64d },
+      greenhouse: { sky: 0x070c0b, horizon: 0x4a3a21, far: 0x101a18, mid: 0x192720, near: 0x090d0c, accent: 0xd5a85a },
+      station: { sky: 0x07090f, horizon: 0x493021, far: 0x10141d, mid: 0x18202b, near: 0x080a10, accent: 0xe0a04f },
+      core: { sky: 0x09070d, horizon: 0x432038, far: 0x12111c, mid: 0x1c1a2b, near: 0x08070d, accent: 0xd05b78 },
+    };
+    const palette = palettes[this.level.background];
 
-    this.add.rectangle(this.level.width / 2, 360, this.level.width, 720, palette[0]).setDepth(-20);
-    for (let i = 0; i < Math.ceil(this.level.width / 150) + 3; i += 1) {
-      const x = i * 150 - 70;
-      const height = 140 + ((i * 61) % 230);
-      this.add.rectangle(x, 720 - height / 2, 110, height, palette[i % 2 === 0 ? 1 : 2], 0.55)
-        .setOrigin(0, 0.5)
-        .setScrollFactor(0.35)
-        .setDepth(-15);
-    }
+    this.drawNoirSky(palette);
+    this.drawSearchlights(palette);
+    this.drawDecoSkyline(palette, -16, 0.22, 115, 250, 0.95);
+    this.drawDecoSkyline(palette, -13, 0.38, 150, 330, 0.9);
+    this.drawDecoSkyline(palette, -10, 0.56, 200, 420, 0.88);
 
-    for (let i = 0; i < Math.ceil(this.level.width / 90); i += 1) {
-      const y = 70 + ((i * 37) % 180);
-      this.add.rectangle(i * 90 + 30, y, 3, 3, 0x6ee7f2, 0.45).setScrollFactor(0.18).setDepth(-14);
-    }
+    this.add.rectangle(this.level.width / 2, 704, this.level.width, 54, 0x05060a, 0.72).setDepth(-7);
+    this.add.rectangle(this.level.width / 2, 675, this.level.width, 4, palette.accent, 0.2).setDepth(-6);
+    this.drawRainStreaks(palette);
 
     this.timelineTint = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.06);
     this.timelineTint.setScrollFactor(0);
     this.timelineTint.setDepth(30);
     this.timelineTint.setBlendMode(Phaser.BlendModes.ADD);
+  }
+
+  private drawNoirSky(palette: Pick<NoirPalette, 'sky' | 'horizon' | 'accent'>): void {
+    this.add.rectangle(this.level.width / 2, 360, this.level.width, 720, palette.sky).setDepth(-24);
+    this.add.rectangle(this.level.width / 2, 500, this.level.width, 360, palette.horizon, 0.34).setDepth(-23);
+    this.add.circle(this.level.width * 0.78, 170, 82, palette.accent, 0.16).setScrollFactor(0.18).setDepth(-22);
+    this.add.circle(this.level.width * 0.78, 170, 42, palette.accent, 0.18).setScrollFactor(0.18).setDepth(-22);
+  }
+
+  private drawSearchlights(palette: Pick<NoirPalette, 'accent'>): void {
+    for (let i = 0; i < Math.ceil(this.level.width / 720) + 1; i += 1) {
+      const baseX = 280 + i * 720;
+      const beamA = this.add.polygon(baseX, 470, [0, 0, 34, 0, -180, -430, -230, -430], palette.accent, 0.1);
+      const beamB = this.add.polygon(baseX + 320, 490, [0, 0, 30, 0, 210, -430, 260, -430], 0x9ad7ff, 0.07);
+      beamA.setScrollFactor(0.24).setDepth(-21);
+      beamB.setScrollFactor(0.2).setDepth(-21);
+    }
+  }
+
+  private drawDecoSkyline(
+    palette: Pick<NoirPalette, 'far' | 'mid' | 'near' | 'accent'>,
+    depth: number,
+    scrollFactor: number,
+    minHeight: number,
+    maxHeight: number,
+    alpha: number,
+  ): void {
+    const color = depth <= -15 ? palette.far : depth <= -12 ? palette.mid : palette.near;
+    const count = Math.ceil(this.level.width / 112) + 6;
+
+    for (let i = 0; i < count; i += 1) {
+      const width = 70 + ((i * 29 + depth * 7) % 62);
+      const heightRange = maxHeight - minHeight;
+      const height = minHeight + ((i * 71 + Math.abs(depth) * 19) % heightRange);
+      const x = i * 106 - 140;
+      const y = 690 - height / 2;
+      const building = this.add.rectangle(x, y, width, height, color, alpha);
+      building.setOrigin(0, 0.5).setScrollFactor(scrollFactor).setDepth(depth);
+
+      const capHeight = 18 + ((i * 11) % 26);
+      const cap = this.add.triangle(x + width / 2, y - height / 2 - capHeight / 2, 0, capHeight, width * 0.5, 0, width, capHeight, color, alpha);
+      cap.setScrollFactor(scrollFactor).setDepth(depth);
+
+      const trimY = y - height / 2 + 42;
+      this.add.rectangle(x + width / 2, trimY, width * 0.84, 3, palette.accent, 0.16).setScrollFactor(scrollFactor).setDepth(depth + 0.1);
+
+      if (depth > -15) {
+        const columns = Math.max(2, Math.floor(width / 24));
+        const rows = Math.max(3, Math.floor(height / 44));
+        for (let column = 0; column < columns; column += 1) {
+          for (let row = 0; row < rows; row += 1) {
+            if ((column + row + i) % 3 === 0) {
+              continue;
+            }
+            const wx = x + 14 + column * 22;
+            const wy = y - height / 2 + 58 + row * 38;
+            this.add.rectangle(wx, wy, 5, 13, palette.accent, depth === -10 ? 0.42 : 0.24).setScrollFactor(scrollFactor).setDepth(depth + 0.2);
+          }
+        }
+      }
+    }
+  }
+
+  private drawRainStreaks(palette: Pick<NoirPalette, 'accent'>): void {
+    for (let i = 0; i < Math.ceil(this.level.width / 72); i += 1) {
+      const x = i * 72 + 26;
+      const y = 70 + ((i * 47) % 360);
+      const streak = this.add.rectangle(x, y, 2, 34, 0xa8c0d0, 0.11);
+      streak.setAngle(-16).setScrollFactor(0.62).setDepth(-5);
+    }
+
+    for (let i = 0; i < Math.ceil(this.level.width / 190); i += 1) {
+      this.add.rectangle(i * 190 + 48, 666, 78, 2, palette.accent, 0.15).setDepth(-4);
+    }
   }
 
   private handleTimelineInput(): void {

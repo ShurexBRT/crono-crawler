@@ -20,6 +20,7 @@ This repository currently uses the browser fallback stack because Godot 4.x was 
 - One patrolling enemy type
 - Prototype boss-style final puzzle using timeline shifts, echo pressure plate, switches, and a Keeper barrier
 - Generated placeholder pixel art sprites and procedural Web Audio tones
+- Noir-deco city backdrop with layered skyline silhouettes, searchlights, rain, and timeline color accents
 
 ## Run Locally
 
