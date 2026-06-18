@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../assets/manifest';
+import { AnimationKeys, TextureKeys } from '../assets/manifest';
 import type { InputController } from '../input/InputController';
 import type { Point } from '../types';
 
@@ -15,15 +15,32 @@ export class Player {
   private coyoteMs = 0;
   private jumpBufferMs = 0;
   private wasOnGround = false;
+  private hasEliasAnimations = false;
+  private baseScale = 1;
+  private animationLockMs = 0;
 
   constructor(scene: Phaser.Scene, spawn: Point) {
     this.scene = scene;
-    this.sprite = scene.physics.add.sprite(spawn.x, spawn.y, TextureKeys.elias);
+    this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
+    this.baseScale = this.hasEliasAnimations ? 0.255 : 1;
+    this.sprite = scene.physics.add.sprite(
+      spawn.x,
+      spawn.y,
+      this.hasEliasAnimations ? TextureKeys.eliasSheet : TextureKeys.elias,
+      this.hasEliasAnimations ? 'idle-0' : undefined,
+    );
     this.sprite.setDepth(20);
     this.sprite.setDragX(120);
     this.sprite.setMaxVelocity(280, 620);
     this.sprite.setCollideWorldBounds(false);
-    this.sprite.body?.setSize(18, 34).setOffset(7, 5);
+    this.sprite.setScale(this.baseScale);
+
+    if (this.hasEliasAnimations) {
+      this.sprite.body?.setSize(64, 126).setOffset(60, 48);
+      this.playAnimation(AnimationKeys.eliasIdle);
+    } else {
+      this.sprite.body?.setSize(18, 34).setOffset(7, 5);
+    }
   }
 
   update(input: InputController, deltaMs: number, blocked: boolean): PlayerStepResult {
@@ -73,6 +90,7 @@ export class Player {
     }
 
     const moving = Math.abs(body.velocity.x) > 5;
+    this.updateAnimation(onGround, moving, input.running, body.velocity.y, deltaMs);
     this.sprite.setTint(moving ? 0xd9fbff : 0xffffff);
     this.wasOnGround = onGround;
 
@@ -83,21 +101,62 @@ export class Player {
     };
   }
 
+  playTimeShift(): void {
+    if (!this.hasEliasAnimations) {
+      return;
+    }
+
+    this.animationLockMs = 420;
+    this.playAnimation(AnimationKeys.eliasTimeShift, true);
+  }
+
   respawn(point: Point): void {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0, 0);
     this.sprite.setPosition(point.x, point.y);
     this.wasOnGround = false;
-    this.sprite.setScale(1);
+    this.animationLockMs = 0;
+    this.sprite.setScale(this.baseScale);
+    this.playAnimation(AnimationKeys.eliasIdle, true);
+  }
+
+  private updateAnimation(onGround: boolean, moving: boolean, running: boolean, velocityY: number, deltaMs: number): void {
+    if (!this.hasEliasAnimations) {
+      return;
+    }
+
+    if (this.animationLockMs > 0) {
+      this.animationLockMs = Math.max(0, this.animationLockMs - deltaMs);
+      return;
+    }
+
+    if (!onGround) {
+      this.playAnimation(velocityY < 0 ? AnimationKeys.eliasJump : AnimationKeys.eliasFall);
+      return;
+    }
+
+    if (moving) {
+      this.playAnimation(running ? AnimationKeys.eliasRun : AnimationKeys.eliasWalk);
+      return;
+    }
+
+    this.playAnimation(AnimationKeys.eliasIdle);
+  }
+
+  private playAnimation(key: string, restart = false): void {
+    if (!this.scene.anims.exists(key)) {
+      return;
+    }
+    this.sprite.play(key, restart);
   }
 
   private pulseScale(scaleX: number, scaleY: number, duration: number): void {
     this.scene.tweens.killTweensOf(this.sprite);
-    this.sprite.setScale(scaleX, scaleY);
+    this.sprite.setScale(this.baseScale * scaleX, this.baseScale * scaleY);
     this.scene.tweens.add({
       targets: this.sprite,
-      scaleX: 1,
-      scaleY: 1,
+      scaleX: this.baseScale,
+      scaleY: this.baseScale,
       duration,
       ease: 'Quad.easeOut',
     });
