@@ -21,7 +21,7 @@ export class Player {
     this.sprite = scene.physics.add.sprite(spawn.x, spawn.y, TextureKeys.elias);
     this.sprite.setDepth(20);
     this.sprite.setDragX(120);
-    this.sprite.setMaxVelocity(260, 620);
+    this.sprite.setMaxVelocity(280, 620);
     this.sprite.setCollideWorldBounds(false);
     this.sprite.body?.setSize(18, 34).setOffset(7, 5);
   }
@@ -30,7 +30,7 @@ export class Player {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down || body.touching.down;
     const horizontal = blocked ? 0 : input.horizontal;
-    const speed = input.running ? 230 : 145;
+    const speed = input.running ? 246 : 152;
     let jumped = false;
     const landed = onGround && !this.wasOnGround && body.velocity.y >= 0;
 
@@ -79,7 +79,7 @@ export class Player {
     return {
       jumped,
       landed,
-      speedRatio: Phaser.Math.Clamp(Math.abs(body.velocity.x) / 230, 0, 1),
+      speedRatio: Phaser.Math.Clamp(Math.abs(body.velocity.x) / 246, 0, 1),
     };
   }
 
