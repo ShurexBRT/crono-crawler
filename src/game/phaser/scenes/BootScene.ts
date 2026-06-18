@@ -1,9 +1,12 @@
 import Phaser from 'phaser';
 import { AnimationKeys, TextureKeys } from '../../assets/manifest';
 
-const assetUrl = (fileName: string): string => new URL(`../../../../assets/${fileName}`, import.meta.url).href;
+const assetPath = (fileName: string): string => `assets/${fileName}`;
 const PLATFORM_COLUMNS = 3;
 const PLATFORM_ROWS = 7;
+const ELIAS_FRAME_WIDTH = 260;
+const ELIAS_FRAME_HEIGHT = 260;
+const ELIAS_BASELINE = 238;
 
 const eliasFrameSets = {
   idle: [
@@ -42,22 +45,27 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, assetUrl('Elias char sprite transparent.png'));
-    this.load.image(TextureKeys.platformSheet, assetUrl('platform assets.png'));
-    this.load.image(TextureKeys.titleBackdrop, assetUrl('chrono_crawler_title_screen_concept.png'));
-    this.load.image(TextureKeys.backdropReactor, assetUrl('gloomy_industrial_nightscape_with_steam_and_lights.png'));
-    this.load.image(TextureKeys.backdropStreets, assetUrl('misty_alley_in_a_futuristic_city.png'));
-    this.load.image(TextureKeys.backdropGreenhouse, assetUrl('steampunk_observatory_with_glowing_machinery.png'));
-    this.load.image(TextureKeys.backdropStation, assetUrl('fading_clockwork_city_in_ruins.png'));
-    this.load.image(TextureKeys.backdropCore, assetUrl('ruins_of_a_fractured_city_skyline.png'));
+    this.load.image(TextureKeys.eliasSheet, assetPath('Elias char sprite transparent.png'));
+    this.load.image(TextureKeys.platformSheet, assetPath('platform assets.png'));
+    this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
+    this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
+    this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
+    this.load.image(TextureKeys.backdropGreenhouse, assetPath('steampunk_observatory_with_glowing_machinery.png'));
+    this.load.image(TextureKeys.backdropStation, assetPath('fading_clockwork_city_in_ruins.png'));
+    this.load.image(TextureKeys.backdropCore, assetPath('ruins_of_a_fractured_city_skyline.png'));
   }
 
   create(): void {
     this.createGeneratedTextures();
-    this.replaceCheckerboardWithAlpha(TextureKeys.eliasSheet);
-    this.replaceCheckerboardWithAlpha(TextureKeys.platformSheet);
-    this.registerEliasAnimationFrames();
-    this.registerTimelinePlatformFrames();
+    try {
+      this.replaceCheckerboardWithAlpha(TextureKeys.eliasSheet);
+      this.replaceCheckerboardWithAlpha(TextureKeys.platformSheet);
+      this.normalizeEliasAtlas();
+      this.registerEliasAnimationFrames();
+      this.registerTimelinePlatformFrames();
+    } catch (error) {
+      console.warn('External asset preparation failed; falling back to generated prototype art.', error);
+    }
     this.scene.start('MainMenuScene');
   }
 
@@ -95,6 +103,43 @@ export class BootScene extends Phaser.Scene {
     this.textures.addCanvas(textureKey, canvas);
   }
 
+  private normalizeEliasAtlas(): void {
+    if (!this.textures.exists(TextureKeys.eliasSheet)) {
+      return;
+    }
+
+    const texture = this.textures.get(TextureKeys.eliasSheet);
+    const source = texture.getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = ELIAS_FRAME_WIDTH * 6;
+    canvas.height = ELIAS_FRAME_HEIGHT * 5;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.imageSmoothingEnabled = false;
+
+    const rowBySet: Record<string, number> = {
+      idle: 0,
+      run: 1,
+      jump: 3,
+      shift: 4,
+    };
+
+    for (const [setName, frames] of Object.entries(eliasFrameSets)) {
+      const row = rowBySet[setName];
+      frames.forEach((frame, index) => {
+        const targetX = index * ELIAS_FRAME_WIDTH + Math.round((ELIAS_FRAME_WIDTH - frame.width) / 2);
+        const targetY = row * ELIAS_FRAME_HEIGHT + ELIAS_BASELINE - frame.height;
+        context.drawImage(source, frame.x, frame.y, frame.width, frame.height, targetX, targetY, frame.width, frame.height);
+      });
+    }
+
+    this.textures.remove(TextureKeys.eliasSheet);
+    this.textures.addCanvas(TextureKeys.eliasSheet, canvas);
+  }
+
   private registerTimelinePlatformFrames(): void {
     if (!this.textures.exists(TextureKeys.platformSheet)) {
       return;
@@ -123,10 +168,15 @@ export class BootScene extends Phaser.Scene {
       return;
     }
 
-    for (const [setName, frames] of Object.entries(eliasFrameSets)) {
-      frames.forEach((frame, index) => {
-        texture.add(`${setName}-${index}`, 0, frame.x, frame.y, frame.width, frame.height);
-      });
+    texture.add('idle-0', 0, 0, 0, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
+    texture.add('idle-1', 0, ELIAS_FRAME_WIDTH, 0, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
+    texture.add('idle-2', 0, ELIAS_FRAME_WIDTH * 2, 0, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
+    for (let index = 0; index < 6; index += 1) {
+      texture.add(`run-${index}`, 0, ELIAS_FRAME_WIDTH * index, ELIAS_FRAME_HEIGHT, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
+      texture.add(`shift-${index}`, 0, ELIAS_FRAME_WIDTH * index, ELIAS_FRAME_HEIGHT * 4, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
+    }
+    for (let index = 0; index < 5; index += 1) {
+      texture.add(`jump-${index}`, 0, ELIAS_FRAME_WIDTH * index, ELIAS_FRAME_HEIGHT * 3, ELIAS_FRAME_WIDTH, ELIAS_FRAME_HEIGHT);
     }
 
     this.anims.create({
