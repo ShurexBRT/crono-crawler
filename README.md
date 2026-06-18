@@ -2,7 +2,7 @@
 
 Chrono Crawler is a playable vertical-slice prototype for a dark atmospheric 2D side-scroller puzzle-platformer. Elias Voss wakes after the Chrono Core incident and moves through broken versions of the same city: past, present, ruined future, and the still hour guarded by The Keeper.
 
-This repository currently uses the browser fallback stack because Godot 4.x was not available in the local environment. The project is built with Phaser, TypeScript, and Vite, and can be deployed as static files through GitHub Pages.
+The project is built with Phaser, TypeScript, and Vite, and can be deployed as static files through GitHub Pages.
 
 ## What Is Implemented
 
