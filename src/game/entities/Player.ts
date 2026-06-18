@@ -36,7 +36,8 @@ export class Player {
     this.sprite.setScale(this.baseScale);
 
     if (this.hasEliasAnimations) {
-      this.sprite.body?.setSize(64, 126).setOffset(60, 48);
+      this.sprite.setBlendMode(Phaser.BlendModes.ADD);
+      this.sprite.body?.setSize(58, 118).setOffset(64, 54);
       this.playAnimation(AnimationKeys.eliasIdle);
     } else {
       this.sprite.body?.setSize(18, 34).setOffset(7, 5);
