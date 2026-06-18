@@ -7,6 +7,9 @@
 - Corrected timeline platform atlas slicing to use Past/Present/Future columns.
 - Added a timeline-shift collision stabilization pass so Elias does not drop through solid timeline platforms.
 - Tuned echo clones to reuse the Elias atlas at 70% opacity with cyan tint.
+- Normalized Elias animation frames into fixed-size bottom-aligned runtime cells to reduce idle/run jitter from uneven source crops.
+- Replaced placeholder platform rendering with the imported platform atlas for static and timeline platforms.
+- Added a stronger post-shift player snap to the nearest valid support when a timeline change keeps a solid platform underfoot.
 - Fixed local Vite dev/build asset serving so root `assets/` files are available in local preview, not only GitHub Pages.
 - Integrated the external Elias character sprite sheet as player idle, walk, run, jump, fall, and time-shift animations.
 - Loaded the new backdrop assets and mapped them into the playable levels through a scene polish layer.

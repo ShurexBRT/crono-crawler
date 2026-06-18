@@ -14,13 +14,21 @@ type Actor = Phaser.Physics.Arcade.Sprite | undefined;
 
 export class StaticPlatform {
   readonly rectangle: Phaser.GameObjects.Rectangle;
+  private visual?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, spec: PlatformSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.color ?? 0x222a31);
-    this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.95);
-    this.rectangle.setDepth(8);
-    scene.add.rectangle(spec.x, spec.y - spec.height / 2 + 4, spec.width - 12, 3, 0xe0a04f, 0.22).setDepth(8.1);
-    scene.add.rectangle(spec.x, spec.y + spec.height / 2 - 8, spec.width - 24, 2, 0x6ee7f2, 0.12).setDepth(8.1);
+    this.rectangle.setDepth(7.9);
+    if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
+      this.rectangle.setAlpha(0.01);
+      this.visual = scene.add.image(spec.x, spec.y, TextureKeys.platformSheet, 'present');
+      this.visual.setDepth(8);
+      this.visual.setDisplaySize(spec.width, platformVisualHeight(spec.height));
+    } else {
+      this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.95);
+      scene.add.rectangle(spec.x, spec.y - spec.height / 2 + 4, spec.width - 12, 3, 0xe0a04f, 0.22).setDepth(8.1);
+      scene.add.rectangle(spec.x, spec.y + spec.height / 2 - 8, spec.width - 24, 2, 0x6ee7f2, 0.12).setDepth(8.1);
+    }
     scene.physics.add.existing(this.rectangle, true);
     group.add(this.rectangle);
   }
@@ -33,7 +41,7 @@ export class TimelineBlock {
   private spec: TimelineBlockSpec;
   private accent: Phaser.GameObjects.Rectangle;
   private ember: Phaser.GameObjects.Rectangle;
-  private visual?: Phaser.GameObjects.TileSprite;
+  private visual?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, spec: TimelineBlockSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.scene = scene;
@@ -48,10 +56,10 @@ export class TimelineBlock {
     this.ember.setDepth(9.1);
 
     if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
-      this.visual = scene.add.tileSprite(spec.x, spec.y, spec.width, spec.height, TextureKeys.platformSheet, 'present');
+      this.visual = scene.add.image(spec.x, spec.y, TextureKeys.platformSheet, 'present');
       this.visual.setDepth(9.15);
       this.visual.setAlpha(0.98);
-      this.visual.setTileScale(1, 1);
+      this.visual.setDisplaySize(spec.width, platformVisualHeight(spec.height));
     }
 
     scene.physics.add.existing(this.rectangle, true);
@@ -73,6 +81,7 @@ export class TimelineBlock {
       this.visual.setAlpha(state.visible ? state.alpha ?? 1 : 0);
       if (hasVisual) {
         this.visual.setTexture(TextureKeys.platformSheet, timeline);
+        this.visual.setDisplaySize(this.spec.width, platformVisualHeight(this.spec.height));
       }
       this.visual.setTint(state.solid ? 0xffffff : timelineAccent(timeline));
     }
@@ -258,4 +267,8 @@ function timelineAccent(timeline: TimelineKey): number {
     return 0x6ee7f2;
   }
   return 0xe0618a;
+}
+
+function platformVisualHeight(collisionHeight: number): number {
+  return Math.max(48, Math.round(collisionHeight * 2.7));
 }

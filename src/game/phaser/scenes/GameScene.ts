@@ -336,8 +336,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onTimelineChanged(timeline: TimelineKey): void {
+    const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+    const wasSupported = body.blocked.down || body.touching.down;
+    const previousBottom = body.bottom;
     this.applyTimeline();
-    this.stabilizePlayerAfterTimelineShift();
+    this.stabilizePlayerAfterTimelineShift(wasSupported, previousBottom);
     this.audioManager.playTimelineTone(timeline);
     this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
     this.emitTimelinePulse(timeline);
@@ -345,12 +348,13 @@ export class GameScene extends Phaser.Scene {
     this.uiManager.updateHud({ timeline });
   }
 
-  private stabilizePlayerAfterTimelineShift(): void {
+  private stabilizePlayerAfterTimelineShift(wasSupported: boolean, previousBottom: number): void {
     const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
     const previousVelocityY = body.velocity.y;
+    body.setVelocityY(Math.min(0, previousVelocityY));
     this.physics.world.collide(this.player.sprite, this.solidGroup);
-    if (body.blocked.down || body.touching.down) {
-      body.setVelocityY(Math.min(0, previousVelocityY));
+    if (wasSupported) {
+      this.snapPlayerToNearestSupport(previousBottom);
     }
 
     this.time.delayedCall(0, () => {
@@ -358,7 +362,45 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       this.physics.world.collide(this.player.sprite, this.solidGroup);
+      if (wasSupported) {
+        this.snapPlayerToNearestSupport(previousBottom);
+      }
     });
+  }
+
+  private snapPlayerToNearestSupport(previousBottom: number): void {
+    const playerBody = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+    const playerLeft = playerBody.left + 3;
+    const playerRight = playerBody.right - 3;
+    let bestTop: number | undefined;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    this.solidGroup.getChildren().forEach((child) => {
+      const body = (child as Phaser.GameObjects.GameObject).body as Phaser.Physics.Arcade.StaticBody | undefined;
+      if (!body || !body.enable || body.checkCollision.none) {
+        return;
+      }
+      if (playerRight < body.left || playerLeft > body.right) {
+        return;
+      }
+
+      const distance = Math.abs(body.top - previousBottom);
+      if (body.top >= previousBottom - 80 && body.top <= previousBottom + 42 && distance < bestDistance) {
+        bestTop = body.top;
+        bestDistance = distance;
+      }
+    });
+
+    if (bestTop === undefined) {
+      return;
+    }
+
+    const correction = bestTop - playerBody.bottom;
+    if (Math.abs(correction) > 0.5) {
+      this.player.sprite.y += correction;
+      playerBody.updateFromGameObject();
+    }
+    playerBody.setVelocityY(0);
   }
 
   private applyTimeline(): void {
