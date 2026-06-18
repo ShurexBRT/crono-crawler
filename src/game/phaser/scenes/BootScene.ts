@@ -1,14 +1,117 @@
 import Phaser from 'phaser';
-import { TextureKeys } from '../../assets/manifest';
+import { AnimationKeys, TextureKeys } from '../../assets/manifest';
+
+const assetPath = (fileName: string): string => `assets/${fileName}`;
+
+const eliasFrameSets = {
+  idle: [
+    { x: 168, y: 16, width: 172, height: 198 },
+    { x: 380, y: 16, width: 172, height: 198 },
+    { x: 592, y: 16, width: 178, height: 198 },
+  ],
+  run: [
+    { x: 164, y: 232, width: 184, height: 176 },
+    { x: 372, y: 232, width: 184, height: 176 },
+    { x: 582, y: 232, width: 196, height: 176 },
+    { x: 804, y: 232, width: 184, height: 176 },
+    { x: 1010, y: 232, width: 188, height: 176 },
+    { x: 1222, y: 232, width: 198, height: 176 },
+  ],
+  jump: [
+    { x: 164, y: 616, width: 190, height: 176 },
+    { x: 370, y: 616, width: 190, height: 176 },
+    { x: 580, y: 616, width: 196, height: 176 },
+    { x: 806, y: 616, width: 188, height: 176 },
+    { x: 1050, y: 616, width: 206, height: 176 },
+  ],
+  shift: [
+    { x: 164, y: 812, width: 178, height: 250 },
+    { x: 356, y: 812, width: 188, height: 250 },
+    { x: 558, y: 812, width: 176, height: 250 },
+    { x: 746, y: 812, width: 196, height: 250 },
+    { x: 954, y: 812, width: 244, height: 250 },
+    { x: 1220, y: 812, width: 198, height: 250 },
+  ],
+};
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('BootScene');
   }
 
+  preload(): void {
+    this.load.image(TextureKeys.eliasSheet, assetPath('Elias%20char%20sprite.png'));
+    this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
+    this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
+    this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
+    this.load.image(TextureKeys.backdropGreenhouse, assetPath('steampunk_observatory_with_glowing_machinery.png'));
+    this.load.image(TextureKeys.backdropStation, assetPath('fading_clockwork_city_in_ruins.png'));
+    this.load.image(TextureKeys.backdropCore, assetPath('ruins_of_a_fractured_city_skyline.png'));
+  }
+
   create(): void {
     this.createGeneratedTextures();
+    this.registerEliasAnimationFrames();
     this.scene.start('MainMenuScene');
+  }
+
+  private registerEliasAnimationFrames(): void {
+    if (!this.textures.exists(TextureKeys.eliasSheet)) {
+      return;
+    }
+
+    const texture = this.textures.get(TextureKeys.eliasSheet);
+    if (texture.has('idle-0')) {
+      return;
+    }
+
+    for (const [setName, frames] of Object.entries(eliasFrameSets)) {
+      frames.forEach((frame, index) => {
+        texture.add(`${setName}-${index}`, 0, frame.x, frame.y, frame.width, frame.height);
+      });
+    }
+
+    this.anims.create({
+      key: AnimationKeys.eliasIdle,
+      frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix: 'idle-', start: 0, end: 2 }),
+      frameRate: 3,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: AnimationKeys.eliasWalk,
+      frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix: 'run-', start: 0, end: 5 }),
+      frameRate: 7,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: AnimationKeys.eliasRun,
+      frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix: 'run-', start: 0, end: 5 }),
+      frameRate: 11,
+      repeat: -1,
+    });
+
+    this.anims.create({
+      key: AnimationKeys.eliasJump,
+      frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix: 'jump-', start: 0, end: 2 }),
+      frameRate: 8,
+      repeat: 0,
+    });
+
+    this.anims.create({
+      key: AnimationKeys.eliasFall,
+      frames: [{ key: TextureKeys.eliasSheet, frame: 'jump-3' }],
+      frameRate: 1,
+      repeat: 0,
+    });
+
+    this.anims.create({
+      key: AnimationKeys.eliasTimeShift,
+      frames: this.anims.generateFrameNames(TextureKeys.eliasSheet, { prefix: 'shift-', start: 0, end: 5 }),
+      frameRate: 12,
+      repeat: 0,
+    });
   }
 
   private createGeneratedTextures(): void {
