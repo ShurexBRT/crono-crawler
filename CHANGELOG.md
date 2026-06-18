@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed local Vite dev/build asset serving so root `assets/` files are available in local preview, not only GitHub Pages.
 - Integrated the external Elias character sprite sheet as player idle, walk, run, jump, fall, and time-shift animations.
 - Loaded the new backdrop assets and mapped them into the playable levels through a scene polish layer.
 - Added environmental signage and Keeper-style messages across the reactor, streets, station, and boss arena.
