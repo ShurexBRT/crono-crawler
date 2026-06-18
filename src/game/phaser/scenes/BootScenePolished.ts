@@ -4,11 +4,7 @@ import { BootScene } from './BootScene';
 const assetPath = (fileName: string): string => `assets/${fileName}`;
 
 const eliasFrameSets = {
-  idle: [
-    { x: 168, y: 16, width: 172, height: 198 },
-    { x: 380, y: 16, width: 172, height: 198 },
-    { x: 592, y: 16, width: 178, height: 198 },
-  ],
+  idle: [{ x: 168, y: 16, width: 172, height: 198 }],
   run: [
     { x: 164, y: 232, width: 184, height: 176 },
     { x: 372, y: 232, width: 184, height: 176 },
@@ -67,7 +63,7 @@ export class BootScenePolished extends BootScene {
       });
     }
 
-    this.createExternalAnimation(AnimationKeys.eliasIdle, 'idle-', 0, 2, 3, -1);
+    this.createExternalAnimation(AnimationKeys.eliasIdle, 'idle-', 0, 0, 1, -1);
     this.createExternalAnimation(AnimationKeys.eliasWalk, 'run-', 0, 5, 7, -1);
     this.createExternalAnimation(AnimationKeys.eliasRun, 'run-', 0, 5, 11, -1);
     this.createExternalAnimation(AnimationKeys.eliasJump, 'jump-', 0, 2, 8, 0);
