@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { TextureKeys } from '../assets/manifest';
 import type {
   CheckpointSpec,
   DoorSpec,
@@ -28,11 +29,14 @@ export class StaticPlatform {
 export class TimelineBlock {
   readonly id: string;
   readonly rectangle: Phaser.GameObjects.Rectangle;
+  private scene: Phaser.Scene;
   private spec: TimelineBlockSpec;
   private accent: Phaser.GameObjects.Rectangle;
   private ember: Phaser.GameObjects.Rectangle;
+  private visual?: Phaser.GameObjects.TileSprite;
 
   constructor(scene: Phaser.Scene, spec: TimelineBlockSpec, group: Phaser.Physics.Arcade.StaticGroup) {
+    this.scene = scene;
     this.id = spec.id;
     this.spec = spec;
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.states.present.color);
@@ -42,6 +46,14 @@ export class TimelineBlock {
     this.accent.setDepth(9.2);
     this.ember = scene.add.rectangle(spec.x, spec.y + spec.height / 2 - 4, Math.max(10, spec.width - 28), 2, 0xe0a04f, 0.28);
     this.ember.setDepth(9.1);
+
+    if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
+      this.visual = scene.add.tileSprite(spec.x, spec.y, spec.width, spec.height, TextureKeys.platformSheet, 'present');
+      this.visual.setDepth(9.15);
+      this.visual.setAlpha(0.98);
+      this.visual.setTileScale(1, 1);
+    }
+
     scene.physics.add.existing(this.rectangle, true);
     group.add(this.rectangle);
   }
@@ -49,14 +61,26 @@ export class TimelineBlock {
   applyTimeline(timeline: TimelineKey): void {
     const state = this.spec.states[timeline];
     const body = this.rectangle.body as Phaser.Physics.Arcade.StaticBody;
-    this.rectangle.setVisible(state.visible);
-    this.rectangle.setAlpha(state.alpha ?? 1);
+    const hasVisual = !!this.visual && this.scene.textures.get(TextureKeys.platformSheet).has(timeline);
+
+    this.rectangle.setVisible(state.visible && !hasVisual);
+    this.rectangle.setAlpha(hasVisual ? 0.01 : state.alpha ?? 1);
     this.rectangle.setFillStyle(state.color);
     this.rectangle.setStrokeStyle(state.solid ? 2 : 1, timelineAccent(timeline), state.solid ? 0.85 : 0.45);
-    this.accent.setVisible(state.visible);
+
+    if (this.visual) {
+      this.visual.setVisible(state.visible);
+      this.visual.setAlpha(state.visible ? state.alpha ?? 1 : 0);
+      if (hasVisual) {
+        this.visual.setTexture(TextureKeys.platformSheet, timeline);
+      }
+      this.visual.setTint(state.solid ? 0xffffff : timelineAccent(timeline));
+    }
+
+    this.accent.setVisible(state.visible && !hasVisual);
     this.accent.setAlpha(state.solid ? 0.82 : 0.28);
     this.accent.setFillStyle(timelineAccent(timeline), state.solid ? 0.82 : 0.28);
-    this.ember.setVisible(state.visible);
+    this.ember.setVisible(state.visible && !hasVisual);
     this.ember.setAlpha(timeline === 'past' ? 0.48 : 0.18);
     this.ember.setFillStyle(timeline === 'past' ? 0xf0a64d : 0x101820, timeline === 'past' ? 0.48 : 0.18);
     body.enable = state.solid;
