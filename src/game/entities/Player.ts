@@ -22,7 +22,8 @@ export class Player {
   constructor(scene: Phaser.Scene, spawn: Point) {
     this.scene = scene;
     this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
-    this.baseScale = this.hasEliasAnimations ? 0.255 : 1;
+    const idleFrame = this.hasEliasAnimations ? scene.textures.getFrame(TextureKeys.eliasSheet, 'idle-0') : undefined;
+    this.baseScale = idleFrame ? 58 / idleFrame.height : 1;
     this.sprite = scene.physics.add.sprite(
       spawn.x,
       spawn.y,
@@ -35,9 +36,12 @@ export class Player {
     this.sprite.setCollideWorldBounds(false);
     this.sprite.setScale(this.baseScale);
 
-    if (this.hasEliasAnimations) {
-      this.sprite.setBlendMode(Phaser.BlendModes.ADD);
-      this.sprite.body?.setSize(58, 118).setOffset(64, 54);
+    if (this.hasEliasAnimations && idleFrame) {
+      const bodyWidth = Math.round(24 / this.baseScale);
+      const bodyHeight = Math.round(44 / this.baseScale);
+      const bodyOffsetX = Math.round((idleFrame.width - bodyWidth) / 2);
+      const bodyOffsetY = Math.max(0, Math.round(idleFrame.height - bodyHeight - 3 / this.baseScale));
+      this.sprite.body?.setSize(bodyWidth, bodyHeight).setOffset(bodyOffsetX, bodyOffsetY);
       this.playAnimation(AnimationKeys.eliasIdle);
     } else {
       this.sprite.body?.setSize(18, 34).setOffset(7, 5);
