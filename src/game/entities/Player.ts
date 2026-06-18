@@ -107,7 +107,7 @@ export class Player {
     }
 
     this.animationLockMs = 420;
-    this.playAnimation(AnimationKeys.eliasTimeShift, true);
+    this.playAnimation(AnimationKeys.eliasTimeShift, false);
   }
 
   respawn(point: Point): void {
@@ -117,7 +117,7 @@ export class Player {
     this.wasOnGround = false;
     this.animationLockMs = 0;
     this.sprite.setScale(this.baseScale);
-    this.playAnimation(AnimationKeys.eliasIdle, true);
+    this.playAnimation(AnimationKeys.eliasIdle);
   }
 
   private updateAnimation(onGround: boolean, moving: boolean, running: boolean, velocityY: number, deltaMs: number): void {
@@ -143,11 +143,11 @@ export class Player {
     this.playAnimation(AnimationKeys.eliasIdle);
   }
 
-  private playAnimation(key: string, restart = false): void {
+  private playAnimation(key: string, ignoreIfPlaying = true): void {
     if (!this.scene.anims.exists(key)) {
       return;
     }
-    this.sprite.play(key, restart);
+    this.sprite.play(key, ignoreIfPlaying);
   }
 
   private pulseScale(scaleX: number, scaleY: number, duration: number): void {
