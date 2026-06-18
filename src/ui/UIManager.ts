@@ -50,11 +50,11 @@ export class UIManager {
   showMainMenu(actions: MainMenuActions): void {
     this.clearHud();
     this.setOverlay(`
-      <div class="menu-shell title-screen">
+      <div class="menu-shell title-screen" style="background-image: linear-gradient(90deg, rgba(0,0,0,0.78), rgba(0,0,0,0.22)), url('assets/chrono_crawler_title_screen_concept.png');">
         <div class="title-mark">
-          <span class="title-kicker">Vertical Slice Prototype</span>
+          <span class="title-kicker">Broken Time Side-Scroller</span>
           <h1>Chrono Crawler</h1>
-          <p>Elias Voss wakes inside a city where every second has broken differently.</p>
+          <p>The Core did not explode. It pulled every version of the city into the same dying second.</p>
         </div>
         <nav class="menu-stack" aria-label="Main menu">
           <button data-action="new">New Game</button>
@@ -136,8 +136,8 @@ export class UIManager {
           <span class="title-kicker">Prototype Credits</span>
           <h2>Chrono Crawler</h2>
         </header>
-        <p>Design, code, systems, placeholder pixel art, and procedural audio were created for this repository.</p>
-        <p>Influence notes: cinematic side-scrollers, time puzzles, and quiet industrial melancholy.</p>
+        <p>Design direction: noir-deco ruins, broken timelines, quiet industrial grief, and time powers that change the route instead of just the color palette.</p>
+        <p>Current build: Phaser, TypeScript, Vite, custom level data, external backdrop art, and an Elias animation sheet pass.</p>
         <footer class="modal-actions">
           <button data-action="back">Back</button>
         </footer>
@@ -156,8 +156,8 @@ export class UIManager {
         <article>
           <span class="title-kicker">Incident Zero</span>
           <h2>The Core Did Not Explode</h2>
-          <p>It folded. Every unfinished second in the city opened at once.</p>
-          <p>Elias Voss wakes with the Chrono Core fused to his ribs and a stranger's shadow waiting at the edge of the hour.</p>
+          <p>It remembered every version of the city at once.</p>
+          <p>Elias Voss woke inside the fracture. And time answered him back.</p>
           <button data-action="begin">Wake</button>
         </article>
       </div>
@@ -175,8 +175,8 @@ export class UIManager {
         <article>
           <span class="title-kicker">End of Vertical Slice</span>
           <h2>Time Cannot Be Owned</h2>
-          <p>The Keeper removes his mask, and Elias sees the face grief would have carved from him.</p>
-          <p>The Core still hurts. The city still breaks. But the next second is no longer a cage.</p>
+          <p>The Keeper removes his mask, and Elias sees what grief was trying to turn him into.</p>
+          <p>The city still breaks. The Core still hurts. But the next second is no longer a cage.</p>
           <button data-action="menu">Main Menu</button>
         </article>
       </div>
