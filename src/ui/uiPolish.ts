@@ -9,7 +9,7 @@ type MainMenuActions = {
   onCredits: () => void;
 };
 
-type PatchedUIManager = UIManager & {
+type PatchedUIManager = {
   saveManager: { hasContinue: () => boolean };
   audioManager: { playSfx: (name: string) => void };
   clearHud: () => void;
