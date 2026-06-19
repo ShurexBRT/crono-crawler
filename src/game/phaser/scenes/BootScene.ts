@@ -4,9 +4,12 @@ import { AnimationKeys, TextureKeys } from '../../assets/manifest';
 const assetPath = (fileName: string): string => `assets/${fileName}`;
 const PLATFORM_COLUMNS = 3;
 const PLATFORM_ROWS = 7;
+const PLATFORM_FRAME_WIDTH = 512;
+const PLATFORM_FRAME_HEIGHT = 128;
 const ELIAS_FRAME_WIDTH = 260;
 const ELIAS_FRAME_HEIGHT = 260;
 const ELIAS_BASELINE = 238;
+const TRANSPARENT_PIXEL_ALPHA = 8;
 
 const eliasFrameSets = {
   idle: [
@@ -61,6 +64,7 @@ export class BootScene extends Phaser.Scene {
       this.replaceCheckerboardWithAlpha(TextureKeys.eliasSheet);
       this.replaceCheckerboardWithAlpha(TextureKeys.platformSheet);
       this.normalizeEliasAtlas();
+      this.normalizePlatformAtlas();
       this.registerEliasAnimationFrames();
       this.registerTimelinePlatformFrames();
     } catch (error) {
@@ -140,6 +144,97 @@ export class BootScene extends Phaser.Scene {
     this.textures.addCanvas(TextureKeys.eliasSheet, canvas);
   }
 
+  private normalizePlatformAtlas(): void {
+    if (!this.textures.exists(TextureKeys.platformSheet)) {
+      return;
+    }
+
+    const texture = this.textures.get(TextureKeys.platformSheet);
+    const source = texture.getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = source.width;
+    sourceCanvas.height = source.height;
+
+    const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
+    if (!sourceContext) {
+      return;
+    }
+    sourceContext.drawImage(source, 0, 0);
+
+    const frameWidth = Math.floor(source.width / PLATFORM_COLUMNS);
+    const frameHeight = Math.floor(source.height / PLATFORM_ROWS);
+    const canvas = document.createElement('canvas');
+    canvas.width = PLATFORM_FRAME_WIDTH * PLATFORM_COLUMNS;
+    canvas.height = PLATFORM_FRAME_HEIGHT;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.imageSmoothingEnabled = false;
+
+    for (let column = 0; column < PLATFORM_COLUMNS; column += 1) {
+      const sourceX = column * frameWidth;
+      const bounds = this.findOpaqueBounds(sourceContext, sourceX, 0, frameWidth, frameHeight);
+      if (!bounds) {
+        continue;
+      }
+
+      const targetHeight = Math.min(PLATFORM_FRAME_HEIGHT, Math.max(52, Math.round((bounds.height / bounds.width) * PLATFORM_FRAME_WIDTH)));
+      context.drawImage(
+        sourceCanvas,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height,
+        column * PLATFORM_FRAME_WIDTH,
+        0,
+        PLATFORM_FRAME_WIDTH,
+        targetHeight,
+      );
+    }
+
+    this.textures.remove(TextureKeys.platformSheet);
+    this.textures.addCanvas(TextureKeys.platformSheet, canvas);
+  }
+
+  private findOpaqueBounds(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): { x: number; y: number; width: number; height: number } | undefined {
+    const image = context.getImageData(x, y, width, height);
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let pixelY = 0; pixelY < height; pixelY += 1) {
+      for (let pixelX = 0; pixelX < width; pixelX += 1) {
+        const alpha = image.data[(pixelY * width + pixelX) * 4 + 3];
+        if (alpha <= TRANSPARENT_PIXEL_ALPHA) {
+          continue;
+        }
+        minX = Math.min(minX, pixelX);
+        minY = Math.min(minY, pixelY);
+        maxX = Math.max(maxX, pixelX);
+        maxY = Math.max(maxY, pixelY);
+      }
+    }
+
+    if (maxX < minX || maxY < minY) {
+      return undefined;
+    }
+
+    return {
+      x: x + minX,
+      y: y + minY,
+      width: maxX - minX + 1,
+      height: maxY - minY + 1,
+    };
+  }
+
   private registerTimelinePlatformFrames(): void {
     if (!this.textures.exists(TextureKeys.platformSheet)) {
       return;
@@ -150,12 +245,9 @@ export class BootScene extends Phaser.Scene {
       return;
     }
 
-    const source = texture.getSourceImage() as HTMLImageElement;
-    const frameWidth = Math.floor(source.width / PLATFORM_COLUMNS);
-    const frameHeight = Math.floor(source.height / PLATFORM_ROWS);
-    texture.add('past', 0, 0, 0, frameWidth, frameHeight);
-    texture.add('present', 0, frameWidth, 0, frameWidth, frameHeight);
-    texture.add('future', 0, frameWidth * 2, 0, frameWidth, frameHeight);
+    texture.add('past', 0, 0, 0, PLATFORM_FRAME_WIDTH, PLATFORM_FRAME_HEIGHT);
+    texture.add('present', 0, PLATFORM_FRAME_WIDTH, 0, PLATFORM_FRAME_WIDTH, PLATFORM_FRAME_HEIGHT);
+    texture.add('future', 0, PLATFORM_FRAME_WIDTH * 2, 0, PLATFORM_FRAME_WIDTH, PLATFORM_FRAME_HEIGHT);
   }
 
   private registerEliasAnimationFrames(): void {
@@ -270,15 +362,27 @@ export class BootScene extends Phaser.Scene {
     graphics.generateTexture(TextureKeys.keeper, 56, 100);
     graphics.clear();
 
-    graphics.fillStyle(0x0b1218, 1);
-    graphics.fillRect(8, 8, 12, 8);
-    graphics.fillStyle(0xc9d3c0, 1);
-    graphics.fillRect(7, 16, 14, 18);
-    graphics.fillStyle(0x7cb57e, 0.95);
-    graphics.fillRect(9, 22, 10, 16);
-    graphics.fillStyle(0xe0a04f, 0.9);
-    graphics.fillRect(6, 20, 16, 2);
-    graphics.generateTexture(TextureKeys.girl, 28, 42);
+    graphics.fillStyle(0x05070c, 0.72);
+    graphics.fillEllipse(26, 80, 30, 7);
+    graphics.fillStyle(0x171016, 1);
+    graphics.fillRect(18, 20, 16, 16);
+    graphics.fillStyle(0xc2b18d, 1);
+    graphics.fillRect(20, 30, 12, 12);
+    graphics.fillStyle(0x111923, 1);
+    graphics.fillRect(17, 42, 18, 30);
+    graphics.fillStyle(0x6b4d31, 1);
+    graphics.fillTriangle(17, 42, 9, 74, 22, 74);
+    graphics.fillTriangle(35, 42, 43, 74, 30, 74);
+    graphics.fillStyle(0x0a0d12, 1);
+    graphics.fillRect(19, 70, 5, 10);
+    graphics.fillRect(29, 70, 5, 10);
+    graphics.fillStyle(0x8ed081, 0.92);
+    graphics.fillRect(22, 45, 8, 12);
+    graphics.lineStyle(2, 0x6ee7f2, 0.42);
+    graphics.strokeCircle(26, 52, 11);
+    graphics.lineStyle(1, 0xf0a64d, 0.55);
+    graphics.strokeRect(16, 42, 20, 30);
+    graphics.generateTexture(TextureKeys.girl, 52, 86);
     graphics.clear();
 
     graphics.fillStyle(0x260e14, 1);
@@ -309,6 +413,20 @@ export class BootScene extends Phaser.Scene {
     graphics.generateTexture(TextureKeys.checkpoint, 32, 56);
     graphics.clear();
 
+    graphics.fillStyle(0x05070c, 0.92);
+    graphics.fillRoundedRect(4, 7, 88, 14, 3);
+    graphics.fillStyle(0x1a2426, 1);
+    graphics.fillRoundedRect(9, 3, 78, 14, 3);
+    graphics.lineStyle(2, 0x6ee7f2, 0.58);
+    graphics.strokeRoundedRect(9, 3, 78, 14, 3);
+    graphics.fillStyle(0xf0a64d, 0.72);
+    graphics.fillRect(42, 0, 12, 5);
+    graphics.generateTexture(TextureKeys.plate, 96, 24);
+    graphics.clear();
+
+    this.drawSwitchTexture(graphics, TextureKeys.switchOff, 0x8a5a35, 0x6ee7f2, -18);
+    this.drawSwitchTexture(graphics, TextureKeys.switchOn, 0xe8c46a, 0x73f2b2, 18);
+
     graphics.fillStyle(0x6ee7f2, 1);
     graphics.fillCircle(4, 4, 4);
     graphics.generateTexture(TextureKeys.particle, 8, 8);
@@ -329,5 +447,26 @@ export class BootScene extends Phaser.Scene {
     graphics.fillRect(66, 46, 18, 4);
     graphics.generateTexture(TextureKeys.core, 96, 96);
     graphics.destroy();
+  }
+
+  private drawSwitchTexture(graphics: Phaser.GameObjects.Graphics, key: string, bodyColor: number, accentColor: number, angle: number): void {
+    const handleEndX = angle < 0 ? 22 : 42;
+    const handleEndY = 8;
+    graphics.fillStyle(0x05070c, 0.84);
+    graphics.fillEllipse(32, 48, 42, 8);
+    graphics.fillStyle(0x161118, 1);
+    graphics.fillRoundedRect(10, 20, 44, 26, 4);
+    graphics.lineStyle(2, bodyColor, 0.82);
+    graphics.strokeRoundedRect(10, 20, 44, 26, 4);
+    graphics.fillStyle(0x0a0f14, 1);
+    graphics.fillRect(27, 4, 8, 22);
+    graphics.lineStyle(6, accentColor, 0.95);
+    graphics.lineBetween(31, 28, handleEndX, handleEndY);
+    graphics.fillStyle(0xe7f2f2, 0.9);
+    graphics.fillCircle(handleEndX, handleEndY, 5);
+    graphics.fillStyle(accentColor, 0.55);
+    graphics.fillRect(18, 31, 28, 3);
+    graphics.generateTexture(key, 64, 56);
+    graphics.clear();
   }
 }

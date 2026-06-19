@@ -273,6 +273,79 @@ p {
   box-shadow: inset 0 0 0 1px rgba(240, 166, 77, 0.08);
 }
 
+.intro-screen {
+  position: relative;
+  place-items: center;
+  background-size: cover;
+  background-position: center;
+}
+
+.intro-screen::before,
+.intro-screen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(240, 166, 77, 0.48), rgba(110, 231, 242, 0.36), transparent);
+}
+
+.intro-screen::before {
+  top: 9vh;
+}
+
+.intro-screen::after {
+  bottom: 9vh;
+}
+
+.intro-screen article {
+  position: relative;
+  width: min(43rem, calc(100vw - 2rem));
+  border: 1px solid rgba(240, 166, 77, 0.24);
+  border-left: 2px solid rgba(110, 231, 242, 0.78);
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, rgba(4, 7, 14, 0.96), rgba(5, 7, 13, 0.88)),
+    radial-gradient(circle at 88% 18%, rgba(240, 166, 77, 0.1), transparent 18rem);
+  box-shadow:
+    0 0 0 1px rgba(110, 231, 242, 0.08),
+    0 30px 90px rgba(0, 0, 0, 0.62),
+    inset 0 1px rgba(255, 235, 176, 0.08);
+}
+
+.intro-screen article::before {
+  content: "";
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 5.5rem;
+  height: 5.5rem;
+  border: 1px solid rgba(110, 231, 242, 0.2);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1rem rgba(110, 231, 242, 0.025),
+    0 0 30px rgba(110, 231, 242, 0.08);
+}
+
+.intro-screen h2 {
+  width: min(35rem, 100%);
+  color: #f2ead4;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  text-shadow: 0 0 18px rgba(240, 166, 77, 0.18);
+}
+
+.intro-screen button {
+  min-width: 10rem;
+  border-color: rgba(240, 166, 77, 0.48);
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, rgba(5, 8, 15, 0.95), rgba(15, 18, 28, 0.96)),
+    linear-gradient(180deg, rgba(240, 166, 77, 0.11), rgba(110, 231, 242, 0.04));
+  color: #ead8a8;
+  text-transform: uppercase;
+}
+
 .modal-panel {
   position: absolute;
   top: 50%;

@@ -152,7 +152,7 @@ export class UIManager {
 
   showIntro(onBegin: () => void): void {
     this.setOverlay(`
-      <div class="story-screen">
+      <div class="story-screen intro-screen" style="background-image: linear-gradient(90deg, rgba(2, 4, 9, 0.98), rgba(2, 4, 9, 0.54) 48%, rgba(2, 4, 9, 0.96)), linear-gradient(180deg, rgba(110, 231, 242, 0.1), transparent 38%, rgba(240, 166, 77, 0.08)), url('assets/chrono_crawler_title_screen_concept.png');">
         <article>
           <span class="title-kicker">Incident Zero</span>
           <h2>The Core Did Not Explode</h2>
