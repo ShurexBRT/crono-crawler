@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rebuilt Elias runtime atlas with larger fixed cells, safer trim padding, and stable baseline alignment to reduce cut-off frames and animation jitter.
 - Restyled the gameplay HUD, level chip, pause overlay, and pause controls with the noir-deco visual language.
 - Tightened responsive HUD sizing so timeline controls stay readable without feeling like default web panels.
 - Replaced painted-menu hotspots with visible art-matched title buttons.

@@ -6,39 +6,40 @@ const PLATFORM_COLUMNS = 3;
 const PLATFORM_ROWS = 7;
 const PLATFORM_FRAME_WIDTH = 512;
 const PLATFORM_FRAME_HEIGHT = 128;
-const ELIAS_FRAME_WIDTH = 260;
-const ELIAS_FRAME_HEIGHT = 260;
-const ELIAS_BASELINE = 238;
+const ELIAS_FRAME_WIDTH = 320;
+const ELIAS_FRAME_HEIGHT = 300;
+const ELIAS_FOOT_Y = 278;
+const ELIAS_TRIM_PADDING = 4;
 const TRANSPARENT_PIXEL_ALPHA = 8;
 
 const eliasFrameSets = {
   idle: [
-    { x: 168, y: 16, width: 172, height: 198 },
-    { x: 380, y: 16, width: 172, height: 198 },
-    { x: 592, y: 16, width: 178, height: 198 },
+    { x: 130, y: 0, width: 170, height: 232 },
+    { x: 340, y: 0, width: 170, height: 232 },
+    { x: 535, y: 0, width: 170, height: 232 },
   ],
   run: [
-    { x: 164, y: 232, width: 184, height: 176 },
-    { x: 372, y: 232, width: 184, height: 176 },
-    { x: 582, y: 232, width: 196, height: 176 },
-    { x: 804, y: 232, width: 184, height: 176 },
-    { x: 1010, y: 232, width: 188, height: 176 },
-    { x: 1222, y: 232, width: 198, height: 176 },
+    { x: 120, y: 220, width: 190, height: 205 },
+    { x: 315, y: 220, width: 200, height: 205 },
+    { x: 515, y: 220, width: 220, height: 205 },
+    { x: 745, y: 220, width: 210, height: 205 },
+    { x: 965, y: 220, width: 210, height: 205 },
+    { x: 1175, y: 220, width: 215, height: 205 },
   ],
   jump: [
-    { x: 164, y: 616, width: 190, height: 176 },
-    { x: 370, y: 616, width: 190, height: 176 },
-    { x: 580, y: 616, width: 196, height: 176 },
-    { x: 806, y: 616, width: 188, height: 176 },
-    { x: 1050, y: 616, width: 206, height: 176 },
+    { x: 115, y: 600, width: 165, height: 205 },
+    { x: 330, y: 600, width: 190, height: 205 },
+    { x: 545, y: 600, width: 180, height: 205 },
+    { x: 770, y: 600, width: 190, height: 205 },
+    { x: 995, y: 640, width: 205, height: 160 },
   ],
   shift: [
-    { x: 164, y: 812, width: 178, height: 250 },
-    { x: 356, y: 812, width: 188, height: 250 },
-    { x: 558, y: 812, width: 176, height: 250 },
-    { x: 746, y: 812, width: 196, height: 250 },
-    { x: 954, y: 812, width: 244, height: 250 },
-    { x: 1220, y: 812, width: 198, height: 250 },
+    { x: 115, y: 785, width: 190, height: 285 },
+    { x: 325, y: 785, width: 220, height: 285 },
+    { x: 530, y: 785, width: 180, height: 285 },
+    { x: 725, y: 785, width: 220, height: 285 },
+    { x: 930, y: 785, width: 275, height: 285 },
+    { x: 1160, y: 785, width: 215, height: 285 },
   ],
 };
 
@@ -118,10 +119,16 @@ export class BootScene extends Phaser.Scene {
     canvas.width = ELIAS_FRAME_WIDTH * 6;
     canvas.height = ELIAS_FRAME_HEIGHT * 5;
 
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = source.width;
+    sourceCanvas.height = source.height;
+
+    const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
     const context = canvas.getContext('2d');
-    if (!context) {
+    if (!sourceContext || !context) {
       return;
     }
+    sourceContext.drawImage(source, 0, 0);
     context.imageSmoothingEnabled = false;
 
     const rowBySet: Record<string, number> = {
@@ -134,9 +141,15 @@ export class BootScene extends Phaser.Scene {
     for (const [setName, frames] of Object.entries(eliasFrameSets)) {
       const row = rowBySet[setName];
       frames.forEach((frame, index) => {
-        const targetX = index * ELIAS_FRAME_WIDTH + Math.round((ELIAS_FRAME_WIDTH - frame.width) / 2);
-        const targetY = row * ELIAS_FRAME_HEIGHT + ELIAS_BASELINE - frame.height;
-        context.drawImage(source, frame.x, frame.y, frame.width, frame.height, targetX, targetY, frame.width, frame.height);
+        const bounds = this.findOpaqueBounds(sourceContext, frame.x, frame.y, frame.width, frame.height);
+        if (!bounds) {
+          return;
+        }
+
+        const padded = this.expandBounds(bounds, sourceCanvas.width, sourceCanvas.height, ELIAS_TRIM_PADDING);
+        const targetX = index * ELIAS_FRAME_WIDTH + Math.round((ELIAS_FRAME_WIDTH - padded.width) / 2);
+        const targetY = row * ELIAS_FRAME_HEIGHT + ELIAS_FOOT_Y - padded.height;
+        context.drawImage(sourceCanvas, padded.x, padded.y, padded.width, padded.height, targetX, targetY, padded.width, padded.height);
       });
     }
 
@@ -233,6 +246,19 @@ export class BootScene extends Phaser.Scene {
       width: maxX - minX + 1,
       height: maxY - minY + 1,
     };
+  }
+
+  private expandBounds(
+    bounds: { x: number; y: number; width: number; height: number },
+    maxWidth: number,
+    maxHeight: number,
+    padding: number,
+  ): { x: number; y: number; width: number; height: number } {
+    const x = Math.max(0, bounds.x - padding);
+    const y = Math.max(0, bounds.y - padding);
+    const right = Math.min(maxWidth, bounds.x + bounds.width + padding);
+    const bottom = Math.min(maxHeight, bounds.y + bounds.height + padding);
+    return { x, y, width: right - x, height: bottom - y };
   }
 
   private registerTimelinePlatformFrames(): void {
