@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restyled the gameplay HUD, level chip, pause overlay, and pause controls with the noir-deco visual language.
+- Tightened responsive HUD sizing so timeline controls stay readable without feeling like default web panels.
 - Replaced painted-menu hotspots with visible art-matched title buttons.
 - Added runtime checkerboard-to-alpha cleanup for the Elias and platform atlases.
 - Corrected timeline platform atlas slicing to use Past/Present/Future columns.

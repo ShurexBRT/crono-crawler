@@ -280,24 +280,26 @@ export class UIManager {
 
   showPause(onResume: () => void, onOptions: () => void, onMenu: () => void): void {
     this.setOverlay(`
-      <div class="modal-panel pause-panel">
-        <header>
-          <span class="title-kicker">Suspended Second</span>
-          <h2>Paused</h2>
-        </header>
-        <div class="controls-grid">
-          <span>Move</span><strong>A/D or Arrows</strong>
-          <span>Jump</span><strong>Space/W</strong>
-          <span>Shift Time</span><strong>Q or 1/2/3</strong>
-          <span>Echo Record</span><strong>G</strong>
-          <span>Interact</span><strong>E</strong>
-          <span>Rewind</span><strong>R</strong>
+      <div class="pause-overlay">
+        <div class="modal-panel pause-panel">
+          <header>
+            <span class="title-kicker">Suspended Second</span>
+            <h2>Paused</h2>
+          </header>
+          <div class="controls-grid">
+            <span>Move</span><strong>A/D or Arrows</strong>
+            <span>Jump</span><strong>Space/W</strong>
+            <span>Shift Time</span><strong>Q or 1/2/3</strong>
+            <span>Echo Record</span><strong>G</strong>
+            <span>Interact</span><strong>E</strong>
+            <span>Rewind</span><strong>R</strong>
+          </div>
+          <footer class="modal-actions">
+            <button data-action="resume">Resume</button>
+            <button data-action="options">Options</button>
+            <button data-action="menu">Main Menu</button>
+          </footer>
         </div>
-        <footer class="modal-actions">
-          <button data-action="resume">Resume</button>
-          <button data-action="options">Options</button>
-          <button data-action="menu">Main Menu</button>
-        </footer>
       </div>
     `);
 
