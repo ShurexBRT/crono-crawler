@@ -83,7 +83,9 @@ export class Player {
       this.jumpBufferMs = 0;
       this.coyoteMs = 0;
       jumped = true;
-      this.pulseScale(0.92, 1.08, 120);
+      if (!this.hasEliasAnimations) {
+        this.pulseScale(0.92, 1.08, 120);
+      }
     }
 
     if (!input.jumpHeld && body.velocity.y < -150) {
@@ -91,7 +93,9 @@ export class Player {
     }
 
     if (landed) {
-      this.pulseScale(1.08, 0.92, 150);
+      if (!this.hasEliasAnimations) {
+        this.pulseScale(1.08, 0.92, 150);
+      }
     }
 
     const moving = Math.abs(body.velocity.x) > 5;

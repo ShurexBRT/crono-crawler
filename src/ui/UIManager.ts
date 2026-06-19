@@ -152,7 +152,7 @@ export class UIManager {
 
   showIntro(onBegin: () => void): void {
     this.setOverlay(`
-      <div class="story-screen">
+      <div class="story-screen intro-screen" style="background-image: linear-gradient(90deg, rgba(2, 4, 9, 0.98), rgba(2, 4, 9, 0.54) 48%, rgba(2, 4, 9, 0.96)), linear-gradient(180deg, rgba(110, 231, 242, 0.1), transparent 38%, rgba(240, 166, 77, 0.08)), url('assets/chrono_crawler_title_screen_concept.png');">
         <article>
           <span class="title-kicker">Incident Zero</span>
           <h2>The Core Did Not Explode</h2>
@@ -280,24 +280,26 @@ export class UIManager {
 
   showPause(onResume: () => void, onOptions: () => void, onMenu: () => void): void {
     this.setOverlay(`
-      <div class="modal-panel pause-panel">
-        <header>
-          <span class="title-kicker">Suspended Second</span>
-          <h2>Paused</h2>
-        </header>
-        <div class="controls-grid">
-          <span>Move</span><strong>A/D or Arrows</strong>
-          <span>Jump</span><strong>Space/W</strong>
-          <span>Shift Time</span><strong>Q or 1/2/3</strong>
-          <span>Echo Record</span><strong>G</strong>
-          <span>Interact</span><strong>E</strong>
-          <span>Rewind</span><strong>R</strong>
+      <div class="pause-overlay">
+        <div class="modal-panel pause-panel">
+          <header>
+            <span class="title-kicker">Suspended Second</span>
+            <h2>Paused</h2>
+          </header>
+          <div class="controls-grid">
+            <span>Move</span><strong>A/D or Arrows</strong>
+            <span>Jump</span><strong>Space/W</strong>
+            <span>Shift Time</span><strong>Q or 1/2/3</strong>
+            <span>Echo Record</span><strong>G</strong>
+            <span>Interact</span><strong>E</strong>
+            <span>Rewind</span><strong>R</strong>
+          </div>
+          <footer class="modal-actions">
+            <button data-action="resume">Resume</button>
+            <button data-action="options">Options</button>
+            <button data-action="menu">Main Menu</button>
+          </footer>
         </div>
-        <footer class="modal-actions">
-          <button data-action="resume">Resume</button>
-          <button data-action="options">Options</button>
-          <button data-action="menu">Main Menu</button>
-        </footer>
       </div>
     `);
 

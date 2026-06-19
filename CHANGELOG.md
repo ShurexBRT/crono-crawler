@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restyled the gameplay HUD, level chip, pause overlay, and pause controls with the noir-deco visual language.
+- Tightened responsive HUD sizing so timeline controls stay readable without feeling like default web panels.
 - Replaced painted-menu hotspots with visible art-matched title buttons.
 - Added runtime checkerboard-to-alpha cleanup for the Elias and platform atlases.
 - Corrected timeline platform atlas slicing to use Past/Present/Future columns.
@@ -10,6 +12,10 @@
 - Normalized Elias animation frames into fixed-size bottom-aligned runtime cells to reduce idle/run jitter from uneven source crops.
 - Replaced placeholder platform rendering with the imported platform atlas for static and timeline platforms.
 - Added a stronger post-shift player snap to the nearest valid support when a timeline change keeps a solid platform underfoot.
+- Restyled the intro story screen to match the noir-deco title/game presentation.
+- Rebuilt platform atlas frames at runtime without transparent margins and aligned visuals to collision tops for clearer walkable edges.
+- Replaced several placeholder interactables with in-style generated sprites for the girl, pressure plates, and switches.
+- Disabled squash/stretch landing pulses for the external Elias sprite sheet to reduce intermittent visual shaking.
 - Fixed local Vite dev/build asset serving so root `assets/` files are available in local preview, not only GitHub Pages.
 - Integrated the external Elias character sprite sheet as player idle, walk, run, jump, fall, and time-shift animations.
 - Loaded the new backdrop assets and mapped them into the playable levels through a scene polish layer.

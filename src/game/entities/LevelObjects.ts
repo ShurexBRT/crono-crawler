@@ -21,7 +21,8 @@ export class StaticPlatform {
     this.rectangle.setDepth(7.9);
     if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
       this.rectangle.setAlpha(0.01);
-      this.visual = scene.add.image(spec.x, spec.y, TextureKeys.platformSheet, 'present');
+      this.visual = scene.add.image(spec.x, platformVisualY(spec), TextureKeys.platformSheet, 'present');
+      this.visual.setOrigin(0.5, 0);
       this.visual.setDepth(8);
       this.visual.setDisplaySize(spec.width, platformVisualHeight(spec.height));
     } else {
@@ -56,7 +57,8 @@ export class TimelineBlock {
     this.ember.setDepth(9.1);
 
     if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
-      this.visual = scene.add.image(spec.x, spec.y, TextureKeys.platformSheet, 'present');
+      this.visual = scene.add.image(spec.x, platformVisualY(spec), TextureKeys.platformSheet, 'present');
+      this.visual.setOrigin(0.5, 0);
       this.visual.setDepth(9.15);
       this.visual.setAlpha(0.98);
       this.visual.setDisplaySize(spec.width, platformVisualHeight(spec.height));
@@ -81,6 +83,7 @@ export class TimelineBlock {
       this.visual.setAlpha(state.visible ? state.alpha ?? 1 : 0);
       if (hasVisual) {
         this.visual.setTexture(TextureKeys.platformSheet, timeline);
+        this.visual.setPosition(this.spec.x, platformVisualY(this.spec));
         this.visual.setDisplaySize(this.spec.width, platformVisualHeight(this.spec.height));
       }
       this.visual.setTint(state.solid ? 0xffffff : timelineAccent(timeline));
@@ -147,6 +150,7 @@ export class PressurePlate {
   private spec: PressurePlateSpec;
   private active = false;
   private signal: Phaser.GameObjects.Rectangle;
+  private visual?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, spec: PressurePlateSpec) {
     this.id = spec.id;
@@ -155,6 +159,12 @@ export class PressurePlate {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, 0x4a3648);
     this.rectangle.setDepth(11);
     this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.9);
+    if (scene.textures.exists(TextureKeys.plate)) {
+      this.rectangle.setAlpha(0.01);
+      this.visual = scene.add.image(spec.x, spec.y - 3, TextureKeys.plate);
+      this.visual.setDepth(11.05);
+      this.visual.setDisplaySize(spec.width, Math.max(18, spec.height * 2));
+    }
     this.signal = scene.add.rectangle(spec.x, spec.y - 7, spec.width - 14, 3, 0xc46cff, 0.58);
     this.signal.setDepth(11.1);
     scene.physics.add.existing(this.rectangle, true);
@@ -164,8 +174,12 @@ export class PressurePlate {
     const available = !this.spec.timelines || this.spec.timelines.includes(timeline);
     const occupied = available && actors.some((actor) => actor && boundsOverlap(this.rectangle, actor));
     this.active = occupied;
-    this.rectangle.setAlpha(available ? 1 : 0.22);
+    this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.22);
     this.rectangle.setFillStyle(occupied ? 0xdbb3ff : 0x4a3648);
+    if (this.visual) {
+      this.visual.setAlpha(available ? 1 : 0.28);
+      this.visual.setTint(occupied ? 0xffffff : timelineAccent(timeline));
+    }
     this.signal.setAlpha(available ? (occupied ? 0.95 : 0.42) : 0.16);
     this.signal.setFillStyle(occupied ? 0xffffff : timelineAccent(timeline), occupied ? 0.85 : 0.42);
     return occupied;
@@ -179,6 +193,7 @@ export class LeverSwitch {
   private spec: SwitchSpec;
   private toggled = false;
   private handle: Phaser.GameObjects.Rectangle;
+  private visual?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, spec: SwitchSpec) {
     this.id = spec.id;
@@ -187,7 +202,14 @@ export class LeverSwitch {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, 0x67452c);
     this.rectangle.setDepth(11);
     this.rectangle.setStrokeStyle(2, 0x0a0f14, 0.9);
+    if (scene.textures.exists(TextureKeys.switchOff)) {
+      this.rectangle.setAlpha(0.01);
+      this.visual = scene.add.image(spec.x, spec.y - 8, TextureKeys.switchOff);
+      this.visual.setDepth(11.25);
+      this.visual.setDisplaySize(Math.max(58, spec.width * 1.45), Math.max(50, spec.height * 1.35));
+    }
     this.handle = scene.add.rectangle(spec.x + 3, spec.y - 10, 6, 22, 0xefb14d, 0.88);
+    this.handle.setVisible(!this.visual);
     this.handle.setAngle(-16);
     this.handle.setDepth(11.2);
     scene.physics.add.existing(this.rectangle, true);
@@ -198,10 +220,15 @@ export class LeverSwitch {
     const playerUses = available && interact && actor && boundsOverlap(this.rectangle, actor, 24, 28);
     const ghostUses = available && ghostInteract && ghost && boundsOverlap(this.rectangle, ghost, 24, 28);
 
-    this.rectangle.setAlpha(available ? 1 : 0.28);
-    this.handle.setAlpha(available ? 0.9 : 0.22);
+    this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.28);
+    this.handle.setAlpha(this.visual ? 0 : available ? 0.9 : 0.22);
     this.handle.setFillStyle(this.toggled ? 0x73f2b2 : timelineAccent(timeline), this.toggled ? 0.95 : 0.82);
     this.handle.setAngle(this.toggled ? 18 : -16);
+    if (this.visual) {
+      this.visual.setTexture(this.toggled ? TextureKeys.switchOn : TextureKeys.switchOff);
+      this.visual.setAlpha(available ? 1 : 0.28);
+      this.visual.setTint(available ? 0xffffff : timelineAccent(timeline));
+    }
     if (!this.toggled && (playerUses || ghostUses)) {
       this.toggled = true;
       this.rectangle.setFillStyle(0xe6c36a);
@@ -270,5 +297,9 @@ function timelineAccent(timeline: TimelineKey): number {
 }
 
 function platformVisualHeight(collisionHeight: number): number {
-  return Math.max(48, Math.round(collisionHeight * 2.7));
+  return Math.max(46, Math.min(72, Math.round(collisionHeight * 1.3)));
+}
+
+function platformVisualY(spec: PlatformSpec | TimelineBlockSpec): number {
+  return spec.y - spec.height / 2 - 2;
 }
