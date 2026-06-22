@@ -429,7 +429,10 @@ export class GameScene extends Phaser.Scene {
 
   private updateFlags(interactPressed: boolean): void {
     this.heldFlags.clear();
-    const actors = [this.player.sprite, this.ghost?.sprite];
+    const actors = [{ sprite: this.player.sprite, timeline: this.timelineManager.current }];
+    if (this.ghost) {
+      actors.push({ sprite: this.ghost.sprite, timeline: this.ghost.timeline });
+    }
     this.plates.forEach((plate) => {
       if (plate.update(this.timelineManager.current, actors)) {
         this.heldFlags.add(plate.flag);
@@ -444,6 +447,7 @@ export class GameScene extends Phaser.Scene {
           interactPressed,
           this.ghost?.sprite,
           Boolean(this.ghost?.isInteracting),
+          this.ghost?.timeline,
         )
       ) {
         this.latchedFlags.add(lever.flag);
@@ -549,7 +553,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const frames = this.ghostRecorder.capture(this.player.sprite.x, this.player.sprite.y, this.player.sprite.flipX, interactPressed);
+    const frames = this.ghostRecorder.capture(
+      this.player.sprite.x,
+      this.player.sprite.y,
+      this.player.sprite.flipX,
+      interactPressed,
+      this.timelineManager.current,
+    );
     if (frames) {
       this.spawnGhost(frames);
     }
@@ -557,6 +567,7 @@ export class GameScene extends Phaser.Scene {
 
   private spawnGhost(frames: ReturnType<GhostRecorder['stop']>): void {
     if (frames.length < 2) {
+      this.destroyRecordingAura();
       this.uiManager.showToast('The echo was too thin to hold.');
       return;
     }

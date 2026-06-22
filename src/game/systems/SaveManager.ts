@@ -15,6 +15,8 @@ const defaultSave: SaveState = {
   settings: defaultSettings,
 };
 
+const timelineKeys: TimelineKey[] = ['past', 'present', 'future'];
+
 export class SaveManager {
   private state: SaveState;
 
@@ -40,10 +42,10 @@ export class SaveManager {
   updateSettings(settings: Partial<SettingsState>): SettingsState {
     this.state = {
       ...this.state,
-      settings: {
+      settings: normalizeSettings({
         ...this.state.settings,
         ...settings,
-      },
+      }),
     };
     this.persist();
     return this.getSettings();
@@ -83,22 +85,19 @@ export class SaveManager {
       return { ...defaultSave, settings: { ...defaultSettings } };
     }
 
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { ...defaultSave, settings: { ...defaultSettings } };
-    }
-
     try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return { ...defaultSave, settings: { ...defaultSettings } };
+      }
+
       const parsed = JSON.parse(raw) as Partial<SaveState>;
       return {
         hasContinue: Boolean(parsed.hasContinue),
         currentLevelId: parsed.currentLevelId ?? defaultSave.currentLevelId,
         checkpointId: parsed.checkpointId,
-        timeline: parsed.timeline ?? defaultSave.timeline,
-        settings: {
-          ...defaultSettings,
-          ...(parsed.settings ?? {}),
-        },
+        timeline: isTimelineKey(parsed.timeline) ? parsed.timeline : defaultSave.timeline,
+        settings: normalizeSettings(parsed.settings),
       };
     } catch {
       return { ...defaultSave, settings: { ...defaultSettings } };
@@ -109,10 +108,33 @@ export class SaveManager {
     if (!this.canUseStorage()) {
       return;
     }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    } catch {
+      // Storage can be present but unavailable in private or restricted browser contexts.
+    }
   }
 
   private canUseStorage(): boolean {
     return typeof window !== 'undefined' && 'localStorage' in window;
   }
+}
+
+function isTimelineKey(value: unknown): value is TimelineKey {
+  return typeof value === 'string' && timelineKeys.includes(value as TimelineKey);
+}
+
+function normalizeSettings(settings?: Partial<SettingsState>): SettingsState {
+  return {
+    musicVolume: normalizeVolume(settings?.musicVolume, defaultSettings.musicVolume),
+    sfxVolume: normalizeVolume(settings?.sfxVolume, defaultSettings.sfxVolume),
+    fullscreen: Boolean(settings?.fullscreen),
+  };
+}
+
+function normalizeVolume(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(1, Math.max(0, value));
 }

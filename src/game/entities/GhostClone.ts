@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AnimationKeys, TextureKeys } from '../assets/manifest';
 import type { GhostFrame } from '../systems/GhostRecorder';
+import type { TimelineKey } from '../types';
 
 export class GhostClone {
   readonly sprite: Phaser.Physics.Arcade.Sprite;
@@ -12,11 +13,13 @@ export class GhostClone {
   private lastTrailAt = 0;
   private hasEliasAnimations = false;
   private baseScale = 1;
+  private activeTimeline: TimelineKey;
 
   constructor(scene: Phaser.Scene, frames: GhostFrame[]) {
     this.scene = scene;
     this.frames = frames;
     const first = frames[0];
+    this.activeTimeline = first.timeline;
     this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
     const idleFrame = this.hasEliasAnimations ? scene.textures.getFrame(TextureKeys.eliasSheet, 'idle-0') : undefined;
     this.baseScale = idleFrame ? 58 / idleFrame.height : 1;
@@ -55,6 +58,10 @@ export class GhostClone {
     return this.replayDone;
   }
 
+  get timeline(): TimelineKey {
+    return this.activeTimeline;
+  }
+
   update(deltaMs: number): void {
     if (this.frames.length === 0) {
       return;
@@ -65,6 +72,7 @@ export class GhostClone {
 
     if (this.elapsed >= last.t) {
       this.replayDone = true;
+      this.activeTimeline = last.timeline;
       this.sprite.setPosition(last.x, last.y);
       this.sprite.setFlipX(last.flipX);
       this.playMovementAnimation(0, 0);
@@ -79,6 +87,7 @@ export class GhostClone {
     const mix = Phaser.Math.Clamp((this.elapsed - previous.t) / span, 0, 1);
     const x = Phaser.Math.Linear(previous.x, next.x, mix);
     const y = Phaser.Math.Linear(previous.y, next.y, mix);
+    this.activeTimeline = next.timeline;
 
     if (next.interact || previous.interact) {
       this.interactUntil = this.elapsed + 160;

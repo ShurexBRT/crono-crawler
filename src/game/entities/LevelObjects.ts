@@ -11,6 +11,10 @@ import type {
 } from '../types';
 
 type Actor = Phaser.Physics.Arcade.Sprite | undefined;
+type TimelineActor = {
+  sprite: Actor;
+  timeline: TimelineKey;
+};
 
 export class StaticPlatform {
   readonly rectangle: Phaser.GameObjects.Rectangle;
@@ -170,19 +174,25 @@ export class PressurePlate {
     scene.physics.add.existing(this.rectangle, true);
   }
 
-  update(timeline: TimelineKey, actors: Actor[]): boolean {
-    const available = !this.spec.timelines || this.spec.timelines.includes(timeline);
-    const occupied = available && actors.some((actor) => actor && boundsOverlap(this.rectangle, actor));
+  update(timeline: TimelineKey, actors: TimelineActor[]): boolean {
+    const available = this.isAvailableIn(timeline);
+    const occupied = actors.some(({ sprite, timeline: actorTimeline }) => {
+      return Boolean(sprite && this.isAvailableIn(actorTimeline) && boundsOverlap(this.rectangle, sprite));
+    });
     this.active = occupied;
     this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.22);
     this.rectangle.setFillStyle(occupied ? 0xdbb3ff : 0x4a3648);
     if (this.visual) {
-      this.visual.setAlpha(available ? 1 : 0.28);
+      this.visual.setAlpha(available ? 1 : occupied ? 0.65 : 0.28);
       this.visual.setTint(occupied ? 0xffffff : timelineAccent(timeline));
     }
-    this.signal.setAlpha(available ? (occupied ? 0.95 : 0.42) : 0.16);
+    this.signal.setAlpha(occupied ? 0.95 : available ? 0.42 : 0.16);
     this.signal.setFillStyle(occupied ? 0xffffff : timelineAccent(timeline), occupied ? 0.85 : 0.42);
     return occupied;
+  }
+
+  private isAvailableIn(timeline: TimelineKey): boolean {
+    return !this.spec.timelines || this.spec.timelines.includes(timeline);
   }
 }
 
@@ -215,10 +225,18 @@ export class LeverSwitch {
     scene.physics.add.existing(this.rectangle, true);
   }
 
-  update(timeline: TimelineKey, actor: Actor, interact: boolean, ghost: Actor, ghostInteract: boolean): boolean {
-    const available = !this.spec.timelines || this.spec.timelines.includes(timeline);
+  update(
+    timeline: TimelineKey,
+    actor: Actor,
+    interact: boolean,
+    ghost: Actor,
+    ghostInteract: boolean,
+    ghostTimeline?: TimelineKey,
+  ): boolean {
+    const available = this.isAvailableIn(timeline);
     const playerUses = available && interact && actor && boundsOverlap(this.rectangle, actor, 24, 28);
-    const ghostUses = available && ghostInteract && ghost && boundsOverlap(this.rectangle, ghost, 24, 28);
+    const ghostUses =
+      ghostTimeline !== undefined && this.isAvailableIn(ghostTimeline) && ghostInteract && ghost && boundsOverlap(this.rectangle, ghost, 24, 28);
 
     this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.28);
     this.handle.setAlpha(this.visual ? 0 : available ? 0.9 : 0.22);
@@ -237,6 +255,10 @@ export class LeverSwitch {
 
     this.rectangle.setFillStyle(this.toggled ? 0xe6c36a : 0x67452c);
     return false;
+  }
+
+  private isAvailableIn(timeline: TimelineKey): boolean {
+    return !this.spec.timelines || this.spec.timelines.includes(timeline);
   }
 
   reset(): void {
