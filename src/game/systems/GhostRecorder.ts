@@ -7,6 +7,7 @@ export interface GhostFrame {
   flipX: boolean;
   interact: boolean;
   timeline: TimelineKey;
+  heldPlateFlags: string[];
 }
 
 export class GhostRecorder {
@@ -36,13 +37,20 @@ export class GhostRecorder {
     this.active = true;
   }
 
-  capture(x: number, y: number, flipX: boolean, interact: boolean, timeline: TimelineKey): GhostFrame[] | undefined {
+  capture(
+    x: number,
+    y: number,
+    flipX: boolean,
+    interact: boolean,
+    timeline: TimelineKey,
+    heldPlateFlags: string[],
+  ): GhostFrame[] | undefined {
     if (!this.active) {
       return undefined;
     }
 
     const t = this.elapsed;
-    this.frames.push({ t, x, y, flipX, interact, timeline });
+    this.frames.push({ t, x, y, flipX, interact, timeline, heldPlateFlags: [...heldPlateFlags] });
 
     if (t >= this.maxDurationMs) {
       return this.stop();

@@ -433,8 +433,9 @@ export class GameScene extends Phaser.Scene {
     if (this.ghost) {
       actors.push({ sprite: this.ghost.sprite, timeline: this.ghost.timeline });
     }
+    const ghostHeldPlateFlags = new Set(this.ghost?.heldPlateFlags ?? []);
     this.plates.forEach((plate) => {
-      if (plate.update(this.timelineManager.current, actors)) {
+      if (plate.update(this.timelineManager.current, actors, ghostHeldPlateFlags.has(plate.flag))) {
         this.heldFlags.add(plate.flag);
       }
     });
@@ -553,12 +554,17 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    const heldPlateFlags = this.plates
+      .filter((plate) => plate.isHeldBy(this.timelineManager.current, this.player.sprite))
+      .map((plate) => plate.flag);
+
     const frames = this.ghostRecorder.capture(
       this.player.sprite.x,
       this.player.sprite.y,
       this.player.sprite.flipX,
       interactPressed,
       this.timelineManager.current,
+      heldPlateFlags,
     );
     if (frames) {
       this.spawnGhost(frames);

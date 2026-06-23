@@ -175,10 +175,10 @@ export class PressurePlate {
     scene.physics.add.existing(this.rectangle, true);
   }
 
-  update(timeline: TimelineKey, actors: TimelineActor[]): boolean {
+  update(timeline: TimelineKey, actors: TimelineActor[], forcedActive = false): boolean {
     const available = this.isAvailableIn(timeline);
-    const occupied = actors.some(({ sprite, timeline: actorTimeline }) => {
-      return Boolean(sprite && this.isAvailableIn(actorTimeline) && actorStandsOnPlate(this.rectangle, sprite));
+    const occupied = forcedActive || actors.some(({ sprite, timeline: actorTimeline }) => {
+      return this.isHeldBy(actorTimeline, sprite);
     });
     this.active = occupied;
     this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.22);
@@ -190,6 +190,10 @@ export class PressurePlate {
     this.signal.setAlpha(occupied ? 0.95 : available ? 0.42 : 0.16);
     this.signal.setFillStyle(occupied ? 0xffffff : timelineAccent(timeline), occupied ? 0.85 : 0.42);
     return occupied;
+  }
+
+  isHeldBy(timeline: TimelineKey, actor: Actor): boolean {
+    return Boolean(actor && this.isAvailableIn(timeline) && actorStandsOnPlate(this.rectangle, actor));
   }
 
   private isAvailableIn(timeline: TimelineKey): boolean {

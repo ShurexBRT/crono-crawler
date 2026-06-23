@@ -14,12 +14,14 @@ export class GhostClone {
   private hasEliasAnimations = false;
   private baseScale = 1;
   private activeTimeline: TimelineKey;
+  private activeHeldPlateFlags: string[];
 
   constructor(scene: Phaser.Scene, frames: GhostFrame[]) {
     this.scene = scene;
     this.frames = frames;
     const first = frames[0];
     this.activeTimeline = first.timeline;
+    this.activeHeldPlateFlags = [...(first.heldPlateFlags ?? [])];
     this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
     const idleFrame = this.hasEliasAnimations ? scene.textures.getFrame(TextureKeys.eliasSheet, 'idle-0') : undefined;
     this.baseScale = idleFrame && idleFrame.height >= 240 ? 0.29 : idleFrame ? 58 / idleFrame.height : 1;
@@ -62,6 +64,10 @@ export class GhostClone {
     return this.activeTimeline;
   }
 
+  get heldPlateFlags(): string[] {
+    return [...this.activeHeldPlateFlags];
+  }
+
   update(deltaMs: number): void {
     if (this.frames.length === 0) {
       return;
@@ -73,6 +79,7 @@ export class GhostClone {
     if (this.elapsed >= last.t) {
       this.replayDone = true;
       this.activeTimeline = last.timeline;
+      this.activeHeldPlateFlags = [...(last.heldPlateFlags ?? [])];
       this.sprite.setPosition(last.x, last.y);
       this.sprite.setFlipX(last.flipX);
       this.playMovementAnimation(0, 0);
@@ -88,6 +95,7 @@ export class GhostClone {
     const x = Phaser.Math.Linear(previous.x, next.x, mix);
     const y = Phaser.Math.Linear(previous.y, next.y, mix);
     this.activeTimeline = next.timeline;
+    this.activeHeldPlateFlags = [...new Set([...(previous.heldPlateFlags ?? []), ...(next.heldPlateFlags ?? [])])];
 
     if (next.interact || previous.interact) {
       this.interactUntil = this.elapsed + 160;
