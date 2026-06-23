@@ -178,7 +178,7 @@ export class PressurePlate {
   update(timeline: TimelineKey, actors: TimelineActor[]): boolean {
     const available = this.isAvailableIn(timeline);
     const occupied = actors.some(({ sprite, timeline: actorTimeline }) => {
-      return Boolean(sprite && this.isAvailableIn(actorTimeline) && boundsOverlap(this.rectangle, sprite));
+      return Boolean(sprite && this.isAvailableIn(actorTimeline) && actorStandsOnPlate(this.rectangle, sprite));
     });
     this.active = occupied;
     this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.22);
@@ -307,6 +307,23 @@ function boundsOverlap(a: OverlapTarget, b: OverlapTarget, inflateX = 0, inflate
   boundsA.width += inflateX * 2;
   boundsA.height += inflateY * 2;
   return Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB);
+}
+
+function actorStandsOnPlate(plate: OverlapTarget, actor: OverlapTarget): boolean {
+  if (boundsOverlap(plate, actor, 3, 5)) {
+    return true;
+  }
+
+  const plateBounds = collisionBounds(plate);
+  const actorBounds = collisionBounds(actor);
+  const footX = actorBounds.centerX;
+  const footY = actorBounds.bottom;
+  return (
+    footX >= plateBounds.left - 18 &&
+    footX <= plateBounds.right + 18 &&
+    footY >= plateBounds.top - 20 &&
+    footY <= plateBounds.bottom + 34
+  );
 }
 
 function collisionBounds(object: OverlapTarget): Phaser.Geom.Rectangle {
