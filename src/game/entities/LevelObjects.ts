@@ -293,19 +293,27 @@ export class CheckpointBeacon {
   }
 }
 
-function boundsOverlap(
-  a: Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle },
-  b: Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle },
-  inflateX = 0,
-  inflateY = 0,
-): boolean {
-  const boundsA = a.getBounds();
-  const boundsB = b.getBounds();
+type OverlapTarget = Phaser.GameObjects.GameObject & {
+  getBounds: () => Phaser.Geom.Rectangle;
+  body?: unknown;
+};
+
+function boundsOverlap(a: OverlapTarget, b: OverlapTarget, inflateX = 0, inflateY = 0): boolean {
+  const boundsA = collisionBounds(a);
+  const boundsB = collisionBounds(b);
   boundsA.x -= inflateX;
   boundsA.y -= inflateY;
   boundsA.width += inflateX * 2;
   boundsA.height += inflateY * 2;
   return Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB);
+}
+
+function collisionBounds(object: OverlapTarget): Phaser.Geom.Rectangle {
+  const body = object.body as Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | undefined | null;
+  if (body?.enable && !body.checkCollision.none) {
+    return new Phaser.Geom.Rectangle(body.left, body.top, body.right - body.left, body.bottom - body.top);
+  }
+  return object.getBounds();
 }
 
 function timelineAccent(timeline: TimelineKey): number {

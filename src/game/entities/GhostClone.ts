@@ -22,7 +22,7 @@ export class GhostClone {
     this.activeTimeline = first.timeline;
     this.hasEliasAnimations = scene.textures.exists(TextureKeys.eliasSheet) && scene.anims.exists(AnimationKeys.eliasIdle);
     const idleFrame = this.hasEliasAnimations ? scene.textures.getFrame(TextureKeys.eliasSheet, 'idle-0') : undefined;
-    this.baseScale = idleFrame ? 58 / idleFrame.height : 1;
+    this.baseScale = idleFrame && idleFrame.height >= 240 ? 0.29 : idleFrame ? 58 / idleFrame.height : 1;
     this.sprite = scene.physics.add.sprite(
       first.x,
       first.y,
