@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { AnimationKeys, TextureKeys } from '../../assets/manifest';
+import type { TimelineKey } from '../../types';
 
 const assetPath = (fileName: string): string => `assets/${fileName}`;
 const PLATFORM_COLUMNS = 3;
@@ -11,6 +12,17 @@ const ELIAS_FRAME_HEIGHT = 300;
 const ELIAS_FOOT_Y = 278;
 const ELIAS_TRIM_PADDING = 4;
 const TRANSPARENT_PIXEL_ALPHA = 8;
+const TIMELINE_ORDER: TimelineKey[] = ['past', 'present', 'future'];
+const doorTextureKeys: Record<TimelineKey, string> = {
+  past: TextureKeys.doorPast,
+  present: TextureKeys.doorPresent,
+  future: TextureKeys.doorFuture,
+};
+const plateTextureKeys: Record<TimelineKey, string> = {
+  past: TextureKeys.platePast,
+  present: TextureKeys.platePresent,
+  future: TextureKeys.plateFuture,
+};
 
 const eliasFrameSets = {
   idle: [
@@ -49,8 +61,13 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, assetPath('Elias char sprite transparent.png'));
-    this.load.image(TextureKeys.platformSheet, assetPath('platform assets.png'));
+    this.load.image(TextureKeys.eliasSheet, assetPath('sprites/elias-sheet.png'));
+    this.load.image(TextureKeys.platformSheet, assetPath('sprites/platforms-sheet.png'));
+    this.load.image(TextureKeys.keeperSheet, assetPath('sprites/keeper-sheet.png'));
+    this.load.image(TextureKeys.girlSheet, assetPath('sprites/daughter-sheet.png'));
+    this.load.image(TextureKeys.doorSheet, assetPath('sprites/doors-gates-barriers-sheet.png'));
+    this.load.image(TextureKeys.puzzleDevicesSheet, assetPath('sprites/puzzle-devices-switches-sheet.png'));
+    this.load.image(TextureKeys.uiSignPanel, assetPath('ui/sign-panel.png'));
     this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
     this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
     this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
@@ -62,50 +79,15 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.createGeneratedTextures();
     try {
-      this.replaceCheckerboardWithAlpha(TextureKeys.eliasSheet);
-      this.replaceCheckerboardWithAlpha(TextureKeys.platformSheet);
       this.normalizeEliasAtlas();
       this.normalizePlatformAtlas();
+      this.extractSpritePackTextures();
       this.registerEliasAnimationFrames();
       this.registerTimelinePlatformFrames();
     } catch (error) {
       console.warn('External asset preparation failed; falling back to generated prototype art.', error);
     }
     this.scene.start('MainMenuScene');
-  }
-
-  private replaceCheckerboardWithAlpha(textureKey: string): void {
-    if (!this.textures.exists(textureKey)) {
-      return;
-    }
-
-    const texture = this.textures.get(textureKey);
-    const source = texture.getSourceImage() as HTMLImageElement;
-    const canvas = document.createElement('canvas');
-    canvas.width = source.width;
-    canvas.height = source.height;
-
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) {
-      return;
-    }
-
-    context.drawImage(source, 0, 0);
-    const image = context.getImageData(0, 0, canvas.width, canvas.height);
-    for (let index = 0; index < image.data.length; index += 4) {
-      const red = image.data[index];
-      const green = image.data[index + 1];
-      const blue = image.data[index + 2];
-      const max = Math.max(red, green, blue);
-      const min = Math.min(red, green, blue);
-      if (min >= 224 && max - min <= 10) {
-        image.data[index + 3] = 0;
-      }
-    }
-    context.putImageData(image, 0, 0);
-
-    this.textures.remove(textureKey);
-    this.textures.addCanvas(textureKey, canvas);
   }
 
   private normalizeEliasAtlas(): void {
@@ -208,6 +190,82 @@ export class BootScene extends Phaser.Scene {
 
     this.textures.remove(TextureKeys.platformSheet);
     this.textures.addCanvas(TextureKeys.platformSheet, canvas);
+  }
+
+  private extractSpritePackTextures(): void {
+    this.extractCharacterPose(TextureKeys.keeperSheet, TextureKeys.keeper, 0);
+    this.extractCharacterPose(TextureKeys.girlSheet, TextureKeys.girl, 0);
+    this.extractTimelineRow(TextureKeys.doorSheet, doorTextureKeys, 1, 4, 8);
+    this.extractTimelineRow(TextureKeys.puzzleDevicesSheet, plateTextureKeys, 0, 5, 6);
+    this.extractSheetTexture(TextureKeys.puzzleDevicesSheet, TextureKeys.switchOff, { column: 1, row: 1, columns: 3, rows: 5 }, 6);
+    this.extractSheetTexture(TextureKeys.puzzleDevicesSheet, TextureKeys.switchOn, { column: 2, row: 2, columns: 3, rows: 5 }, 6);
+  }
+
+  private extractCharacterPose(sourceKey: string, targetKey: string, column: number): void {
+    this.extractSheetTexture(sourceKey, targetKey, { column, row: 0, columns: 3, rows: 1 }, 8);
+  }
+
+  private extractTimelineRow(
+    sourceKey: string,
+    targetKeys: Record<TimelineKey, string>,
+    row: number,
+    rows: number,
+    padding: number,
+  ): void {
+    TIMELINE_ORDER.forEach((timeline, column) => {
+      this.extractSheetTexture(sourceKey, targetKeys[timeline], { column, row, columns: 3, rows }, padding);
+    });
+  }
+
+  private extractSheetTexture(
+    sourceKey: string,
+    targetKey: string,
+    cell: { column: number; row: number; columns: number; rows: number },
+    padding: number,
+  ): void {
+    if (!this.textures.exists(sourceKey)) {
+      return;
+    }
+
+    const texture = this.textures.get(sourceKey);
+    const source = texture.getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = source.width;
+    sourceCanvas.height = source.height;
+
+    const sourceContext = sourceCanvas.getContext('2d', { willReadFrequently: true });
+    if (!sourceContext) {
+      return;
+    }
+    sourceContext.drawImage(source, 0, 0);
+
+    const cellWidth = Math.floor(source.width / cell.columns);
+    const cellHeight = Math.floor(source.height / cell.rows);
+    const x = cell.column * cellWidth;
+    const y = cell.row * cellHeight;
+    const width = cell.column === cell.columns - 1 ? source.width - x : cellWidth;
+    const height = cell.row === cell.rows - 1 ? source.height - y : cellHeight;
+    const bounds = this.findOpaqueBounds(sourceContext, x, y, width, height);
+    if (!bounds) {
+      return;
+    }
+
+    const padded = this.expandBounds(bounds, sourceCanvas.width, sourceCanvas.height, padding);
+    const canvas = document.createElement('canvas');
+    canvas.width = padded.width;
+    canvas.height = padded.height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.imageSmoothingEnabled = false;
+    context.drawImage(sourceCanvas, padded.x, padded.y, padded.width, padded.height, 0, 0, padded.width, padded.height);
+
+    if (this.textures.exists(targetKey)) {
+      this.textures.remove(targetKey);
+    }
+    this.textures.addCanvas(targetKey, canvas);
   }
 
   private findOpaqueBounds(

@@ -111,6 +111,7 @@ export class TimelineDoor {
   private spec: DoorSpec;
   private wasOpen = false;
   private lockLine: Phaser.GameObjects.Rectangle;
+  private visual?: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, spec: DoorSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.id = spec.id;
@@ -118,6 +119,12 @@ export class TimelineDoor {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.states.present.color);
     this.rectangle.setDepth(12);
     this.rectangle.setStrokeStyle(2, 0x1b2028, 0.95);
+    if (scene.textures.exists(TextureKeys.doorPresent)) {
+      this.rectangle.setAlpha(0.01);
+      this.visual = scene.add.image(spec.x, spec.y, TextureKeys.doorPresent);
+      this.visual.setDepth(12.1);
+      this.visual.setDisplaySize(Math.max(spec.width * 1.45, 88), Math.max(spec.height * 1.08, 136));
+    }
     this.lockLine = scene.add.rectangle(spec.x, spec.y, 6, spec.height - 18, 0x6ee7f2, 0.48);
     this.lockLine.setDepth(12.2);
     scene.physics.add.existing(this.rectangle, true);
@@ -131,12 +138,20 @@ export class TimelineDoor {
     const visible = state.visible && !isUnlocked;
     const body = this.rectangle.body as Phaser.Physics.Arcade.StaticBody;
 
-    this.rectangle.setVisible(visible);
-    this.rectangle.setAlpha(visible ? state.alpha ?? 1 : 0);
+    this.rectangle.setVisible(!this.visual && visible);
+    this.rectangle.setAlpha(this.visual ? 0.01 : visible ? state.alpha ?? 1 : 0);
     this.rectangle.setFillStyle(isUnlocked ? 0x73f2b2 : state.color);
     this.rectangle.setStrokeStyle(2, isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.42 : 0.85);
-    this.lockLine.setVisible(visible);
-    this.lockLine.setAlpha(visible ? 0.62 : 0);
+    if (this.visual) {
+      const textureKey = doorTextureForTimeline(timeline);
+      this.visual.setTexture(this.visual.scene.textures.exists(textureKey) ? textureKey : TextureKeys.doorPresent);
+      this.visual.setDisplaySize(Math.max(this.spec.width * 1.45, 88), Math.max(this.spec.height * 1.08, 136));
+      this.visual.setVisible(visible);
+      this.visual.setAlpha(visible ? state.alpha ?? 1 : 0);
+      this.visual.setTint(isUnlocked ? 0x73f2b2 : 0xffffff);
+    }
+    this.lockLine.setVisible(!this.visual && visible);
+    this.lockLine.setAlpha(!this.visual && visible ? 0.62 : 0);
     this.lockLine.setFillStyle(isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.18 : 0.62);
     body.enable = solid;
     body.checkCollision.none = !solid;
@@ -184,8 +199,11 @@ export class PressurePlate {
     this.rectangle.setAlpha(this.visual ? 0.01 : available ? 1 : 0.22);
     this.rectangle.setFillStyle(occupied ? 0xdbb3ff : 0x4a3648);
     if (this.visual) {
-      this.visual.setAlpha(available ? 1 : occupied ? 0.65 : 0.28);
-      this.visual.setTint(occupied ? 0xffffff : timelineAccent(timeline));
+      const textureKey = plateTextureForTimeline(timeline);
+      this.visual.setTexture(this.visual.scene.textures.exists(textureKey) ? textureKey : TextureKeys.plate);
+      this.visual.setDisplaySize(this.spec.width, Math.max(18, this.spec.height * 2));
+      this.visual.setAlpha(occupied ? 1 : available ? 0.82 : 0.28);
+      this.visual.setTint(occupied || available ? 0xffffff : timelineAccent(timeline));
     }
     this.signal.setAlpha(occupied ? 0.95 : available ? 0.42 : 0.16);
     this.signal.setFillStyle(occupied ? 0xffffff : timelineAccent(timeline), occupied ? 0.85 : 0.42);
@@ -249,6 +267,7 @@ export class LeverSwitch {
     this.handle.setAngle(this.toggled ? 18 : -16);
     if (this.visual) {
       this.visual.setTexture(this.toggled ? TextureKeys.switchOn : TextureKeys.switchOff);
+      this.visual.setDisplaySize(Math.max(58, this.spec.width * 1.45), Math.max(50, this.spec.height * 1.35));
       this.visual.setAlpha(available ? 1 : 0.28);
       this.visual.setTint(available ? 0xffffff : timelineAccent(timeline));
     }
@@ -336,6 +355,26 @@ function collisionBounds(object: OverlapTarget): Phaser.Geom.Rectangle {
     return new Phaser.Geom.Rectangle(body.left, body.top, body.right - body.left, body.bottom - body.top);
   }
   return object.getBounds();
+}
+
+function doorTextureForTimeline(timeline: TimelineKey): string {
+  if (timeline === 'past') {
+    return TextureKeys.doorPast;
+  }
+  if (timeline === 'future') {
+    return TextureKeys.doorFuture;
+  }
+  return TextureKeys.doorPresent;
+}
+
+function plateTextureForTimeline(timeline: TimelineKey): string {
+  if (timeline === 'past') {
+    return TextureKeys.platePast;
+  }
+  if (timeline === 'future') {
+    return TextureKeys.plateFuture;
+  }
+  return TextureKeys.platePresent;
 }
 
 function timelineAccent(timeline: TimelineKey): number {

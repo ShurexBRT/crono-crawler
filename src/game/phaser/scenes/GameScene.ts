@@ -170,12 +170,12 @@ export class GameScene extends Phaser.Scene {
     this.exitZone.setDepth(6);
 
     if (this.level.id === 'boss') {
-      this.add.sprite(2265, 590, TextureKeys.keeper).setDepth(13).setScale(1.45).setAlpha(0.92);
+      this.add.sprite(2265, 590, TextureKeys.keeper).setDepth(13).setDisplaySize(84, 150).setAlpha(0.92);
       this.add.sprite(2180, 505, TextureKeys.core).setDepth(5).setScale(1.45).setAlpha(0.64);
     }
 
     if (this.level.id === 'level-2') {
-      this.add.sprite(530, 637, TextureKeys.girl).setDepth(10).setAlpha(0.82);
+      this.add.sprite(530, 637, TextureKeys.girl).setDepth(10).setDisplaySize(56, 96).setAlpha(0.88);
     }
   }
 

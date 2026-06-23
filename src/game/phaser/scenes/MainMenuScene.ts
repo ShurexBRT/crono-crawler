@@ -67,7 +67,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.polygon(240, 475, [0, 0, 38, 0, -190, -430, -245, -430], 0xf0a64d, 0.11).setDepth(-8);
     this.add.polygon(1010, 480, [0, 0, 34, 0, 210, -440, 270, -440], 0x9ad7ff, 0.08).setDepth(-8);
     this.add.rectangle(640, 690, 1280, 64, 0x030407, 0.72).setDepth(-5);
-    this.add.sprite(980, 395, 'character.keeper').setScale(2.7).setAlpha(0.22).setDepth(-1);
+    this.add.sprite(980, 395, 'character.keeper').setDisplaySize(170, 300).setAlpha(0.22).setDepth(-1);
     this.add.sprite(1080, 310, 'fx.chrono-core').setScale(1.6).setAlpha(0.35).setDepth(-2);
   }
 }

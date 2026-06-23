@@ -12,6 +12,11 @@
   --line: rgba(240, 166, 77, 0.24);
   --deco-gold: #d9bb78;
   --deco-ink: rgba(3, 6, 12, 0.88);
+  --ui-dialogue-frame: url("../assets/ui/dialogue-frame.png");
+  --ui-hud-panel: url("../assets/ui/hud-panel.png");
+  --ui-level-chip: url("../assets/ui/level-chip.png");
+  --ui-modal-panel: url("../assets/ui/modal-panel.png");
+  --ui-toast-bubble: url("../assets/ui/toast-bubble.png");
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
@@ -105,8 +110,8 @@ button:disabled {
 .toast,
 .dialogue-panel,
 .modal-panel {
-  border: 1px solid rgba(217, 187, 120, 0.24);
-  border-radius: 2px;
+  border: 0;
+  border-radius: 0;
   background:
     linear-gradient(90deg, rgba(4, 7, 13, 0.92), rgba(7, 9, 16, 0.82)),
     radial-gradient(circle at 92% 10%, rgba(240, 166, 77, 0.08), transparent 12rem);
@@ -119,8 +124,13 @@ button:disabled {
 .hud-status > div {
   position: relative;
   min-width: 9rem;
-  min-height: 3.65rem;
-  padding: 0.5rem 0.72rem 0.55rem;
+  min-height: 4.35rem;
+  padding: 0.72rem 0.9rem 0.64rem;
+  background:
+    linear-gradient(90deg, rgba(4, 7, 13, 0.78), rgba(7, 9, 16, 0.5)),
+    var(--ui-hud-panel);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   overflow: hidden;
 }
 
@@ -210,7 +220,14 @@ button:disabled {
   right: 0.72rem;
   top: 0.72rem;
   max-width: min(15rem, calc(100vw - 2rem));
-  padding: 0.52rem 0.72rem;
+  min-width: 11rem;
+  min-height: 4rem;
+  padding: 0.75rem 1.05rem;
+  background:
+    linear-gradient(90deg, rgba(4, 7, 13, 0.78), rgba(7, 9, 16, 0.5)),
+    var(--ui-level-chip);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   text-align: right;
   overflow: hidden;
 }
@@ -394,10 +411,12 @@ p {
   left: 50%;
   width: min(34rem, calc(100vw - 2rem));
   transform: translate(-50%, -50%);
-  padding: 1.25rem;
+  padding: 2.35rem 2rem 1.75rem;
   background:
-    linear-gradient(90deg, rgba(5, 8, 15, 0.97), rgba(9, 12, 19, 0.94)),
-    radial-gradient(circle at 88% 12%, rgba(110, 231, 242, 0.08), transparent 12rem);
+    linear-gradient(90deg, rgba(5, 8, 15, 0.82), rgba(9, 12, 19, 0.7)),
+    var(--ui-modal-panel);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 }
 
 .modal-panel::after {
@@ -439,21 +458,30 @@ input[type="checkbox"] {
 .dialogue-panel {
   position: absolute;
   left: 50%;
-  bottom: 2rem;
-  width: min(48rem, calc(100vw - 2rem));
+  bottom: 1.4rem;
+  width: min(60rem, calc(100vw - 1.5rem));
+  min-height: 11rem;
   transform: translateX(-50%);
-  padding: 1rem;
-  background: rgba(7, 10, 16, 0.92);
+  padding: 2.15rem 2.35rem 1.35rem clamp(8.5rem, 17vw, 12.5rem);
+  background:
+    linear-gradient(90deg, rgba(5, 8, 15, 0.24), rgba(5, 8, 15, 0.44)),
+    var(--ui-dialogue-frame);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
 }
 
 .dialogue-panel p {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.72rem;
+  color: #f0ead8;
+  font-size: 0.98rem;
+  line-height: 1.45;
 }
 
 .dialogue-panel small {
   display: block;
-  margin-bottom: 0.6rem;
-  color: var(--muted);
+  margin-bottom: 0.5rem;
+  color: #b8a77e;
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -549,9 +577,17 @@ input[type="checkbox"] {
   left: 50%;
   bottom: 1rem;
   transform: translateX(-50%);
-  max-width: min(36rem, calc(100vw - 2rem));
-  padding: 0.7rem 1rem;
+  min-width: min(20rem, calc(100vw - 2rem));
+  max-width: min(34rem, calc(100vw - 2rem));
+  min-height: 4rem;
+  padding: 1.08rem 1.35rem 1.25rem;
+  background:
+    linear-gradient(90deg, rgba(5, 8, 15, 0.36), rgba(9, 12, 19, 0.32)),
+    var(--ui-toast-bubble);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   color: var(--ink);
+  text-align: center;
 }
 
 @media (max-width: 760px) {
@@ -576,6 +612,11 @@ input[type="checkbox"] {
 
   button {
     width: 100%;
+  }
+
+  .dialogue-panel {
+    min-height: 10rem;
+    padding: 1.8rem 1.35rem 1.25rem;
   }
 
   .pause-panel .modal-actions {

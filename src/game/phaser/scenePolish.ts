@@ -111,9 +111,17 @@ function drawLevelSignage(scene: PatchedGameScene): void {
   const signs = signsByLevel[scene.level.id] ?? [];
   signs.forEach((sign) => {
     const accent = sign.accent ?? 0xf0a64d;
-    const panel = scene.add.rectangle(sign.x, sign.y, sign.width, sign.height, 0x06080d, sign.alpha ?? 0.58);
-    panel.setDepth(8);
-    panel.setStrokeStyle(1, accent, 0.62);
+    if (scene.textures.exists(TextureKeys.uiSignPanel)) {
+      const panel = scene.add.image(sign.x, sign.y, TextureKeys.uiSignPanel);
+      panel.setDepth(8);
+      panel.setDisplaySize(sign.width, Math.max(sign.height, 26));
+      panel.setAlpha(sign.alpha ?? 0.82);
+      panel.setTint(0xffffff);
+    } else {
+      const panel = scene.add.rectangle(sign.x, sign.y, sign.width, sign.height, 0x06080d, sign.alpha ?? 0.58);
+      panel.setDepth(8);
+      panel.setStrokeStyle(1, accent, 0.62);
+    }
 
     scene.add
       .text(sign.x, sign.y, sign.text, {
