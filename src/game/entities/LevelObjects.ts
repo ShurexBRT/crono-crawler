@@ -128,14 +128,15 @@ export class TimelineDoor {
     const state = this.spec.states[timeline];
     const isUnlocked = this.spec.requiresFlags.every((flag) => flags.has(flag));
     const solid = state.solid && !isUnlocked;
+    const visible = state.visible && !isUnlocked;
     const body = this.rectangle.body as Phaser.Physics.Arcade.StaticBody;
 
-    this.rectangle.setVisible(state.visible);
-    this.rectangle.setAlpha(isUnlocked ? 0.18 : state.alpha ?? 1);
+    this.rectangle.setVisible(visible);
+    this.rectangle.setAlpha(visible ? state.alpha ?? 1 : 0);
     this.rectangle.setFillStyle(isUnlocked ? 0x73f2b2 : state.color);
     this.rectangle.setStrokeStyle(2, isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.42 : 0.85);
-    this.lockLine.setVisible(state.visible);
-    this.lockLine.setAlpha(isUnlocked ? 0.18 : 0.62);
+    this.lockLine.setVisible(visible);
+    this.lockLine.setAlpha(visible ? 0.62 : 0);
     this.lockLine.setFillStyle(isUnlocked ? 0x73f2b2 : timelineAccent(timeline), isUnlocked ? 0.18 : 0.62);
     body.enable = solid;
     body.checkCollision.none = !solid;
