@@ -1,6 +1,7 @@
 import type { AudioManager } from '../game/systems/AudioManager';
 import type { SaveManager } from '../game/systems/SaveManager';
 import type { SettingsState, TimelineKey } from '../game/types';
+import { introBeats, type IntroBeat } from '../game/content/intro';
 
 interface MainMenuActions {
   onNewGame: () => void;
@@ -27,6 +28,8 @@ export class UIManager {
   private audioManager: AudioManager;
   private toastTimeout?: number;
   private dialogueKeyHandler?: (event: KeyboardEvent) => void;
+  private introKeyHandler?: (event: KeyboardEvent) => void;
+  private introTimeout?: number;
 
   constructor(saveManager: SaveManager, audioManager: AudioManager) {
     const root = document.getElementById('ui-root');
@@ -151,21 +154,73 @@ export class UIManager {
   }
 
   showIntro(onBegin: () => void): void {
-    this.setOverlay(`
-      <div class="story-screen intro-screen" style="background-image: linear-gradient(90deg, rgba(2, 4, 9, 0.98), rgba(2, 4, 9, 0.54) 48%, rgba(2, 4, 9, 0.96)), linear-gradient(180deg, rgba(110, 231, 242, 0.1), transparent 38%, rgba(240, 166, 77, 0.08)), url('assets/chrono_crawler_title_screen_concept.png');">
-        <article>
-          <span class="title-kicker">Incident Zero</span>
-          <h2>The Core Did Not Explode</h2>
-          <p>It remembered every version of the city at once.</p>
-          <p>Elias Voss woke inside the fracture. And time answered him back.</p>
-          <button data-action="begin">Wake</button>
-        </article>
-      </div>
-    `);
-    this.bindClick('[data-action="begin"]', () => {
-      this.audioManager.playSfx('click');
+    this.clearHud();
+    this.clearIntroPlayback();
+
+    let index = 0;
+    let isFinished = false;
+
+    const finish = (playSound: boolean) => {
+      if (isFinished) {
+        return;
+      }
+      isFinished = true;
+      if (playSound) {
+        this.audioManager.playSfx('click');
+      }
+      this.clearIntroPlayback();
       onBegin();
-    });
+    };
+
+    const scheduleNext = (beat: IntroBeat) => {
+      window.clearTimeout(this.introTimeout);
+      if (beat.waitForInput || beat.durationMs <= 0) {
+        return;
+      }
+      this.introTimeout = window.setTimeout(() => {
+        advance(false);
+      }, beat.durationMs);
+    };
+
+    const advance = (playSound = true) => {
+      if (isFinished) {
+        return;
+      }
+      if (playSound) {
+        this.audioManager.playSfx('click');
+      }
+      if (index >= introBeats.length - 1) {
+        finish(false);
+        return;
+      }
+      index += 1;
+      render();
+    };
+
+    const skip = () => {
+      finish(true);
+    };
+
+    const render = () => {
+      const beat = introBeats[index];
+      this.setOverlay(this.renderIntroBeat(beat, index, introBeats.length));
+      this.bindClick('[data-action="intro-next"]', () => advance());
+      this.bindClick('[data-action="intro-skip"]', skip);
+      scheduleNext(beat);
+    };
+
+    this.introKeyHandler = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        advance();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        skip();
+      }
+    };
+    window.addEventListener('keydown', this.introKeyHandler);
+    render();
   }
 
   showEnding(onMenu: () => void): void {
@@ -328,6 +383,7 @@ export class UIManager {
 
   clearOverlay(): void {
     this.clearDialogueKeyHandler();
+    this.clearIntroPlayback();
     this.overlayLayer.innerHTML = '';
     this.overlayLayer.classList.remove('is-active');
   }
@@ -347,6 +403,16 @@ export class UIManager {
     }
     window.removeEventListener('keydown', this.dialogueKeyHandler);
     this.dialogueKeyHandler = undefined;
+  }
+
+  private clearIntroPlayback(): void {
+    window.clearTimeout(this.introTimeout);
+    this.introTimeout = undefined;
+    if (!this.introKeyHandler) {
+      return;
+    }
+    window.removeEventListener('keydown', this.introKeyHandler);
+    this.introKeyHandler = undefined;
   }
 
   private updateSettings(settings: Partial<SettingsState>): void {
@@ -377,6 +443,78 @@ export class UIManager {
       return 'Present';
     }
     return 'Ruined Future';
+  }
+
+  private renderIntroBeat(beat: IntroBeat, index: number, total: number): string {
+    const body = this.renderIntroBeatBody(beat);
+    const actionLabel = index === total - 1 ? 'Begin' : 'Continue';
+    return `
+      <div class="intro-sequence intro-beat-${beat.visual}">
+        <div class="intro-lab" aria-hidden="true">
+          <div class="intro-lab-backdrop"></div>
+          <div class="intro-core"></div>
+          <div class="intro-elias"></div>
+          <div class="intro-drawing"></div>
+          <div class="intro-later-shadow"></div>
+          <div class="intro-scanlines"></div>
+        </div>
+        <div class="intro-vignette" aria-hidden="true"></div>
+        <article class="intro-card">
+          ${body}
+        </article>
+        <footer class="intro-controls">
+          <button data-action="intro-skip">Skip</button>
+          <button data-action="intro-next">${actionLabel}</button>
+        </footer>
+      </div>
+    `;
+  }
+
+  private renderIntroBeatBody(beat: IntroBeat): string {
+    if (beat.chapterLabel && beat.chapterTitle) {
+      return `
+        <span class="intro-chapter-label">${this.escapeHtml(beat.chapterLabel)}</span>
+        <h2>${this.escapeHtml(beat.chapterTitle)}</h2>
+      `;
+    }
+
+    const kicker = beat.kicker ? `<span class="title-kicker">${this.escapeHtml(beat.kicker)}</span>` : '';
+    const title = beat.title ? `<h2>${this.escapeHtml(beat.title)}</h2>` : '';
+    const lines = beat.lines?.map((line) => `<p>${this.escapeHtml(line)}</p>`).join('') ?? '';
+    const system = beat.systemLines ? this.renderIntroSystemLines(beat.systemLines) : '';
+    const dialogue = beat.dialogue ? this.renderIntroDialogue(beat.dialogue) : '';
+    const objective = beat.objective ? `<div class="intro-objective"><span>Objective</span><strong>${this.escapeHtml(beat.objective)}</strong></div>` : '';
+
+    return `${kicker}${title}<div class="intro-copy">${lines}${system}${dialogue}${objective}</div>`;
+  }
+
+  private renderIntroSystemLines(lines: string[]): string {
+    const rows = lines.map((line) => `<span>${this.escapeHtml(line)}</span>`).join('');
+    return `<div class="intro-system-panel">${rows}</div>`;
+  }
+
+  private renderIntroDialogue(lines: IntroBeat['dialogue']): string {
+    if (!lines) {
+      return '';
+    }
+    const rows = lines
+      .map((entry) => `
+        <div class="intro-dialogue-line">
+          <span>${this.escapeHtml(entry.speaker)}</span>
+          <p>${this.escapeHtml(entry.line)}</p>
+        </div>
+      `)
+      .join('');
+    return `<div class="intro-dialogue">${rows}</div>`;
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
   private setText(selector: string, text: string): void {
