@@ -7,11 +7,12 @@ import { GhostClone } from '../../entities/GhostClone';
 import { Player } from '../../entities/Player';
 import { InputController } from '../../input/InputController';
 import { AudioManager } from '../../systems/AudioManager';
+import { CheckpointSystem } from '../../systems/CheckpointSystem';
 import { DialogueManager } from '../../systems/DialogueManager';
 import { GhostRecorder } from '../../systems/GhostRecorder';
 import { SaveManager } from '../../systems/SaveManager';
 import { TimelineManager } from '../../systems/TimelineManager';
-import type { CheckpointSpec, LevelData, Point, RectSpec, StoryZoneSpec, TimelineKey } from '../../types';
+import type { LevelData, RectSpec, StoryZoneSpec, TimelineKey } from '../../types';
 import type { UIManager } from '../../../ui/UIManager';
 
 type NoirPalette = {
@@ -35,6 +36,7 @@ export class GameScene extends Phaser.Scene {
   private uiManager!: UIManager;
   private inputController!: InputController;
   private timelineManager!: TimelineManager;
+  private checkpointSystem!: CheckpointSystem;
   private dialogueManager!: DialogueManager;
   private ghostRecorder!: GhostRecorder;
   private level!: LevelData;
@@ -50,8 +52,6 @@ export class GameScene extends Phaser.Scene {
   private exitZone?: Phaser.GameObjects.Rectangle;
   private timelineTint?: Phaser.GameObjects.Rectangle;
   private recordingAura?: Phaser.GameObjects.Arc;
-  private activeCheckpoint?: CheckpointSpec;
-  private checkpointTimeline?: TimelineKey;
   private latchedFlags = new Set<string>();
   private heldFlags = new Set<string>();
   private storyTriggered = new Set<string>();
@@ -71,6 +71,7 @@ export class GameScene extends Phaser.Scene {
     this.resetRuntimeState();
     this.level = getLevel(data.levelId ?? 'tutorial');
     this.timelineManager = new TimelineManager(data.timeline ?? this.level.startTimeline);
+    this.checkpointSystem = new CheckpointSystem(this.level, this.timelineManager.current, data.checkpointId);
     this.dialogueManager = new DialogueManager();
     this.ghostRecorder = new GhostRecorder();
     this.inputController = new InputController(this);
@@ -84,7 +85,7 @@ export class GameScene extends Phaser.Scene {
 
     this.drawBackground();
     this.buildLevel();
-    this.player = new Player(this, this.resolveSpawn(data.checkpointId));
+    this.player = new Player(this, this.checkpointSystem.resolveSpawn(this.timelineManager.current, data.checkpointId));
     this.configurePhysics();
     this.configureCamera();
     this.applyTimeline();
@@ -94,12 +95,12 @@ export class GameScene extends Phaser.Scene {
       levelTitle: this.level.title,
       objective: this.level.objective,
       timeline: this.timelineManager.current,
-      checkpoint: this.activeCheckpoint ? `Checkpoint: ${this.activeCheckpoint.id}` : this.level.subtitle,
+      checkpoint: this.checkpointSystem.checkpointLabel(),
       ghostLabel: 'Ready',
       ghostProgress: 0,
     });
 
-    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.activeCheckpoint?.id);
+    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id);
     this.showDialogue(`start-${this.level.id}`, this.level.startLines, true);
   }
 
@@ -190,8 +191,6 @@ export class GameScene extends Phaser.Scene {
     this.exitZone = undefined;
     this.timelineTint = undefined;
     this.recordingAura = undefined;
-    this.activeCheckpoint = undefined;
-    this.checkpointTimeline = undefined;
     this.latchedFlags.clear();
     this.heldFlags.clear();
     this.storyTriggered.clear();
@@ -344,7 +343,7 @@ export class GameScene extends Phaser.Scene {
     this.audioManager.playTimelineTone(timeline);
     this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
     this.emitTimelinePulse(timeline);
-    this.saveManager.saveProgress(this.level.id, timeline, this.activeCheckpoint?.id);
+    this.saveManager.saveProgress(this.level.id, timeline, this.checkpointSystem.activeCheckpoint?.id);
     this.uiManager.updateHud({ timeline });
   }
 
@@ -465,15 +464,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateCheckpoints(): void {
-    this.checkpoints.forEach((checkpoint) => {
-      if (checkpoint.update(this.player.sprite)) {
-        this.activeCheckpoint = this.level.checkpoints.find((candidate) => candidate.id === checkpoint.id);
-        this.checkpointTimeline = this.timelineManager.current;
-        this.audioManager.playSfx('checkpoint');
-        this.uiManager.showToast('Checkpoint stabilized.');
-        this.saveManager.saveProgress(this.level.id, this.timelineManager.current, checkpoint.id);
-      }
-    });
+    const checkpoint = this.checkpointSystem.update(this.checkpoints, this.player.sprite, this.timelineManager.current);
+    if (!checkpoint) {
+      return;
+    }
+    this.audioManager.playSfx('checkpoint');
+    this.uiManager.showToast('Checkpoint stabilized.');
+    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, checkpoint.id);
   }
 
   private updateStoryZones(): void {
@@ -529,7 +526,7 @@ export class GameScene extends Phaser.Scene {
 
     this.uiManager.updateHud({
       timeline: this.timelineManager.current,
-      checkpoint: this.activeCheckpoint ? `Checkpoint: ${this.activeCheckpoint.id}` : this.level.subtitle,
+      checkpoint: this.checkpointSystem.checkpointLabel(),
       ghostLabel,
       ghostProgress,
     });
@@ -595,13 +592,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.destroyRecordingAura();
 
-    const spawn = this.activeCheckpoint
-      ? { x: this.activeCheckpoint.x, y: this.activeCheckpoint.y - 24 }
-      : this.level.spawn;
-
-    this.player.respawn(spawn);
-    if (this.checkpointTimeline) {
-      this.setTimeline(this.checkpointTimeline);
+    this.player.respawn(this.checkpointSystem.rewindSpawn());
+    if (this.checkpointSystem.checkpointTimeline) {
+      this.setTimeline(this.checkpointSystem.checkpointTimeline);
     }
     this.uiManager.showToast('Rewound to the last stable point.');
   }
@@ -658,21 +651,6 @@ export class GameScene extends Phaser.Scene {
         done();
       });
     });
-  }
-
-  private resolveSpawn(checkpointId?: string): Point {
-    if (!checkpointId) {
-      return this.level.spawn;
-    }
-
-    const checkpoint = this.level.checkpoints.find((candidate) => candidate.id === checkpointId);
-    if (!checkpoint) {
-      return this.level.spawn;
-    }
-
-    this.activeCheckpoint = checkpoint;
-    this.checkpointTimeline = this.timelineManager.current;
-    return { x: checkpoint.x, y: checkpoint.y - 24 };
   }
 
   private combinedFlags(): Set<string> {
