@@ -35,3 +35,20 @@ test('loads the Bellweather Canals content from continue data', async ({ page })
   await expect(page.locator('[data-hud="timeline"]')).toHaveText('Present');
   expect(runtimeErrors).toEqual([]);
 });
+
+test('loads the Minute Market content from continue data', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page);
+  await seedContinueSave(page, 'minute-market');
+
+  await page.goto('/');
+  await expect(page.locator('[data-action="continue"]')).toBeEnabled();
+  await expect(page.locator('[data-continue-summary]')).toContainText('The Minute Market');
+  await page.locator('[data-action="continue"]').click();
+  await expect(page.locator('[data-action="next"]')).toBeVisible();
+  await dismissDialogue(page);
+
+  await expect(page.locator('.level-chip')).toContainText('The Minute Market');
+  await expect(page.locator('[data-hud="objective"]')).toHaveText('Find the market key in the Present. Cross the stalls through the wrong years.');
+  await expect(page.locator('[data-hud="timeline"]')).toHaveText('Present');
+  expect(runtimeErrors).toEqual([]);
+});
