@@ -82,6 +82,8 @@ See [LEARNINGS.md](LEARNINGS.md) for the game design, platformer, puzzle, visual
 
 See [docs/full-game-blueprint.md](docs/full-game-blueprint.md) for the target structure, chapter plan, mechanic progression, art direction, accessibility priorities, and production roadmap for turning the vertical slice into a complete game.
 
+See [docs/asset-pipeline.md](docs/asset-pipeline.md) for sprite sheet naming, frame metadata, raw-vs-game-ready asset rules, and integration QA.
+
 ## Folder Structure
 
 ```text
