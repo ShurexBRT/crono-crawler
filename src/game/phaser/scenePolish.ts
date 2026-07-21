@@ -24,6 +24,7 @@ const backdropByBackground: Record<LevelData['background'], string> = {
   streets: TextureKeys.backdropStreets,
   greenhouse: TextureKeys.backdropGreenhouse,
   station: TextureKeys.backdropStation,
+  canals: TextureKeys.backdropStreets,
   core: TextureKeys.backdropCore,
 };
 
@@ -32,6 +33,7 @@ const backdropTintByBackground: Record<LevelData['background'], number> = {
   streets: 0x05070c,
   greenhouse: 0x06100b,
   station: 0x07090f,
+  canals: 0x041019,
   core: 0x09070d,
 };
 
@@ -55,6 +57,11 @@ const signsByLevel: Record<string, SignSpec[]> = {
     { x: 690, y: 474, width: 190, height: 38, text: 'PLATFORM 13', accent: 0xf0a64d },
     { x: 1320, y: 638, width: 230, height: 34, text: 'DELAYED FOREVER', accent: 0x6ee7f2 },
     { x: 1760, y: 552, width: 230, height: 44, text: 'NO CHANGE\nNO PAIN', accent: 0xe0618a },
+  ],
+  'bellweather-canals': [
+    { x: 455, y: 616, width: 210, height: 34, text: 'BELLWEATHER DRAIN', accent: 0x6ee7f2 },
+    { x: 1280, y: 566, width: 190, height: 38, text: 'FLOODGATE', accent: 0xf0a64d },
+    { x: 1960, y: 548, width: 240, height: 38, text: 'ALL HANDS DOWN', accent: 0xe0618a },
   ],
   boss: [
     { x: 410, y: 622, width: 170, height: 34, text: 'ANCHOR I', accent: 0xf0a64d },

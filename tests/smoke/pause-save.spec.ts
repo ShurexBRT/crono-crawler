@@ -5,7 +5,8 @@ test('saves current progress from the pause menu', async ({ page }) => {
   const runtimeErrors = collectRuntimeErrors(page);
   await enterPlayableTutorial(page);
 
-  await page.keyboard.press('Escape');
+  await page.locator('canvas').click({ position: { x: 640, y: 360 } });
+  await page.keyboard.press('p');
   await expect(page.locator('[data-pause-save-summary]')).toContainText('The Folded Reactor');
   await expect(page.locator('[data-pause-save-summary]')).toContainText('Present');
 

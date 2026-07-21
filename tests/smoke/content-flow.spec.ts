@@ -18,3 +18,20 @@ test('loads the Rain District Crossing content from continue data', async ({ pag
   await expect(page.locator('[data-hud="timeline"]')).toHaveText('Present');
   expect(runtimeErrors).toEqual([]);
 });
+
+test('loads the Bellweather Canals content from continue data', async ({ page }) => {
+  const runtimeErrors = collectRuntimeErrors(page);
+  await seedContinueSave(page, 'bellweather-canals');
+
+  await page.goto('/');
+  await expect(page.locator('[data-action="continue"]')).toBeEnabled();
+  await expect(page.locator('[data-continue-summary]')).toContainText('Bellweather Canals');
+  await page.locator('[data-action="continue"]').click();
+  await expect(page.locator('[data-action="next"]')).toBeVisible();
+  await dismissDialogue(page);
+
+  await expect(page.locator('.level-chip')).toContainText('Bellweather Canals');
+  await expect(page.locator('[data-hud="objective"]')).toHaveText('Drain the canal in the Past. Cross the exposed future culvert.');
+  await expect(page.locator('[data-hud="timeline"]')).toHaveText('Present');
+  expect(runtimeErrors).toEqual([]);
+});

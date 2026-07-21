@@ -71,6 +71,13 @@ export interface EnemySpec extends Point {
   speed: number;
 }
 
+export interface HazardSpec extends RectSpec {
+  id: string;
+  timelines?: TimelineKey[];
+  message?: string;
+  color?: number;
+}
+
 export interface CheckpointSpec extends Point {
   id: string;
 }
@@ -100,13 +107,14 @@ export interface LevelData {
   nextLevelId?: string;
   startTimeline: TimelineKey;
   startLines: string[];
-  background: 'reactor' | 'streets' | 'greenhouse' | 'station' | 'core';
+  background: 'reactor' | 'streets' | 'greenhouse' | 'station' | 'canals' | 'core';
   platforms: PlatformSpec[];
   timelineBlocks: TimelineBlockSpec[];
   doors: DoorSpec[];
   plates: PressurePlateSpec[];
   switches: SwitchSpec[];
   enemies: EnemySpec[];
+  hazards?: HazardSpec[];
   checkpoints: CheckpointSpec[];
   storyZones: StoryZoneSpec[];
   memoryFragments?: MemoryFragmentSpec[];

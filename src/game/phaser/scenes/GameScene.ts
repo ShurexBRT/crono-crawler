@@ -4,6 +4,7 @@ import { getLevel } from '../../content/levels';
 import { CheckpointBeacon, LeverSwitch, PressurePlate, StaticPlatform, TimelineBlock, TimelineDoor } from '../../entities/LevelObjects';
 import { Enemy } from '../../entities/Enemy';
 import { GhostClone } from '../../entities/GhostClone';
+import { HazardZone } from '../../entities/HazardZone';
 import { MemoryFragment } from '../../entities/MemoryFragment';
 import { Player } from '../../entities/Player';
 import { InputController } from '../../input/InputController';
@@ -51,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private switches: LeverSwitch[] = [];
   private checkpoints: CheckpointBeacon[] = [];
   private enemies: Enemy[] = [];
+  private hazards: HazardZone[] = [];
   private memoryFragments: MemoryFragment[] = [];
   private ghost?: GhostClone;
   private exitZone?: Phaser.GameObjects.Rectangle;
@@ -150,6 +152,7 @@ export class GameScene extends Phaser.Scene {
     this.ghost?.update(delta);
     this.enemies.forEach((enemy) => enemy.update());
     this.updateFlags(interactPressed);
+    this.updateHazards();
     this.updateCheckpoints();
     this.updateStoryZones();
     this.updateMemoryFragments();
@@ -169,6 +172,7 @@ export class GameScene extends Phaser.Scene {
     this.switches = this.level.switches.map((lever) => new LeverSwitch(this, lever));
     this.checkpoints = this.level.checkpoints.map((checkpoint) => new CheckpointBeacon(this, checkpoint, TextureKeys.checkpoint));
     this.enemies = this.level.enemies.map((enemy) => new Enemy(this, enemy));
+    this.hazards = (this.level.hazards ?? []).map((hazard) => new HazardZone(this, hazard));
     this.memoryFragments = (this.level.memoryFragments ?? []).map((fragment) => new MemoryFragment(this, fragment));
 
     this.exitZone = this.add.rectangle(this.level.exit.x, this.level.exit.y, this.level.exit.width, this.level.exit.height, 0x6ee7f2, 0.16);
@@ -192,6 +196,7 @@ export class GameScene extends Phaser.Scene {
     this.switches = [];
     this.checkpoints = [];
     this.enemies = [];
+    this.hazards = [];
     this.memoryFragments = [];
     this.ghost = undefined;
     this.exitZone = undefined;
@@ -225,6 +230,7 @@ export class GameScene extends Phaser.Scene {
       streets: { sky: 0x07080d, horizon: 0x5b351e, far: 0x11131c, mid: 0x171d29, near: 0x08090f, accent: 0xf0a64d },
       greenhouse: { sky: 0x070c0b, horizon: 0x4a3a21, far: 0x101a18, mid: 0x192720, near: 0x090d0c, accent: 0xd5a85a },
       station: { sky: 0x07090f, horizon: 0x493021, far: 0x10141d, mid: 0x18202b, near: 0x080a10, accent: 0xe0a04f },
+      canals: { sky: 0x05090f, horizon: 0x173c49, far: 0x08121a, mid: 0x102231, near: 0x06090e, accent: 0x6ee7f2 },
       core: { sky: 0x09070d, horizon: 0x432038, far: 0x12111c, mid: 0x1c1a2b, near: 0x08070d, accent: 0xd05b78 },
     };
     const palette = palettes[this.level.background];
@@ -410,6 +416,7 @@ export class GameScene extends Phaser.Scene {
 
   private applyTimeline(): void {
     this.timelineBlocks.forEach((block) => block.applyTimeline(this.timelineManager.current));
+    this.hazards.forEach((hazard) => hazard.applyTimeline(this.timelineManager.current));
     this.applyDoors();
 
     if (this.timelineTint) {
@@ -477,6 +484,13 @@ export class GameScene extends Phaser.Scene {
     this.audioManager.playSfx('checkpoint');
     this.uiManager.showToast('Checkpoint stabilized.');
     this.saveManager.saveProgress(this.level.id, this.timelineManager.current, checkpoint.id);
+  }
+
+  private updateHazards(): void {
+    const hazard = this.hazards.find((candidate) => candidate.overlaps(this.player.sprite));
+    if (hazard) {
+      this.respawn(hazard.message);
+    }
   }
 
   private updateStoryZones(): void {
