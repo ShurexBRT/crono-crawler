@@ -341,7 +341,9 @@ export class GameScene extends Phaser.Scene {
     this.applyTimeline();
     this.stabilizePlayerAfterTimelineShift(wasSupported, previousBottom);
     this.audioManager.playTimelineTone(timeline);
-    this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
+    if (!this.saveManager.getSettings().reducedFlashes) {
+      this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
+    }
     this.emitTimelinePulse(timeline);
     this.saveManager.saveProgress(this.level.id, timeline, this.checkpointSystem.activeCheckpoint?.id);
     this.uiManager.updateHud({ timeline });
@@ -584,7 +586,9 @@ export class GameScene extends Phaser.Scene {
 
   private rewindToCheckpoint(): void {
     this.audioManager.playSfx('rewind');
-    this.cameras.main.flash(140, 110, 231, 242);
+    if (!this.saveManager.getSettings().reducedFlashes) {
+      this.cameras.main.flash(140, 110, 231, 242);
+    }
     this.ghost?.destroy();
     this.ghost = undefined;
     if (this.ghostRecorder.isRecording) {
@@ -607,8 +611,13 @@ export class GameScene extends Phaser.Scene {
     this.isRespawning = true;
     this.audioManager.playSfx('death');
     this.uiManager.showToast(message);
-    this.cameras.main.shake(180, 0.006);
-    this.cameras.main.flash(150, 224, 97, 97);
+    const settings = this.saveManager.getSettings();
+    if (!settings.reducedMotion) {
+      this.cameras.main.shake(180, 0.006);
+    }
+    if (!settings.reducedFlashes) {
+      this.cameras.main.flash(150, 224, 97, 97);
+    }
     this.time.delayedCall(220, () => {
       this.rewindToCheckpoint();
       this.isRespawning = false;
@@ -680,6 +689,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private emitTimelinePulse(timeline: TimelineKey): void {
+    if (this.saveManager.getSettings().reducedMotion) {
+      return;
+    }
     const color: Record<TimelineKey, number> = {
       past: 0xf0a64d,
       present: 0x6ee7f2,
@@ -703,6 +715,9 @@ export class GameScene extends Phaser.Scene {
     this.recordingAura = this.add.circle(this.player.sprite.x, this.player.sprite.y, 30, 0x6ee7f2, 0.08);
     this.recordingAura.setStrokeStyle(2, 0x6ee7f2, 0.72);
     this.recordingAura.setDepth(19);
+    if (this.saveManager.getSettings().reducedMotion) {
+      return;
+    }
     this.tweens.add({
       targets: this.recordingAura,
       scaleX: 1.25,

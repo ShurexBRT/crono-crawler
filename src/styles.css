@@ -17,7 +17,9 @@
   --ui-level-chip: url("../assets/ui/level-chip.png");
   --ui-modal-panel: url("../assets/ui/modal-panel.png");
   --ui-toast-bubble: url("../assets/ui/toast-bubble.png");
+  --text-scale: 1;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: calc(16px * var(--text-scale));
 }
 
 * {
@@ -769,6 +771,15 @@ input[type="checkbox"] {
   width: 1.25rem;
   height: 1.25rem;
   accent-color: var(--cyan);
+}
+
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
 }
 
 .dialogue-panel {

@@ -4,6 +4,9 @@ export interface SettingsState {
   musicVolume: number;
   sfxVolume: number;
   fullscreen: boolean;
+  textScale: number;
+  reducedMotion: boolean;
+  reducedFlashes: boolean;
 }
 
 export interface SaveState {

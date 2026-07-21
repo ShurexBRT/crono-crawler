@@ -48,6 +48,7 @@ export class UIManager {
     this.hudLayer = this.mustFind('[data-layer="hud"]');
     this.overlayLayer = this.mustFind('[data-layer="overlay"]');
     this.toastLayer = this.mustFind('[data-layer="toast"]');
+    this.applyAccessibilitySettings(this.saveManager.getSettings());
   }
 
   showMainMenu(actions: MainMenuActions): void {
@@ -106,6 +107,18 @@ export class UIManager {
           <span>Fullscreen</span>
           <input data-setting="fullscreen" type="checkbox" ${settings.fullscreen ? 'checked' : ''} />
         </label>
+        <label class="range-row">
+          <span>Text Size</span>
+          <input data-setting="text-scale" type="range" min="1" max="1.25" step="0.05" value="${settings.textScale}" />
+        </label>
+        <label class="toggle-row">
+          <span>Reduced Motion</span>
+          <input data-setting="reduced-motion" type="checkbox" ${settings.reducedMotion ? 'checked' : ''} />
+        </label>
+        <label class="toggle-row">
+          <span>Reduced Flashes</span>
+          <input data-setting="reduced-flashes" type="checkbox" ${settings.reducedFlashes ? 'checked' : ''} />
+        </label>
         <footer class="modal-actions">
           <button data-action="back">Back</button>
         </footer>
@@ -124,6 +137,20 @@ export class UIManager {
     this.bindClick('[data-setting="fullscreen"]', async (event) => {
       const target = event.currentTarget as HTMLInputElement;
       await this.setFullscreen(target.checked);
+      this.audioManager.playSfx('click');
+    });
+    this.bindInput('[data-setting="text-scale"]', (event) => {
+      const value = Number((event.currentTarget as HTMLInputElement).value);
+      this.updateSettings({ textScale: value });
+    });
+    this.bindClick('[data-setting="reduced-motion"]', (event) => {
+      const target = event.currentTarget as HTMLInputElement;
+      this.updateSettings({ reducedMotion: target.checked });
+      this.audioManager.playSfx('click');
+    });
+    this.bindClick('[data-setting="reduced-flashes"]', (event) => {
+      const target = event.currentTarget as HTMLInputElement;
+      this.updateSettings({ reducedFlashes: target.checked });
       this.audioManager.playSfx('click');
     });
     this.bindClick('[data-action="back"]', () => {
@@ -436,6 +463,7 @@ export class UIManager {
   private updateSettings(settings: Partial<SettingsState>): void {
     const updated = this.saveManager.updateSettings(settings);
     this.audioManager.setSettings(updated);
+    this.applyAccessibilitySettings(updated);
   }
 
   private async setFullscreen(enabled: boolean): Promise<void> {
@@ -451,6 +479,12 @@ export class UIManager {
       this.showToast('Fullscreen is not available in this browser.');
       this.updateSettings({ fullscreen: false });
     }
+  }
+
+  private applyAccessibilitySettings(settings: SettingsState): void {
+    document.documentElement.style.setProperty('--text-scale', String(settings.textScale));
+    document.documentElement.dataset.reducedMotion = String(settings.reducedMotion);
+    document.documentElement.dataset.reducedFlashes = String(settings.reducedFlashes);
   }
 
   private timelineName(timeline: TimelineKey): string {

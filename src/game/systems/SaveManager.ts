@@ -6,6 +6,9 @@ const defaultSettings: SettingsState = {
   musicVolume: 0.45,
   sfxVolume: 0.7,
   fullscreen: false,
+  textScale: 1,
+  reducedMotion: false,
+  reducedFlashes: false,
 };
 
 const defaultSave: SaveState = {
@@ -129,6 +132,9 @@ function normalizeSettings(settings?: Partial<SettingsState>): SettingsState {
     musicVolume: normalizeVolume(settings?.musicVolume, defaultSettings.musicVolume),
     sfxVolume: normalizeVolume(settings?.sfxVolume, defaultSettings.sfxVolume),
     fullscreen: Boolean(settings?.fullscreen),
+    textScale: normalizeTextScale(settings?.textScale),
+    reducedMotion: Boolean(settings?.reducedMotion),
+    reducedFlashes: Boolean(settings?.reducedFlashes),
   };
 }
 
@@ -137,4 +143,11 @@ function normalizeVolume(value: unknown, fallback: number): number {
     return fallback;
   }
   return Math.min(1, Math.max(0, value));
+}
+
+function normalizeTextScale(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return defaultSettings.textScale;
+  }
+  return Math.min(1.25, Math.max(1, value));
 }
