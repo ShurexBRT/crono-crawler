@@ -10,6 +10,7 @@ import { AudioManager } from '../../systems/AudioManager';
 import { CheckpointSystem } from '../../systems/CheckpointSystem';
 import { DialogueManager } from '../../systems/DialogueManager';
 import { GhostRecorder } from '../../systems/GhostRecorder';
+import { LevelFlowSystem } from '../../systems/LevelFlowSystem';
 import { SaveManager } from '../../systems/SaveManager';
 import { TimelineManager } from '../../systems/TimelineManager';
 import type { LevelData, RectSpec, StoryZoneSpec, TimelineKey } from '../../types';
@@ -37,6 +38,7 @@ export class GameScene extends Phaser.Scene {
   private inputController!: InputController;
   private timelineManager!: TimelineManager;
   private checkpointSystem!: CheckpointSystem;
+  private levelFlowSystem!: LevelFlowSystem;
   private dialogueManager!: DialogueManager;
   private ghostRecorder!: GhostRecorder;
   private level!: LevelData;
@@ -57,8 +59,6 @@ export class GameScene extends Phaser.Scene {
   private storyTriggered = new Set<string>();
   private isPaused = false;
   private isRespawning = false;
-  private levelComplete = false;
-  private exitBlockedToastAt = 0;
 
   constructor() {
     super('GameScene');
@@ -72,6 +72,7 @@ export class GameScene extends Phaser.Scene {
     this.level = getLevel(data.levelId ?? 'tutorial');
     this.timelineManager = new TimelineManager(data.timeline ?? this.level.startTimeline);
     this.checkpointSystem = new CheckpointSystem(this.level, this.timelineManager.current, data.checkpointId);
+    this.levelFlowSystem = new LevelFlowSystem(this.level);
     this.dialogueManager = new DialogueManager();
     this.ghostRecorder = new GhostRecorder();
     this.inputController = new InputController(this);
@@ -105,7 +106,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (!this.player || this.levelComplete) {
+    if (!this.player || this.levelFlowSystem.isComplete) {
       return;
     }
 
@@ -196,8 +197,6 @@ export class GameScene extends Phaser.Scene {
     this.storyTriggered.clear();
     this.isPaused = false;
     this.isRespawning = false;
-    this.levelComplete = false;
-    this.exitBlockedToastAt = 0;
   }
 
   private configurePhysics(): void {
@@ -359,7 +358,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.time.delayedCall(0, () => {
-      if (!this.player || this.levelComplete) {
+      if (!this.player || this.levelFlowSystem.isComplete) {
         return;
       }
       this.physics.world.collide(this.player.sprite, this.solidGroup);
@@ -493,22 +492,24 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const missing = (this.level.requiredExitFlags ?? []).filter((flag) => !this.combinedFlags().has(flag));
-    if (missing.length > 0) {
-      if (performance.now() - this.exitBlockedToastAt > 2200) {
-        this.exitBlockedToastAt = performance.now();
+    const attempt = this.levelFlowSystem.attemptExit(this.combinedFlags(), performance.now());
+    if (attempt.status === 'blocked') {
+      if (attempt.showToast) {
         this.uiManager.showToast('The Keeper still has anchors in this hour.');
       }
       return;
     }
 
-    this.levelComplete = true;
-    this.saveManager.saveProgress(this.level.nextLevelId ?? this.level.id, 'present');
+    if (attempt.status !== 'complete') {
+      return;
+    }
+
+    this.saveManager.saveProgress(attempt.nextLevelId ?? this.level.id, 'present');
     this.audioManager.playSfx('checkpoint');
     this.cameras.main.fadeOut(650, 5, 8, 13);
     this.time.delayedCall(700, () => {
-      if (this.level.nextLevelId) {
-        this.scene.start('GameScene', { levelId: this.level.nextLevelId });
+      if (attempt.nextLevelId) {
+        this.scene.start('GameScene', { levelId: attempt.nextLevelId });
       } else {
         this.scene.start('EndingScene');
       }
