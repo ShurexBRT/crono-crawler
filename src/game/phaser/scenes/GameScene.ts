@@ -4,6 +4,7 @@ import { getLevel } from '../../content/levels';
 import { CheckpointBeacon, LeverSwitch, PressurePlate, StaticPlatform, TimelineBlock, TimelineDoor } from '../../entities/LevelObjects';
 import { Enemy } from '../../entities/Enemy';
 import { GhostClone } from '../../entities/GhostClone';
+import { MemoryFragment } from '../../entities/MemoryFragment';
 import { Player } from '../../entities/Player';
 import { InputController } from '../../input/InputController';
 import { AudioManager } from '../../systems/AudioManager';
@@ -50,6 +51,7 @@ export class GameScene extends Phaser.Scene {
   private switches: LeverSwitch[] = [];
   private checkpoints: CheckpointBeacon[] = [];
   private enemies: Enemy[] = [];
+  private memoryFragments: MemoryFragment[] = [];
   private ghost?: GhostClone;
   private exitZone?: Phaser.GameObjects.Rectangle;
   private timelineTint?: Phaser.GameObjects.Rectangle;
@@ -150,6 +152,7 @@ export class GameScene extends Phaser.Scene {
     this.updateFlags(interactPressed);
     this.updateCheckpoints();
     this.updateStoryZones();
+    this.updateMemoryFragments();
     this.updateExit();
     this.updateHud();
 
@@ -166,6 +169,7 @@ export class GameScene extends Phaser.Scene {
     this.switches = this.level.switches.map((lever) => new LeverSwitch(this, lever));
     this.checkpoints = this.level.checkpoints.map((checkpoint) => new CheckpointBeacon(this, checkpoint, TextureKeys.checkpoint));
     this.enemies = this.level.enemies.map((enemy) => new Enemy(this, enemy));
+    this.memoryFragments = (this.level.memoryFragments ?? []).map((fragment) => new MemoryFragment(this, fragment));
 
     this.exitZone = this.add.rectangle(this.level.exit.x, this.level.exit.y, this.level.exit.width, this.level.exit.height, 0x6ee7f2, 0.16);
     this.exitZone.setStrokeStyle(1, 0x6ee7f2, 0.6);
@@ -188,6 +192,7 @@ export class GameScene extends Phaser.Scene {
     this.switches = [];
     this.checkpoints = [];
     this.enemies = [];
+    this.memoryFragments = [];
     this.ghost = undefined;
     this.exitZone = undefined;
     this.timelineTint = undefined;
@@ -484,6 +489,18 @@ export class GameScene extends Phaser.Scene {
         this.showDialogue(zone.id, zone.lines, zone.once ?? true);
         break;
       }
+    }
+  }
+
+  private updateMemoryFragments(): void {
+    for (const fragment of this.memoryFragments) {
+      const memory = fragment.update(this.player.sprite);
+      if (!memory) {
+        continue;
+      }
+      this.audioManager.playSfx('checkpoint');
+      this.showDialogue(`memory-${memory.id}`, [memory.title, ...memory.lines], true);
+      break;
     }
   }
 

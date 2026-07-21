@@ -80,6 +80,15 @@ export const levels: LevelData[] = [
         lines: ['The gate survives the present. Not the future.'],
       },
     ],
+    memoryFragments: [
+      {
+        id: 'reactor-daughter-sketch',
+        title: 'Memory Fragment: Folded Paper',
+        x: 555,
+        y: 548,
+        lines: ['A child drew the city with three suns. Elias remembers laughing before the Core learned how to stop.'],
+      },
+    ],
     exit: { x: 1760, y: 600, width: 70, height: 130 },
   },
   {
@@ -153,6 +162,15 @@ export const levels: LevelData[] = [
         height: 140,
         once: true,
         lines: ['A black shape blinks between raindrops. The roofs are not empty.'],
+      },
+    ],
+    memoryFragments: [
+      {
+        id: 'rain-payphone',
+        title: 'Memory Fragment: Last Call',
+        x: 705,
+        y: 520,
+        lines: ['The receiver is warm in the Past. In every other hour, the line is only rain.'],
       },
     ],
     exit: { x: 1950, y: 600, width: 70, height: 130 },
@@ -241,6 +259,15 @@ export const levels: LevelData[] = [
         height: 140,
         once: true,
         lines: ['The future is not safe. It is only honest about what has already broken.'],
+      },
+    ],
+    memoryFragments: [
+      {
+        id: 'rain-lamp-letter',
+        title: 'Memory Fragment: Letter Under Glass',
+        x: 650,
+        y: 520,
+        lines: ['The ink has run, but one sentence remains: do not make grief into a machine.'],
       },
     ],
     exit: { x: 2240, y: 600, width: 70, height: 130 },

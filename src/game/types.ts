@@ -80,6 +80,14 @@ export interface StoryZoneSpec extends RectSpec {
   once?: boolean;
 }
 
+export interface MemoryFragmentSpec extends Point {
+  id: string;
+  title: string;
+  lines: string[];
+  width?: number;
+  height?: number;
+}
+
 export interface LevelData {
   id: string;
   title: string;
@@ -100,6 +108,7 @@ export interface LevelData {
   enemies: EnemySpec[];
   checkpoints: CheckpointSpec[];
   storyZones: StoryZoneSpec[];
+  memoryFragments?: MemoryFragmentSpec[];
   exit: RectSpec;
   requiredExitFlags?: string[];
 }
