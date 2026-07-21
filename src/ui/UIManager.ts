@@ -386,6 +386,7 @@ export class UIManager {
     this.clearIntroPlayback();
     this.overlayLayer.innerHTML = '';
     this.overlayLayer.classList.remove('is-active');
+    this.releaseOverlayFocus();
   }
 
   clearHud(): void {
@@ -413,6 +414,23 @@ export class UIManager {
     }
     window.removeEventListener('keydown', this.introKeyHandler);
     this.introKeyHandler = undefined;
+  }
+
+  private releaseOverlayFocus(): void {
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && this.root.contains(activeElement)) {
+      activeElement.blur();
+    }
+    const gameCanvas = document.querySelector<HTMLCanvasElement>('#game-root canvas');
+    if (gameCanvas) {
+      gameCanvas.tabIndex = -1;
+      gameCanvas.focus({ preventScroll: true });
+      return;
+    }
+    const gameRoot = document.getElementById('game-root');
+    if (gameRoot instanceof HTMLElement) {
+      gameRoot.focus({ preventScroll: true });
+    }
   }
 
   private updateSettings(settings: Partial<SettingsState>): void {
