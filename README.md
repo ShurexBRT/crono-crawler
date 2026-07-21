@@ -80,6 +80,8 @@ Checkpoint rewind returns Elias to the last stabilized beacon, clears the curren
 
 See [LEARNINGS.md](LEARNINGS.md) for the game design, platformer, puzzle, visual, UI, technical, and production skills learned so far.
 
+See [docs/full-game-blueprint.md](docs/full-game-blueprint.md) for the target structure, chapter plan, mechanic progression, art direction, accessibility priorities, and production roadmap for turning the vertical slice into a complete game.
+
 ## Folder Structure
 
 ```text
