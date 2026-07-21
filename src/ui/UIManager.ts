@@ -1,5 +1,5 @@
 import type { AudioManager } from '../game/systems/AudioManager';
-import type { SaveManager } from '../game/systems/SaveManager';
+import type { ContinueSummary, SaveManager } from '../game/systems/SaveManager';
 import type { SettingsState, TimelineKey } from '../game/types';
 import { introBeats, type IntroBeat } from '../game/content/intro';
 
@@ -17,6 +17,13 @@ interface HudState {
   checkpoint: string;
   ghostLabel: string;
   ghostProgress: number;
+}
+
+interface PauseActions {
+  onResume: () => void;
+  onOptions: () => void;
+  onSave: () => ContinueSummary | undefined;
+  onMenu: () => void;
 }
 
 export class UIManager {
@@ -374,7 +381,7 @@ export class UIManager {
     render();
   }
 
-  showPause(onResume: () => void, onOptions: () => void, onMenu: () => void): void {
+  showPause(saveSummary: ContinueSummary | undefined, actions: PauseActions): void {
     this.setOverlay(`
       <div class="pause-overlay">
         <div class="modal-panel pause-panel">
@@ -382,6 +389,9 @@ export class UIManager {
             <span class="title-kicker">Suspended Second</span>
             <h2>Paused</h2>
           </header>
+          <div class="pause-save-summary" data-pause-save-summary>
+            ${this.renderSaveSummary(saveSummary)}
+          </div>
           <div class="controls-grid">
             <span>Move</span><strong>A/D or Arrows</strong>
             <span>Jump</span><strong>Space/W</strong>
@@ -393,6 +403,7 @@ export class UIManager {
           </div>
           <footer class="modal-actions">
             <button data-action="resume">Resume</button>
+            <button data-action="save">Save Now</button>
             <button data-action="options">Options</button>
             <button data-action="menu">Main Menu</button>
           </footer>
@@ -403,15 +414,20 @@ export class UIManager {
     this.bindClick('[data-action="resume"]', () => {
       this.audioManager.playSfx('click');
       this.clearOverlay();
-      onResume();
+      actions.onResume();
+    });
+    this.bindClick('[data-action="save"]', () => {
+      this.audioManager.playSfx('checkpoint');
+      this.updatePauseSaveSummary(actions.onSave());
+      this.showToast('Progress saved.');
     });
     this.bindClick('[data-action="options"]', () => {
       this.audioManager.playSfx('click');
-      onOptions();
+      actions.onOptions();
     });
     this.bindClick('[data-action="menu"]', () => {
       this.audioManager.playSfx('click');
-      onMenu();
+      actions.onMenu();
     });
   }
 
@@ -573,6 +589,25 @@ export class UIManager {
       `)
       .join('');
     return `<div class="intro-dialogue">${rows}</div>`;
+  }
+
+  private renderSaveSummary(summary: ContinueSummary | undefined): string {
+    if (!summary) {
+      return '<span>No active save yet.</span>';
+    }
+
+    return `
+      <span>Saved Route</span>
+      <strong>${this.escapeHtml(summary.levelTitle)}</strong>
+      <small>${this.escapeHtml(summary.checkpointLabel)} / ${this.escapeHtml(summary.timelineLabel)} / ${this.escapeHtml(summary.savedAtLabel)}</small>
+    `;
+  }
+
+  private updatePauseSaveSummary(summary: ContinueSummary | undefined): void {
+    const element = this.overlayLayer.querySelector<HTMLElement>('[data-pause-save-summary]');
+    if (element) {
+      element.innerHTML = this.renderSaveSummary(summary);
+    }
   }
 
   private escapeHtml(value: string): string {

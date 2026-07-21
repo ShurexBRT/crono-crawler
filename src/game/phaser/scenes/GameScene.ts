@@ -654,14 +654,24 @@ export class GameScene extends Phaser.Scene {
 
   private openPauseMenu(): void {
     this.uiManager.showPause(
-      () => this.resumeFromPause(),
-      () => this.uiManager.showOptions(() => this.openPauseMenu()),
-      () => {
-        this.physics.resume();
-        this.uiManager.clearOverlay();
-        this.scene.start('MainMenuScene');
+      this.saveManager.getContinueSummary(),
+      {
+        onResume: () => this.resumeFromPause(),
+        onOptions: () => this.uiManager.showOptions(() => this.openPauseMenu()),
+        onSave: () => this.saveCurrentProgress(),
+        onMenu: () => {
+          this.saveCurrentProgress();
+          this.physics.resume();
+          this.uiManager.clearOverlay();
+          this.scene.start('MainMenuScene');
+        },
       },
     );
+  }
+
+  private saveCurrentProgress() {
+    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id);
+    return this.saveManager.getContinueSummary();
   }
 
   private resumeFromPause(): void {
