@@ -41,11 +41,29 @@ export async function enterPlayableTutorial(page: Page): Promise<void> {
   await focusPlayfield(page);
 }
 
+export async function seedContinueSave(page: Page, levelId: string): Promise<void> {
+  await page.addInitScript((targetLevelId) => {
+    window.localStorage.setItem(
+      'chrono-crawler.save.v1',
+      JSON.stringify({
+        hasContinue: true,
+        currentLevelId: targetLevelId,
+        timeline: 'present',
+        settings: {
+          musicVolume: 0,
+          sfxVolume: 0,
+          fullscreen: false,
+        },
+      }),
+    );
+  }, levelId);
+}
+
 export async function focusPlayfield(page: Page): Promise<void> {
   await page.locator('canvas').click({ position: { x: 640, y: 360 } });
 }
 
-async function dismissDialogue(page: Page): Promise<void> {
+export async function dismissDialogue(page: Page): Promise<void> {
   for (let index = 0; index < 8; index += 1) {
     const nextButton = page.locator('[data-action="next"]');
     if ((await nextButton.count()) === 0) {
