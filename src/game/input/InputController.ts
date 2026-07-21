@@ -1,7 +1,20 @@
 import Phaser from 'phaser';
 
+type InputAction =
+  | 'jump'
+  | 'interact'
+  | 'record'
+  | 'rewind'
+  | 'timelineCycle'
+  | 'timelinePast'
+  | 'timelinePresent'
+  | 'timelineFuture'
+  | 'pause';
+
 export class InputController {
   private keys: Record<string, Phaser.Input.Keyboard.Key>;
+  private fallbackJustPressed = new Set<InputAction>();
+  private readonly keyDownHandler: (event: KeyboardEvent) => void;
 
   constructor(scene: Phaser.Scene) {
     const keyboard = scene.input.keyboard;
@@ -28,6 +41,21 @@ export class InputController {
       pause: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC),
       pauseAlt: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P),
     };
+
+    this.keyDownHandler = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+      const action = fallbackActionForKey(event);
+      if (action) {
+        this.fallbackJustPressed.add(action);
+      }
+    };
+    window.addEventListener('keydown', this.keyDownHandler);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('keydown', this.keyDownHandler);
+      this.fallbackJustPressed.clear();
+    });
   }
 
   get horizontal(): number {
@@ -48,17 +76,36 @@ export class InputController {
     return this.keys.jump.isDown || this.keys.jumpAlt.isDown || this.keys.jumpUp.isDown;
   }
 
-  justPressed(action: 'jump' | 'interact' | 'record' | 'rewind' | 'timelineCycle' | 'timelinePast' | 'timelinePresent' | 'timelineFuture' | 'pause'): boolean {
+  justPressed(action: InputAction): boolean {
+    const fallbackPressed = this.fallbackJustPressed.delete(action);
     if (action === 'jump') {
-      return (
+      const phaserPressed =
         Phaser.Input.Keyboard.JustDown(this.keys.jump) ||
         Phaser.Input.Keyboard.JustDown(this.keys.jumpAlt) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.jumpUp)
-      );
+        Phaser.Input.Keyboard.JustDown(this.keys.jumpUp);
+      return fallbackPressed || phaserPressed;
     }
     if (action === 'pause') {
-      return Phaser.Input.Keyboard.JustDown(this.keys.pause) || Phaser.Input.Keyboard.JustDown(this.keys.pauseAlt);
+      const phaserPressed = Phaser.Input.Keyboard.JustDown(this.keys.pause) || Phaser.Input.Keyboard.JustDown(this.keys.pauseAlt);
+      return fallbackPressed || phaserPressed;
     }
-    return Phaser.Input.Keyboard.JustDown(this.keys[action]);
+    const phaserPressed = Phaser.Input.Keyboard.JustDown(this.keys[action]);
+    return fallbackPressed || phaserPressed;
   }
+}
+
+function fallbackActionForKey(event: KeyboardEvent): InputAction | undefined {
+  if (event.code === 'KeyQ') {
+    return 'timelineCycle';
+  }
+  if (event.code === 'Digit1' || event.code === 'Numpad1' || event.key === '1') {
+    return 'timelinePast';
+  }
+  if (event.code === 'Digit2' || event.code === 'Numpad2' || event.key === '2') {
+    return 'timelinePresent';
+  }
+  if (event.code === 'Digit3' || event.code === 'Numpad3' || event.key === '3') {
+    return 'timelineFuture';
+  }
+  return undefined;
 }
