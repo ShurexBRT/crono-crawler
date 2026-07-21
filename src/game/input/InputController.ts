@@ -14,6 +14,8 @@ type InputAction =
 export class InputController {
   private keys: Record<string, Phaser.Input.Keyboard.Key>;
   private fallbackJustPressed = new Set<InputAction>();
+  private gamepadPressed = new Set<InputAction>();
+  private previousGamepadButtons = new Set<number>();
   private readonly keyDownHandler: (event: KeyboardEvent) => void;
 
   constructor(scene: Phaser.Scene) {
@@ -59,6 +61,10 @@ export class InputController {
   }
 
   get horizontal(): number {
+    const gamepadHorizontal = this.gamepadHorizontal;
+    if (gamepadHorizontal !== 0) {
+      return gamepadHorizontal;
+    }
     if (this.keys.left.isDown || this.keys.leftAlt.isDown) {
       return -1;
     }
@@ -69,28 +75,96 @@ export class InputController {
   }
 
   get running(): boolean {
-    return this.keys.run.isDown;
+    return this.keys.run.isDown || this.gamepadButtonDown(7);
   }
 
   get jumpHeld(): boolean {
-    return this.keys.jump.isDown || this.keys.jumpAlt.isDown || this.keys.jumpUp.isDown;
+    return this.keys.jump.isDown || this.keys.jumpAlt.isDown || this.keys.jumpUp.isDown || this.gamepadButtonDown(0);
   }
 
   justPressed(action: InputAction): boolean {
+    this.pollGamepad();
     const fallbackPressed = this.fallbackJustPressed.delete(action);
+    const gamepadPressed = this.gamepadPressed.delete(action);
     if (action === 'jump') {
       const phaserPressed =
         Phaser.Input.Keyboard.JustDown(this.keys.jump) ||
         Phaser.Input.Keyboard.JustDown(this.keys.jumpAlt) ||
         Phaser.Input.Keyboard.JustDown(this.keys.jumpUp);
-      return fallbackPressed || phaserPressed;
+      return fallbackPressed || gamepadPressed || phaserPressed;
     }
     if (action === 'pause') {
       const phaserPressed = Phaser.Input.Keyboard.JustDown(this.keys.pause) || Phaser.Input.Keyboard.JustDown(this.keys.pauseAlt);
-      return fallbackPressed || phaserPressed;
+      return fallbackPressed || gamepadPressed || phaserPressed;
     }
     const phaserPressed = Phaser.Input.Keyboard.JustDown(this.keys[action]);
-    return fallbackPressed || phaserPressed;
+    return fallbackPressed || gamepadPressed || phaserPressed;
+  }
+
+  private get gamepadHorizontal(): number {
+    const gamepad = this.connectedGamepads[0];
+    if (!gamepad) {
+      return 0;
+    }
+    const axis = gamepad.axes[0] ?? 0;
+    if (axis < -0.35 || gamepad.buttons[14]?.pressed) {
+      return -1;
+    }
+    if (axis > 0.35 || gamepad.buttons[15]?.pressed) {
+      return 1;
+    }
+    return 0;
+  }
+
+  private gamepadButtonDown(index: number): boolean {
+    return this.connectedGamepads.some((pad) => pad.buttons[index]?.pressed);
+  }
+
+  private pollGamepad(): void {
+    const buttons = new Set<number>();
+    this.connectedGamepads.forEach((pad) => {
+      pad.buttons.forEach((button, index) => {
+        if (button.pressed) {
+          buttons.add(index);
+        }
+      });
+    });
+
+    buttons.forEach((index) => {
+      if (this.previousGamepadButtons.has(index)) {
+        return;
+      }
+      const action = gamepadActionForButton(index);
+      if (action) {
+        this.gamepadPressed.add(action);
+      }
+    });
+    this.previousGamepadButtons = buttons;
+  }
+
+  private get connectedGamepads(): Gamepad[] {
+    return Array.from(navigator.getGamepads?.() ?? []).filter((pad): pad is Gamepad => Boolean(pad?.connected));
+  }
+}
+
+function gamepadActionForButton(index: number): InputAction | undefined {
+  switch (index) {
+    case 0:
+      return 'jump';
+    case 1:
+      return 'interact';
+    case 2:
+      return 'record';
+    case 3:
+      return 'rewind';
+    case 4:
+      return 'timelinePast';
+    case 5:
+      return 'timelineFuture';
+    case 9:
+      return 'pause';
+    default:
+      return undefined;
   }
 }
 

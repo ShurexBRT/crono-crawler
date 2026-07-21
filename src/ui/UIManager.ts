@@ -119,6 +119,9 @@ export class UIManager {
           <span>Reduced Flashes</span>
           <input data-setting="reduced-flashes" type="checkbox" ${settings.reducedFlashes ? 'checked' : ''} />
         </label>
+        <div class="settings-note">
+          Gamepad: Left stick/D-pad move, South jump, East interact, West echo, North rewind, shoulders shift time, Start pause.
+        </div>
         <footer class="modal-actions">
           <button data-action="back">Back</button>
         </footer>
@@ -375,6 +378,7 @@ export class UIManager {
             <span>Echo Record</span><strong>G</strong>
             <span>Interact</span><strong>E</strong>
             <span>Rewind</span><strong>R</strong>
+            <span>Gamepad</span><strong>Stick, face buttons, shoulders</strong>
           </div>
           <footer class="modal-actions">
             <button data-action="resume">Resume</button>
