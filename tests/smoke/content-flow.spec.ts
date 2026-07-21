@@ -7,6 +7,8 @@ test('loads the Rain District Crossing content from continue data', async ({ pag
 
   await page.goto('/');
   await expect(page.locator('[data-action="continue"]')).toBeEnabled();
+  await expect(page.locator('[data-continue-summary]')).toContainText('Rain District Crossing');
+  await expect(page.locator('[data-continue-summary]')).toContainText('Present');
   await page.locator('[data-action="continue"]').click();
   await expect(page.locator('[data-action="next"]')).toBeVisible();
   await dismissDialogue(page);

@@ -52,6 +52,16 @@ export class UIManager {
   }
 
   showMainMenu(actions: MainMenuActions): void {
+    const continueSummary = this.saveManager.getContinueSummary();
+    const continueDetails = continueSummary
+      ? `
+        <div class="continue-summary" data-continue-summary>
+          <strong>${this.escapeHtml(continueSummary.levelTitle)}</strong>
+          <span>${this.escapeHtml(continueSummary.checkpointLabel)} / ${this.escapeHtml(continueSummary.timelineLabel)} / ${this.escapeHtml(continueSummary.savedAtLabel)}</span>
+        </div>
+      `
+      : '<div class="continue-summary is-empty" data-continue-summary>No stable checkpoint yet.</div>';
+
     this.clearHud();
     this.setOverlay(`
       <div class="menu-shell title-screen" style="background-image: linear-gradient(90deg, rgba(0,0,0,0.78), rgba(0,0,0,0.22)), url('assets/chrono_crawler_title_screen_concept.png');">
@@ -63,6 +73,7 @@ export class UIManager {
         <nav class="menu-stack" aria-label="Main menu">
           <button data-action="new">New Game</button>
           <button data-action="continue" ${this.saveManager.hasContinue() ? '' : 'disabled'}>Continue</button>
+          ${continueDetails}
           <button data-action="options">Options</button>
           <button data-action="credits">Credits</button>
         </nav>

@@ -14,6 +14,7 @@ export interface SaveState {
   currentLevelId: string;
   checkpointId?: string;
   timeline: TimelineKey;
+  updatedAt?: number;
   settings: SettingsState;
 }
 

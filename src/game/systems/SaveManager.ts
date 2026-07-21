@@ -1,4 +1,5 @@
 import type { SaveState, SettingsState, TimelineKey } from '../types';
+import { getLevel } from '../content/levels';
 
 const STORAGE_KEY = 'chrono-crawler.save.v1';
 
@@ -20,6 +21,13 @@ const defaultSave: SaveState = {
 
 const timelineKeys: TimelineKey[] = ['past', 'present', 'future'];
 
+export interface ContinueSummary {
+  levelTitle: string;
+  checkpointLabel: string;
+  timelineLabel: string;
+  savedAtLabel: string;
+}
+
 export class SaveManager {
   private state: SaveState;
 
@@ -36,6 +44,20 @@ export class SaveManager {
 
   hasContinue(): boolean {
     return this.state.hasContinue;
+  }
+
+  getContinueSummary(): ContinueSummary | undefined {
+    if (!this.state.hasContinue) {
+      return undefined;
+    }
+
+    const level = this.safeLevel(this.state.currentLevelId);
+    return {
+      levelTitle: level.title,
+      checkpointLabel: this.state.checkpointId ? `Checkpoint: ${this.state.checkpointId}` : 'Start of level',
+      timelineLabel: timelineLabel(this.state.timeline),
+      savedAtLabel: savedAtLabel(this.state.updatedAt),
+    };
   }
 
   getSettings(): SettingsState {
@@ -58,6 +80,7 @@ export class SaveManager {
     this.state = {
       ...defaultSave,
       hasContinue: true,
+      updatedAt: Date.now(),
       settings: this.state.settings,
     };
     this.persist();
@@ -71,6 +94,7 @@ export class SaveManager {
       currentLevelId,
       timeline,
       checkpointId,
+      updatedAt: Date.now(),
     };
     this.persist();
   }
@@ -100,6 +124,7 @@ export class SaveManager {
         currentLevelId: parsed.currentLevelId ?? defaultSave.currentLevelId,
         checkpointId: parsed.checkpointId,
         timeline: isTimelineKey(parsed.timeline) ? parsed.timeline : defaultSave.timeline,
+        updatedAt: typeof parsed.updatedAt === 'number' && Number.isFinite(parsed.updatedAt) ? parsed.updatedAt : undefined,
         settings: normalizeSettings(parsed.settings),
       };
     } catch {
@@ -120,6 +145,14 @@ export class SaveManager {
 
   private canUseStorage(): boolean {
     return typeof window !== 'undefined' && 'localStorage' in window;
+  }
+
+  private safeLevel(levelId: string) {
+    try {
+      return getLevel(levelId);
+    } catch {
+      return getLevel(defaultSave.currentLevelId);
+    }
   }
 }
 
@@ -150,4 +183,28 @@ function normalizeTextScale(value: unknown): number {
     return defaultSettings.textScale;
   }
   return Math.min(1.25, Math.max(1, value));
+}
+
+function timelineLabel(timeline: TimelineKey): string {
+  if (timeline === 'past') {
+    return 'Past';
+  }
+  if (timeline === 'future') {
+    return 'Ruined Future';
+  }
+  return 'Present';
+}
+
+function savedAtLabel(updatedAt?: number): string {
+  if (!updatedAt) {
+    return 'Legacy save';
+  }
+
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return formatter.format(new Date(updatedAt));
 }

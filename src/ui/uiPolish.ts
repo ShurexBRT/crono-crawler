@@ -7,8 +7,15 @@ type MainMenuActions = {
   onCredits: () => void;
 };
 
+type ContinueSummary = {
+  levelTitle: string;
+  checkpointLabel: string;
+  timelineLabel: string;
+  savedAtLabel: string;
+};
+
 type PatchedUIManager = {
-  saveManager: { hasContinue: () => boolean };
+  saveManager: { hasContinue: () => boolean; getContinueSummary: () => ContinueSummary | undefined };
   audioManager: { playSfx: (name: string) => void };
   clearHud: () => void;
   setOverlay: (html: string) => void;
@@ -19,6 +26,16 @@ type PatchedUIManager = {
   this: PatchedUIManager,
   actions: MainMenuActions,
 ): void {
+  const continueSummary = this.saveManager.getContinueSummary();
+  const continueDetails = continueSummary
+    ? `
+      <div class="painted-continue-summary" data-continue-summary>
+        <strong>${escapeHtml(continueSummary.levelTitle)}</strong>
+        <span>${escapeHtml(continueSummary.checkpointLabel)} / ${escapeHtml(continueSummary.timelineLabel)} / ${escapeHtml(continueSummary.savedAtLabel)}</span>
+      </div>
+    `
+    : '<div class="painted-continue-summary is-empty" data-continue-summary>No stable checkpoint yet.</div>';
+
   this.clearHud();
   this.setOverlay(`
     <div class="title-art-screen" aria-label="Chrono Crawler title screen">
@@ -30,6 +47,7 @@ type PatchedUIManager = {
         <button class="painted-menu-hotspot painted-menu-continue" data-action="continue" aria-label="Continue" ${this.saveManager.hasContinue() ? '' : 'disabled'}>
           <span>Continue</span>
         </button>
+        ${continueDetails}
         <button class="painted-menu-hotspot painted-menu-options" data-action="options" aria-label="Options">
           <span>Options</span>
         </button>
@@ -55,3 +73,12 @@ type PatchedUIManager = {
     actions.onCredits();
   });
 };
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
