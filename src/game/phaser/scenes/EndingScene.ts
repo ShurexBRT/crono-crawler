@@ -20,7 +20,7 @@ export class EndingScene extends Phaser.Scene {
     ui.clearOverlay();
 
     ending.show(() => {
-      save.markEndingSeen();
+      save.completeRun();
       ui.clearOverlay();
       this.scene.start('MainMenuScene');
     });
