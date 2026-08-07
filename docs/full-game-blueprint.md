@@ -4,9 +4,19 @@ This document turns the current vertical slice into a practical target for a com
 
 ## Core Pitch
 
-Chrono Crawler is a compact atmospheric puzzle-platformer about reading the same city through broken time. Elias Voss does not use time as a power fantasy. He uses it to understand consequences, leave echoes behind, and eventually accept that stillness is not mercy.
+Chrono Crawler is a compact atmospheric puzzle-platformer about reading the same city through broken time. Elias Varren does not use time as a power fantasy. He uses it to understand consequences, leave echoes behind, and eventually accept that stillness is not mercy.
 
 The complete game should feel like a dark chrono-noir city journey: sharp silhouettes, rain, art-deco machinery, restrained color, readable platforming, and puzzle rooms where time changes the route rather than simply changing the color palette.
+
+## Narrative Canon
+
+- The protagonist's canonical name is **Elias Varren**.
+- **The Keeper** and **The Later Man** are the same identity: a future Elias Varren shaped by repeated Chrono Core corrections.
+- Elias created the Chrono Core because he could not accept the death of his daughter, Mara.
+- The Core did not restore Mara. It built a temporal architecture around Elias's refusal to let the loss become final.
+- The canonical ending is acceptance, not resurrection: Elias breaks the correction loop, releases Mara from the machine, and allows the future to continue without his control.
+
+Future narrative writing should not reintroduce `Elias Voss` or treat the Keeper and The Later Man as unrelated entities unless the canon is deliberately changed first.
 
 ## Target Scope
 
@@ -148,14 +158,13 @@ HUD should stay sparse:
 - Checkpoint/level chip.
 - Short contextual prompts only near interactables.
 
-Options to add before content grows too far:
+Current vertical-slice accessibility already includes text scaling, reduced motion, reduced flashes, fullscreen, and separate music/SFX controls. Remaining priorities are:
 
 - Remappable keyboard controls.
-- Gamepad support.
-- Text size.
-- Reduced flashes and reduced motion.
+- Complete gamepad configuration/remapping.
 - High-contrast interactables.
-- Separate music, SFX, and dialogue volume.
+- Separate dialogue volume if voiced dialogue is introduced.
+- Touch controls after desktop input is stable.
 
 ## Systems To Extract Next
 
@@ -167,38 +176,46 @@ Do not keep growing `GameScene` indefinitely. Extract systems when the next feat
 - `ObjectiveSystem`: HUD objective, required flags, exit messaging.
 - `HazardSystem`: enemy overlap, death, fall checks, respawn reasons.
 
+`LevelFlowSystem` and `CheckpointSystem` already exist in the vertical slice; preserve those boundaries rather than folding them back into `GameScene`.
+
 Scenes should remain responsible for Phaser lifecycle, camera, physics wiring, and routing.
 
 ## Production Roadmap
 
 ### Milestone 1: Reliable Vertical Slice
 
-- Browser smoke tests for boot, menu, gameplay HUD, timeline controls, and basic movement.
+- Keep browser smoke tests green for boot, menu, gameplay HUD, timeline controls, pause/save, content loading, and accessibility.
 - Build remains green.
-- GameScene refactor plan exists before adding major new mechanics.
+- Keep `main` as the canonical development/deploy branch.
+- Integrate the canonical ending before adding another large content block.
 
-### Milestone 2: Content Authoring Foundation
+### Milestone 2: Progression Foundation
+
+- Introduce a versioned richer save model with migration from `chrono-crawler.save.v1`.
+- Persist chosen progression data such as collectibles and puzzle flags where reload continuity matters.
+- Keep transient echo playback state out of saves unless a concrete design need appears.
+
+### Milestone 3: Content Authoring Foundation
 
 - Tilemap or structured level authoring path.
 - Asset manifest remains stable.
 - Level object specs support new puzzle object types without scene rewrites.
 
-### Milestone 3: First Real Art Pass
+### Milestone 4: First Real Art Pass
 
-- Replace core placeholder sprites.
+- Replace remaining core placeholder/runtime-generated assets.
 - Document sprite sheet layouts.
 - Create consistent timeline platform, door, switch, and plate silhouettes.
 
-### Milestone 4: Chapter Expansion
+### Milestone 5: Chapter Expansion
 
-- Add Rain District and Glass Quarter as proper authored chapters.
-- Add memory fragments and recurring girl appearances.
+- Continue from the current eight-level playable spine with Hourglass Hotel and later roadmap levels.
+- Add more recurring girl appearances and Keeper foreshadowing.
 - Add one new enemy behavior that changes by timeline.
 
-### Milestone 5: Final Game Pass
+### Milestone 6: Final Game Pass
 
-- Build Platform 13 and Still Hour.
-- Add accessibility options.
+- Rework The Still Hour after the pre-final chapters prove the anchor structure at full scale.
 - Replace procedural audio with authored ambience and SFX.
 - Add release packaging and final smoke/regression checks.
 
