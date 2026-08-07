@@ -34,7 +34,7 @@ test('migrates legacy v1 saves and persists richer progression state', async ({ 
     save.saveLevelFlags('level-2', ['station_switch']);
     save.markMemoryCollected('market-photo-strip');
     save.markLevelCompleted('tutorial');
-    save.markEndingSeen();
+    save.completeRun();
 
     return {
       state: save.getState(),
@@ -44,12 +44,14 @@ test('migrates legacy v1 saves and persists richer progression state', async ({ 
 
   expect(result.state.version).toBe(2);
   expect(result.state.currentLevelId).toBe('level-2');
-  expect(result.state.checkpointId).toBe('greenhouse-checkpoint');
+  expect(result.state.checkpointId).toBeUndefined();
   expect(result.state.timeline).toBe('future');
+  expect(result.state.hasContinue).toBe(false);
   expect(result.state.settings.reducedMotion).toBe(true);
   expect(result.state.progression.levelFlags['level-2']).toEqual(['station_switch']);
   expect(result.state.progression.collectedMemoryFragmentIds).toContain('market-photo-strip');
   expect(result.state.progression.completedLevelIds).toContain('tutorial');
   expect(result.state.progression.endingSeen).toBe(true);
   expect(result.persisted.version).toBe(2);
+  expect(result.persisted.hasContinue).toBe(false);
 });
