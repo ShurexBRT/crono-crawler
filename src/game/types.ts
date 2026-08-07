@@ -32,6 +32,16 @@ export interface Point {
   y: number;
 }
 
+export interface CameraSpec {
+  followLerp?: Point;
+  deadzone?: {
+    width: number;
+    height: number;
+  };
+  followOffset?: Point;
+  zoom?: number;
+}
+
 export interface RectSpec extends Point {
   width: number;
   height: number;
@@ -117,6 +127,7 @@ export interface LevelData {
   startTimeline: TimelineKey;
   startLines: string[];
   background: 'reactor' | 'streets' | 'greenhouse' | 'station' | 'canals' | 'core';
+  camera?: CameraSpec;
   platforms: PlatformSpec[];
   timelineBlocks: TimelineBlockSpec[];
   doors: DoorSpec[];
