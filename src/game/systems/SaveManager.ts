@@ -161,6 +161,20 @@ export class SaveManager {
     this.persist();
   }
 
+  completeRun(): void {
+    this.state = {
+      ...this.state,
+      hasContinue: false,
+      checkpointId: undefined,
+      progression: {
+        ...this.state.progression,
+        endingSeen: true,
+      },
+      updatedAt: Date.now(),
+    };
+    this.persist();
+  }
+
   updateSettings(settings: Partial<SettingsState>): SettingsState {
     this.state = {
       ...this.state,
