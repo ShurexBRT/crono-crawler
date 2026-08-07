@@ -6,6 +6,7 @@ import { UIManager } from './ui/UIManager';
 import './ui/uiPolish';
 import './styles.css';
 import './ui/titleArt.css';
+import './ui/ending.css';
 
 const saveManager = new SaveManager();
 const audioManager = new AudioManager(saveManager.getSettings());

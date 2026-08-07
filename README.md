@@ -9,9 +9,10 @@ The canonical development branch is `main`.
 ## What Is Implemented
 
 - Main menu with New Game, Continue, Options, and Credits
-- Intro sequence and current vertical-slice ending screen
+- Data-driven intro and ending sequences
 - Eight playable levels from The Folded Reactor through The Still Hour
-- Local save system for continue state, checkpoint, timeline, timestamp, and settings
+- Versioned local save system with automatic v1 migration
+- Persistent checkpoint, timeline, settings, completed levels, latched puzzle flags, and memory fragments
 - Pause menu with Resume, Save Now, Options, and Main Menu actions
 - Music/SFX volume, fullscreen, text scale, reduced motion, and reduced flashes
 - Keyboard controls plus basic gamepad support
@@ -25,7 +26,7 @@ The canonical development branch is `main`.
 - Final Keeper encounter built as a three-anchor puzzle rather than a combat boss
 - Noir-deco layered city backdrops with rain, searchlights, industrial silhouettes, and timeline accent colors
 - Runtime sprite-sheet processing through stable asset manifest keys
-- Playwright smoke coverage for boot, content flow, timeline input, pause/save, memory fragments, and accessibility settings
+- Playwright smoke coverage plus pull-request CI validation
 
 ## Current Playable Sequence
 
@@ -50,7 +51,7 @@ The Core was created because Elias could not accept the loss of his daughter, Ma
 
 The intended ending is not a resurrection. Elias ends the correction loop, releases Mara from the machine, and accepts a future he cannot control.
 
-The full authored ending remains to be integrated into the runtime.
+The runtime ending is now authored as a sequence of replaceable narrative beats in `src/game/content/ending.ts`. Its current copy is the canonical story spine, not locked final prose; the dedicated narrative pass can rewrite dialogue and pacing without changing scene code.
 
 ## Run Locally
 
@@ -118,10 +119,12 @@ Checkpoint rewind returns Elias to the last stabilized beacon, clears the active
 Current save key:
 
 ```text
-chrono-crawler.save.v1
+chrono-crawler.save.v2
 ```
 
-Stored today:
+Legacy saves under `chrono-crawler.save.v1` are automatically migrated on load. The legacy entry is left untouched as a fallback while the migrated state is written to v2.
+
+Persisted:
 
 - current level
 - checkpoint ID
@@ -133,15 +136,20 @@ Stored today:
 - text scale
 - reduced motion
 - reduced flashes
+- completed level IDs
+- collected memory fragment IDs
+- latched per-level puzzle flags such as activated switches
+- whether the ending has been completed
 
-Not yet persisted:
+Intentionally runtime-only:
 
-- puzzle flags
-- collected memory fragments
-- detailed echo state
-- individual door/switch state
+- pressure-plate occupancy
+- active echo replay state
+- held echo pressure-plate flags
+- transient hazard state
+- transient dialogue state
 
-Local puzzle state therefore resets when a level is reloaded.
+Temporary puzzle conditions are not persisted because doing so would allow a save to freeze an echo or pressure plate into a solved state.
 
 ## Project Structure
 
@@ -149,7 +157,7 @@ Local puzzle state therefore resets when a level is reloaded.
 src/
   game/
     assets/          Stable texture keys and asset manifest
-    content/         Level data and authored story beats
+    content/         Level data and authored intro/ending/story beats
     entities/        Player, enemy, ghost, hazards, fragments, and level objects
     input/           Keyboard and basic gamepad action mapping
     phaser/          Phaser config, scene polish, and scenes
@@ -157,7 +165,7 @@ src/
     types.ts         Shared game/content types
   ui/                DOM menu, HUD, dialogue, settings, pause, and ending UI
   main.ts            App bootstrap
-  styles.css         Game UI styling
+  styles.css         Core game UI styling
 ```
 
 ## Design And Production Docs
@@ -169,8 +177,8 @@ src/
 
 ## Current Limitations
 
-- The full authored ending is not yet represented in the runtime.
-- Saves do not persist full puzzle or collectible progression.
+- Ending prose and exact scene pacing still need the dedicated narrative pass.
+- Persisted switch logic is richer than v1, but temporary echo/plate puzzle state intentionally remains runtime-only.
 - Levels are still rectangle-authored rather than tilemap/editor-authored.
 - Enemy behavior is limited to a simple patrol hazard.
 - Gamepad support exists, but control remapping and complete controller UX do not.

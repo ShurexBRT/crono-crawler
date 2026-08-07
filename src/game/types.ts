@@ -9,13 +9,22 @@ export interface SettingsState {
   reducedFlashes: boolean;
 }
 
+export interface ProgressionState {
+  completedLevelIds: string[];
+  collectedMemoryFragmentIds: string[];
+  levelFlags: Record<string, string[]>;
+  endingSeen: boolean;
+}
+
 export interface SaveState {
+  version: 2;
   hasContinue: boolean;
   currentLevelId: string;
   checkpointId?: string;
   timeline: TimelineKey;
   updatedAt?: number;
   settings: SettingsState;
+  progression: ProgressionState;
 }
 
 export interface Point {

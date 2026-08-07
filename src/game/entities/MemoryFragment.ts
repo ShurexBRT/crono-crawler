@@ -3,18 +3,19 @@ import type { MemoryFragmentSpec } from '../types';
 
 export class MemoryFragment {
   readonly id: string;
-  private collected = false;
+  private collected: boolean;
   private glow: Phaser.GameObjects.Arc;
   private core: Phaser.GameObjects.Arc;
 
-  constructor(scene: Phaser.Scene, private readonly spec: MemoryFragmentSpec) {
+  constructor(scene: Phaser.Scene, private readonly spec: MemoryFragmentSpec, collected = false) {
     this.id = spec.id;
-    this.glow = scene.add.circle(spec.x, spec.y, 20, 0xf0a64d, 0.12);
-    this.glow.setStrokeStyle(2, 0x6ee7f2, 0.34);
+    this.collected = collected;
+    this.glow = scene.add.circle(spec.x, spec.y, 20, 0xf0a64d, collected ? 0.04 : 0.12);
+    this.glow.setStrokeStyle(2, 0x6ee7f2, collected ? 0.12 : 0.34);
     this.glow.setDepth(10.5);
 
-    this.core = scene.add.circle(spec.x, spec.y, 7, 0xf0a64d, 0.72);
-    this.core.setStrokeStyle(1, 0xf2ead4, 0.72);
+    this.core = scene.add.circle(spec.x, spec.y, 7, collected ? 0x6ee7f2 : 0xf0a64d, collected ? 0.16 : 0.72);
+    this.core.setStrokeStyle(1, 0xf2ead4, collected ? 0.18 : 0.72);
     this.core.setDepth(10.6);
   }
 
