@@ -2,7 +2,7 @@ name: Deploy Chrono Crawler to GitHub Pages
 
 on:
   push:
-    branches: ["master"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +29,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: npm run test:smoke
 
       - name: Build
         run: npm run build

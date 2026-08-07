@@ -1,66 +1,56 @@
 # Chrono Crawler Level Roadmap
 
-This roadmap extends the current playable sequence without replacing it. The goal is to keep each new level buildable from the existing Phaser/content architecture, while introducing one clear idea at a time.
+This roadmap extends the current playable sequence without replacing it. The existing `levels.ts` data-driven structure remains the source of truth until a structured editor/tilemap authoring path is deliberately introduced.
 
 ## Current Playable Spine
 
-1. The Folded Reactor
-   - Teaches timeline shifting.
-   - Introduces unstable bridges and future-only openings.
+1. **The Folded Reactor** (`tutorial`)
+   - Teaches movement and timeline shifting.
+   - Uses a Past bridge and a Future opening.
 
-2. Lock Street
-   - Teaches echo recording with a pressure plate.
+2. **Lock Street** (`level-1`)
+   - Introduces echo recording with a pressure plate.
    - Adds the first patrolling rustmite.
 
-3. Rain District Crossing
-   - Combines Past-only pressure plates, echo timing, and Future traversal.
-   - Acts as the first real "prove you understand it" crossing.
+3. **Rain District Crossing** (`rain-crossing`)
+   - Combines a Past-only pressure plate, echo timing, and Future traversal.
+   - Acts as the first real mastery check for the echo/timeline combination.
 
-4. Glasshouse Station
-   - Introduces switches and vertical route pressure.
+4. **Glasshouse Station** (`level-2`)
+   - Introduces switch interaction and more vertical routing.
    - Expands the mystery around the girl.
 
-5. Platform 13
-   - Uses timeline-specific switches and denser enemy pressure.
-   - Builds toward the Keeper reveal.
+5. **Platform 13** (`level-3`)
+   - Uses timeline-specific platforms and a Future-only switch.
+   - Increases enemy pressure before the late-game arc.
 
-6. The Still Hour
+6. **Bellweather Canals** (`bellweather-canals`)
+   - Introduces timeline-sensitive hazards.
+   - Present water and the old drain state create the first dedicated hazard-navigation level.
+
+7. **The Minute Market** (`minute-market`)
+   - Uses alternate Past, Present, and Future routes through one district.
+   - Adds a Present key/switch and optional memory fragment routing.
+
+8. **The Still Hour** (`boss`)
    - Current finale shell.
-   - Uses three anchor flags as a boss-gate structure.
+   - Requires `anchor_past`, `anchor_present`, and `anchor_future` to open the Keeper barrier.
+   - Remains a puzzle encounter, not a combat boss.
 
-## New Level Arc
+## Stabilization Gate Before More Levels
 
-### 7. Bellweather Canals
+Do not add another large level until the current slice is reliable enough to build on.
 
-Role: First post-station expansion level.
+Required first:
 
-Core idea: Water level changes by timeline. The Past has shallow maintenance ledges, the Present is flooded in sections, and the Future exposes broken drain tunnels.
+- Keep build and Playwright smoke tests green.
+- Make `main` the canonical development and Pages deployment branch.
+- Standardize narrative references on Elias Varren.
+- Treat The Keeper and The Later Man as the same future Elias identity.
+- Integrate the canonical ending instead of the current short vertical-slice ending.
+- Introduce a richer, versioned save model before adding progression that players reasonably expect to survive reloads.
 
-Mechanics:
-- Timeline blocks become stepping stones across water gaps.
-- Echo holds a Past drain switch while Elias crosses in Future.
-- Rustmites patrol short platforms above hazard gaps.
-
-Implementation needs:
-- A simple hazard rect type or water hazard entity.
-- Level background can reuse `streets` until a canal backdrop exists.
-- One new checkpoint after the first drain puzzle.
-
-### 8. The Minute Market
-
-Role: First dense navigation and choice level.
-
-Core idea: A market district exists as three different layouts. Past stalls form rooftops, Present awnings form mid-route bridges, and Future ruins open a lower path.
-
-Mechanics:
-- Multiple valid routes through the same area.
-- Optional memory fragment placed on a harder Future route.
-- A switch in Present opens a door that only matters in Past.
-
-Implementation needs:
-- No new entity required.
-- Author with existing platforms, timeline blocks, switches, and memory fragments.
-- Add one more enemy only after traversal feels readable.
+## Planned Expansion Arc
 
 ### 9. The Hourglass Hotel
 
@@ -69,13 +59,15 @@ Role: Mid-game vertical level.
 Core idea: Elias climbs a hotel whose floors do not agree about which century they belong to.
 
 Mechanics:
+
 - Vertical checkpoint placement.
-- Falling becomes a real penalty but not a full reset.
-- Echo must hold a lower-floor switch while Elias climbs to a future-only balcony.
+- Falling becomes a meaningful setback without becoming a full-level reset.
+- Echo holds a lower-floor interaction while Elias climbs to a Future-only balcony.
 
 Implementation needs:
-- Tune camera deadzone for vertical readability or add per-level camera metadata.
-- Add one ladder/elevator-like platform concept later if jumping routes feel too cramped.
+
+- Per-level camera metadata or a vertical camera mode if the existing deadzone becomes awkward.
+- Reuse existing timeline blocks, switches, checkpoints, and echo rules before inventing a new platform entity.
 
 ### 10. Archive of Unsaid Things
 
@@ -84,61 +76,63 @@ Role: Story-heavy puzzle level.
 Core idea: The city archive contains records of timelines the Keeper erased.
 
 Mechanics:
-- Fewer enemies, more story zones.
+
+- Fewer enemies and more environmental storytelling.
 - Memory fragments become optional route rewards.
-- Puzzle order matters: unlock Past record, trigger Present switch, cross Future collapse.
+- Puzzle order matters: unlock a Past record, trigger a Present system, then cross a Future collapse.
 
 Implementation needs:
-- Existing story zones and memory fragments are enough.
-- Could add a "lore terminal" interactable later, but it is not required for the first pass.
+
+- Existing story zones and memory fragments should carry the first pass.
+- Add a dedicated lore-terminal interactable only if the current interaction model cannot express the scene cleanly.
 
 ### 11. Crownline Rooftops
 
 Role: High-mobility skill check.
 
-Core idea: Rooftops above the city require quick timeline shifts while moving.
+Core idea: Rooftops above Veyr require fast timeline decisions while moving.
 
 Mechanics:
+
 - Shorter platforms and wider gaps.
-- Future-only spans appear briefly as safer routes around enemies.
-- Echo can be used defensively to hold plates while Elias avoids patrols.
+- Future-only spans create aggressive shortcuts.
+- Echo anchors allow the player to hold one route open while navigating another.
 
 Implementation needs:
-- Keep the first pass fair with generous checkpoint spacing.
-- Consider a lightweight wind/rain visual pass only after gameplay is stable.
+
+- Keep checkpoint spacing generous during the first tuning pass.
+- Timeline-shift readability matters more than raw difficulty.
 
 ### 12. The Core Reliquary
 
-Role: Final pre-boss lock.
+Role: Final pre-finale rehearsal.
 
-Core idea: Three relic chambers teach the final boss anchors in isolation before the real confrontation.
+Core idea: Three relic chambers teach the Still Hour anchor logic separately before the full confrontation.
 
 Mechanics:
+
 - Past chamber: echo holds memory pressure.
-- Present chamber: precise switch route.
-- Future chamber: enemy pressure and broken traversal.
+- Present chamber: switch-route execution.
+- Future chamber: hazard/enemy pressure with broken traversal.
 
 Implementation needs:
-- Reuse `requiredExitFlags` to require all three chambers.
-- This should become the mechanical rehearsal for an improved Keeper encounter.
+
+- Reuse `requiredExitFlags` for chamber completion.
+- Prove the anchor structure here before expanding or reworking The Still Hour.
 
 ## Recommended Build Order
 
-1. Build Bellweather Canals first because it only needs one new hazard concept and mostly reuses current systems.
-2. Build The Minute Market with existing objects only, to validate that authored content can scale without new code.
-3. Add per-level camera metadata before Hourglass Hotel if vertical traversal feels cramped.
-4. Build Archive of Unsaid Things when dialogue and memory fragment pacing need a story pass.
-5. Build Crownline Rooftops as a movement readability test.
-6. Rework The Still Hour after Core Reliquary proves the three-anchor structure.
+1. Finish the stabilization gate and canonical ending.
+2. Add versioned progression/save state.
+3. Add structured level authoring or per-level camera metadata before Hourglass Hotel if needed.
+4. Build The Hourglass Hotel without introducing a new core verb.
+5. Build Archive of Unsaid Things as a narrative pacing test.
+6. Build Crownline Rooftops as a movement/timeline readability test.
+7. Build The Core Reliquary as the mechanical rehearsal for the final encounter.
+8. Revisit The Still Hour only after the full-game progression proves what the finale actually needs.
 
-## Next Playable Slice
+## Authoring Rule
 
-The next implementation should be Bellweather Canals:
+A new level should justify itself with a new combination, pacing role, or narrative function. Do not add mechanics merely because a new entity type is technically easy to implement.
 
-- Add a serializable `hazards` array to `LevelData`.
-- Add a `HazardZone` entity that respawns Elias on overlap.
-- Add a new `canals` or temporary `streets` background level entry after Rain District Crossing or after Platform 13.
-- Add a smoke test that seeds continue data into the new level and verifies the objective/title.
-- Keep art simple: dark water rectangles with cyan edge highlights are enough for the first pass.
-
-This gives the game a new kind of danger without adding combat complexity yet.
+When possible, prove a level using existing `LevelData` primitives first. Extract or add systems only when the design repeats a real need.
