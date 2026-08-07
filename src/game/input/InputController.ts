@@ -17,6 +17,7 @@ export class InputController {
   private gamepadPressed = new Set<InputAction>();
   private previousGamepadButtons = new Set<number>();
   private readonly keyDownHandler: (event: KeyboardEvent) => void;
+  private readonly postUpdateHandler: () => void;
 
   constructor(scene: Phaser.Scene) {
     const keyboard = scene.input.keyboard;
@@ -53,9 +54,18 @@ export class InputController {
         this.fallbackJustPressed.add(action);
       }
     };
+    this.postUpdateHandler = () => {
+      // Browser keydown is a fallback for edge-triggered actions only. Clear anything
+      // that gameplay did not consume this frame so input pressed during dialogue or
+      // another blocking overlay cannot fire later when gameplay resumes.
+      this.fallbackJustPressed.clear();
+    };
+
     window.addEventListener('keydown', this.keyDownHandler);
+    scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener('keydown', this.keyDownHandler);
+      scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler);
       this.fallbackJustPressed.clear();
     });
   }
@@ -169,17 +179,32 @@ function gamepadActionForButton(index: number): InputAction | undefined {
 }
 
 function fallbackActionForKey(event: KeyboardEvent): InputAction | undefined {
-  if (event.code === 'KeyQ') {
-    return 'timelineCycle';
+  switch (event.code) {
+    case 'Space':
+    case 'KeyW':
+    case 'ArrowUp':
+      return 'jump';
+    case 'KeyE':
+      return 'interact';
+    case 'KeyG':
+      return 'record';
+    case 'KeyR':
+      return 'rewind';
+    case 'KeyQ':
+      return 'timelineCycle';
+    case 'Digit1':
+    case 'Numpad1':
+      return 'timelinePast';
+    case 'Digit2':
+    case 'Numpad2':
+      return 'timelinePresent';
+    case 'Digit3':
+    case 'Numpad3':
+      return 'timelineFuture';
+    case 'Escape':
+    case 'KeyP':
+      return 'pause';
+    default:
+      return undefined;
   }
-  if (event.code === 'Digit1' || event.code === 'Numpad1' || event.key === '1') {
-    return 'timelinePast';
-  }
-  if (event.code === 'Digit2' || event.code === 'Numpad2' || event.key === '2') {
-    return 'timelinePresent';
-  }
-  if (event.code === 'Digit3' || event.code === 'Numpad3' || event.key === '3') {
-    return 'timelineFuture';
-  }
-  return undefined;
 }
