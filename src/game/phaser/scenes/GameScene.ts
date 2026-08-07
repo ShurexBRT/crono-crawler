@@ -223,8 +223,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private configureCamera(): void {
-    this.cameras.main.startFollow(this.player.sprite, true, 0.08, 0.08);
-    this.cameras.main.setDeadzone(220, 120);
+    const camera = this.level.camera;
+    const followLerp = camera?.followLerp ?? { x: 0.08, y: 0.08 };
+    const deadzone = camera?.deadzone ?? { width: 220, height: 120 };
+    const followOffset = camera?.followOffset ?? { x: 0, y: 0 };
+
+    this.cameras.main.startFollow(this.player.sprite, true, followLerp.x, followLerp.y);
+    this.cameras.main.setDeadzone(deadzone.width, deadzone.height);
+    this.cameras.main.setFollowOffset(followOffset.x, followOffset.y);
+    this.cameras.main.setZoom(camera?.zoom ?? 1);
   }
 
   private drawBackground(): void {
