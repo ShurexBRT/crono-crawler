@@ -1,0 +1,271 @@
+.ending-sequence {
+  position: relative;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 2rem);
+  overflow: hidden;
+  background: #020308;
+}
+
+.ending-stage,
+.ending-sky,
+.ending-rain,
+.ending-vignette {
+  position: absolute;
+  inset: 0;
+}
+
+.ending-sky {
+  background:
+    radial-gradient(circle at 70% 26%, rgba(180, 72, 112, 0.14), transparent 22rem),
+    linear-gradient(180deg, #050711 0%, #09111a 54%, #020307 100%);
+  transition: background 900ms ease;
+}
+
+.ending-vignette {
+  background:
+    linear-gradient(180deg, rgba(1, 2, 5, 0.72), transparent 22%, rgba(1, 2, 5, 0.82)),
+    linear-gradient(90deg, rgba(1, 2, 5, 0.7), transparent 34%, rgba(1, 2, 5, 0.7));
+  pointer-events: none;
+}
+
+.ending-rain {
+  opacity: 0.18;
+  background: repeating-linear-gradient(104deg, transparent 0 18px, rgba(154, 215, 255, 0.16) 19px 20px, transparent 21px 36px);
+  transform: translateY(-4%);
+}
+
+.ending-core {
+  position: absolute;
+  right: clamp(5rem, 18vw, 16rem);
+  top: clamp(5rem, 16vh, 9rem);
+  width: clamp(7rem, 15vw, 12rem);
+  aspect-ratio: 1;
+  border: 2px solid rgba(110, 231, 242, 0.5);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1.5rem rgba(110, 231, 242, 0.035),
+    inset 0 0 0 3rem rgba(224, 97, 138, 0.025),
+    0 0 50px rgba(110, 231, 242, 0.2);
+  transition: opacity 900ms ease, transform 900ms ease, box-shadow 900ms ease;
+}
+
+.ending-core::before,
+.ending-core::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 88%;
+  height: 2px;
+  background: rgba(240, 166, 77, 0.62);
+  transform: translate(-50%, -50%);
+}
+
+.ending-core::after {
+  width: 2px;
+  height: 88%;
+  background: rgba(110, 231, 242, 0.58);
+}
+
+.ending-elias,
+.ending-keeper {
+  position: absolute;
+  bottom: 12vh;
+  width: clamp(2.8rem, 5vw, 4.5rem);
+  height: clamp(9rem, 18vw, 13rem);
+  clip-path: polygon(34% 0, 66% 0, 79% 20%, 70% 100%, 30% 100%, 21% 20%);
+  background: linear-gradient(180deg, #18212b, #030509);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.58);
+  transition: opacity 800ms ease, transform 900ms ease;
+}
+
+.ending-elias {
+  left: clamp(10rem, 30vw, 28rem);
+}
+
+.ending-keeper {
+  right: clamp(10rem, 26vw, 24rem);
+  background: linear-gradient(180deg, #090a0f, #000);
+}
+
+.ending-mara {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 4rem;
+  height: 7rem;
+  opacity: 0;
+  border-radius: 46% 46% 38% 38%;
+  background: linear-gradient(180deg, rgba(242, 234, 216, 0.8), rgba(110, 231, 242, 0.08));
+  filter: blur(0.6px);
+  transform: translateX(-50%);
+  box-shadow: 0 0 60px rgba(242, 234, 216, 0.22);
+  transition: opacity 900ms ease, transform 1000ms ease;
+}
+
+.ending-card {
+  position: relative;
+  z-index: 2;
+  width: min(49rem, calc(100vw - 2rem));
+  min-height: min(31rem, calc(100vh - 8rem));
+  display: grid;
+  align-content: center;
+  padding: clamp(1.4rem, 4vw, 3.2rem);
+  border-left: 2px solid rgba(224, 97, 138, 0.66);
+  background:
+    linear-gradient(90deg, rgba(4, 6, 13, 0.95), rgba(7, 8, 16, 0.76)),
+    linear-gradient(180deg, rgba(224, 97, 138, 0.04), rgba(110, 231, 242, 0.025));
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.62), inset 0 1px rgba(255, 235, 176, 0.07);
+}
+
+.ending-card h2 {
+  max-width: 41rem;
+  color: #f2ead4;
+  font-size: clamp(2rem, 5vw, 4.7rem);
+  text-shadow: 0 0 20px rgba(224, 97, 138, 0.16);
+}
+
+.ending-copy {
+  width: min(39rem, 100%);
+}
+
+.ending-copy p {
+  margin-bottom: 0.65rem;
+}
+
+.ending-system-panel {
+  display: grid;
+  gap: 0.42rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(110, 231, 242, 0.24);
+  background: repeating-linear-gradient(180deg, rgba(110, 231, 242, 0.045) 0 1px, transparent 1px 7px), rgba(2, 8, 12, 0.76);
+  color: #9df5ff;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: clamp(0.72rem, 1.8vw, 0.92rem);
+  line-height: 1.35;
+}
+
+.ending-system-panel span:nth-child(2n) {
+  color: #f0c16e;
+}
+
+.ending-dialogue {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.ending-dialogue-line {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) 1fr;
+  gap: 0.85rem;
+}
+
+.ending-dialogue-line > span {
+  color: #b8a77e;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.ending-dialogue-line p {
+  margin: 0;
+  color: #f0ead8;
+}
+
+.ending-controls {
+  position: absolute;
+  z-index: 3;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ending-controls button {
+  min-width: 9rem;
+}
+
+.ending-beat-reveal .ending-keeper {
+  transform: translateX(-1.5rem);
+}
+
+.ending-beat-memory .ending-mara,
+.ending-beat-release .ending-mara {
+  opacity: 0.62;
+}
+
+.ending-beat-choice .ending-core {
+  box-shadow: inset 0 0 0 1.5rem rgba(110, 231, 242, 0.035), 0 0 70px rgba(224, 97, 138, 0.34);
+}
+
+.ending-beat-collapse .ending-core {
+  opacity: 0.46;
+  transform: scale(1.16) rotate(8deg);
+}
+
+.ending-beat-collapse .ending-keeper {
+  opacity: 0.38;
+  transform: translateX(3rem);
+}
+
+.ending-beat-release .ending-keeper {
+  opacity: 0.08;
+}
+
+.ending-beat-release .ending-mara {
+  transform: translateX(-50%) translateY(-1rem);
+}
+
+.ending-beat-dawn .ending-sky,
+.ending-beat-epilogue .ending-sky {
+  background:
+    radial-gradient(circle at 70% 26%, rgba(240, 166, 77, 0.2), transparent 24rem),
+    linear-gradient(180deg, #09121c 0%, #152432 54%, #07080c 100%);
+}
+
+.ending-beat-dawn .ending-core,
+.ending-beat-epilogue .ending-core,
+.ending-beat-dawn .ending-keeper,
+.ending-beat-epilogue .ending-keeper,
+.ending-beat-epilogue .ending-mara {
+  opacity: 0;
+}
+
+.ending-beat-epilogue .ending-card {
+  min-height: 0;
+  border-left-color: rgba(240, 166, 77, 0.6);
+  background: rgba(4, 7, 13, 0.72);
+}
+
+@media (max-width: 720px) {
+  .ending-card {
+    min-height: calc(100vh - 7rem);
+    padding: 1.2rem;
+  }
+
+  .ending-dialogue-line {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .ending-controls {
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .ending-controls button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+html[data-reduced-motion="true"] .ending-core,
+html[data-reduced-motion="true"] .ending-elias,
+html[data-reduced-motion="true"] .ending-keeper,
+html[data-reduced-motion="true"] .ending-mara {
+  transition: none;
+}

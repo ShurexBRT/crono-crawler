@@ -74,6 +74,7 @@ export class GameScene extends Phaser.Scene {
     this.uiManager = this.registry.get('uiManager') as UIManager;
     this.resetRuntimeState();
     this.level = getLevel(data.levelId ?? 'tutorial');
+    this.latchedFlags = new Set(this.saveManager.getLevelFlags(this.level.id));
     this.timelineManager = new TimelineManager(data.timeline ?? this.level.startTimeline);
     this.checkpointSystem = new CheckpointSystem(this.level, this.timelineManager.current, data.checkpointId);
     this.levelFlowSystem = new LevelFlowSystem(this.level);
@@ -173,7 +174,9 @@ export class GameScene extends Phaser.Scene {
     this.checkpoints = this.level.checkpoints.map((checkpoint) => new CheckpointBeacon(this, checkpoint, TextureKeys.checkpoint));
     this.enemies = this.level.enemies.map((enemy) => new Enemy(this, enemy));
     this.hazards = (this.level.hazards ?? []).map((hazard) => new HazardZone(this, hazard));
-    this.memoryFragments = (this.level.memoryFragments ?? []).map((fragment) => new MemoryFragment(this, fragment));
+    this.memoryFragments = (this.level.memoryFragments ?? []).map(
+      (fragment) => new MemoryFragment(this, fragment, this.saveManager.isMemoryCollected(fragment.id)),
+    );
 
     this.exitZone = this.add.rectangle(this.level.exit.x, this.level.exit.y, this.level.exit.width, this.level.exit.height, 0x6ee7f2, 0.16);
     this.exitZone.setStrokeStyle(1, 0x6ee7f2, 0.6);
@@ -452,6 +455,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
+    let progressionChanged = false;
     this.switches.forEach((lever) => {
       if (
         lever.update(
@@ -463,16 +467,25 @@ export class GameScene extends Phaser.Scene {
           this.ghost?.timeline,
         )
       ) {
+        if (!this.latchedFlags.has(lever.flag)) {
+          progressionChanged = true;
+        }
         this.latchedFlags.add(lever.flag);
         this.audioManager.playSfx('switch');
         this.uiManager.showToast('A circuit remembers the choice.');
       }
 
       if (lever.isToggled) {
+        if (!this.latchedFlags.has(lever.flag)) {
+          progressionChanged = true;
+        }
         this.latchedFlags.add(lever.flag);
       }
     });
 
+    if (progressionChanged) {
+      this.saveManager.saveLevelFlags(this.level.id, this.latchedFlags);
+    }
     this.applyDoors();
   }
 
@@ -483,6 +496,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.audioManager.playSfx('checkpoint');
     this.uiManager.showToast('Checkpoint stabilized.');
+    this.persistLevelProgress();
     this.saveManager.saveProgress(this.level.id, this.timelineManager.current, checkpoint.id);
   }
 
@@ -512,6 +526,7 @@ export class GameScene extends Phaser.Scene {
       if (!memory) {
         continue;
       }
+      this.saveManager.markMemoryCollected(memory.id);
       this.audioManager.playSfx('checkpoint');
       this.showDialogue(`memory-${memory.id}`, [memory.title, ...memory.lines], true);
       break;
@@ -535,6 +550,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.persistLevelProgress();
+    this.saveManager.markLevelCompleted(this.level.id);
     this.saveManager.saveProgress(attempt.nextLevelId ?? this.level.id, 'present');
     this.audioManager.playSfx('checkpoint');
     this.cameras.main.fadeOut(650, 5, 8, 13);
@@ -684,8 +701,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private saveCurrentProgress() {
+    this.persistLevelProgress();
     this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id);
     return this.saveManager.getContinueSummary();
+  }
+
+  private persistLevelProgress(): void {
+    this.saveManager.saveLevelFlags(this.level.id, this.latchedFlags);
   }
 
   private resumeFromPause(): void {
