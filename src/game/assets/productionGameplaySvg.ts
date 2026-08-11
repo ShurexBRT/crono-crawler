@@ -21,7 +21,7 @@ function svg(width: number, height: number, body: string): string {
 }
 
 export function svgDataUri(source: string): string {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}`;
+  return `data:image/svg+xml;base64,${btoa(source)}`;
 }
 
 export function temporalAnchorSvg(): string {
