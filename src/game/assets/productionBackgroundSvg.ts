@@ -37,7 +37,7 @@ const themes: Record<TimelineKey, BackgroundTheme> = {
 };
 
 export function backgroundSvgDataUri(source: string): string {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}`;
+  return `data:image/svg+xml;base64,${btoa(source)}`;
 }
 
 export function reactorFarSvg(timeline: TimelineKey): string {
