@@ -23,14 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build production bundle
+        run: npm run build
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Run smoke and visual QA
         run: npm run test:smoke
-
-      - name: Build production bundle
-        run: npm run build
 
       - name: Upload visual QA captures
         if: always()
@@ -38,4 +38,12 @@ jobs:
         with:
           name: folded-reactor-visual-qa
           path: artifacts/visual
+          if-no-files-found: warn
+
+      - name: Upload Playwright diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: folded-reactor-playwright-diagnostics
+          path: test-results
           if-no-files-found: warn
