@@ -26,7 +26,7 @@ type PatchedUi = {
         <strong data-hud="objective">${escapeHtml(state.objective)}</strong>
       </section>
 
-      <section class="hud-v2-level" aria-label="Level and checkpoint">
+      <section class="hud-v2-level level-chip" aria-label="Level and checkpoint">
         <span>${escapeHtml(state.levelTitle)}</span>
         <small data-hud="checkpoint">${escapeHtml(state.checkpoint)}</small>
       </section>
