@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import './scenePolish';
+import './productionArt';
+import './productionFx';
 import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';
@@ -27,9 +29,9 @@ export function gameConfig({
     width: 1280,
     height: 720,
     backgroundColor: '#070910',
-    pixelArt: true,
-    antialias: false,
-    roundPixels: true,
+    pixelArt: false,
+    antialias: true,
+    roundPixels: false,
     physics: {
       default: 'arcade',
       arcade: {
