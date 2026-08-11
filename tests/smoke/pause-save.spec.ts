@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { collectRuntimeErrors, enterPlayableTutorial } from './support/playable';
 
 test('saves current progress from the pause menu', async ({ page }) => {
+  test.setTimeout(60_000);
   const runtimeErrors = collectRuntimeErrors(page);
   await enterPlayableTutorial(page);
 

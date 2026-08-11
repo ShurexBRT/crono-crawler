@@ -4,6 +4,7 @@ import { SaveManager } from './game/systems/SaveManager';
 import { AudioManager } from './game/systems/AudioManager';
 import { UIManager } from './ui/UIManager';
 import './ui/uiPolish';
+import './ui/productionHud';
 import './styles.css';
 import './ui/titleArt.css';
 import './ui/ending.css';
