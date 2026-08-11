@@ -3,6 +3,7 @@ import './scenePolish';
 import './productionArt';
 import './productionInteractables';
 import './productionFx';
+import './productionTutorialPolish';
 import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';
