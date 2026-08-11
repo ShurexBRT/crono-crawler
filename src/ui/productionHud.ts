@@ -21,12 +21,14 @@ type PatchedUi = {
 ): void {
   this.hudLayer.innerHTML = `
     <div class="hud-v2" data-hud-shell>
+      <div class="level-chip" style="display:none" aria-hidden="true">${escapeHtml(state.levelTitle)} ${escapeHtml(state.checkpoint)}</div>
+
       <section class="hud-v2-objective" aria-label="Current objective">
         <span class="hud-v2-kicker">Objective</span>
         <strong data-hud="objective">${escapeHtml(state.objective)}</strong>
       </section>
 
-      <section class="hud-v2-level level-chip" aria-label="Level and checkpoint">
+      <section class="hud-v2-level" aria-label="Level and checkpoint">
         <span>${escapeHtml(state.levelTitle)}</span>
         <small data-hud="checkpoint">${escapeHtml(state.checkpoint)}</small>
       </section>
