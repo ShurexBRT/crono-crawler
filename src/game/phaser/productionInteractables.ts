@@ -71,9 +71,7 @@ function patchPlates(): void {
     const visual = this.visual;
     if (visual?.scene.textures.exists(plateKeys[timeline])) {
       visual.setTexture(plateKeys[timeline]);
-      if (occupied) {
-        visual.setY(visual.y + 2);
-      }
+      visual.setScale(occupied ? 1 : 1, occupied ? 0.9 : 1);
     }
     return occupied;
   };
