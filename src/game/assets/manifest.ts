@@ -30,6 +30,34 @@ export const TextureKeys = {
   backdropStation: 'backdrop.station',
   backdropCore: 'backdrop.core',
   uiSignPanel: 'ui.sign-panel',
+
+  productionCheckpoint: 'production.checkpoint.temporal-anchor',
+  productionMemoryFragment: 'production.collectible.memory-fragment',
+  productionRustmiteA: 'production.enemy.rustmite-a',
+  productionRustmiteB: 'production.enemy.rustmite-b',
+  productionRustmiteAlert: 'production.enemy.rustmite-alert',
+  productionPlatformPast: 'production.platform.past',
+  productionPlatformPresent: 'production.platform.present',
+  productionPlatformFuture: 'production.platform.future',
+  productionDoorPast: 'production.door.past',
+  productionDoorPresent: 'production.door.present',
+  productionDoorFuture: 'production.door.future',
+  productionPlatePast: 'production.plate.past',
+  productionPlatePresent: 'production.plate.present',
+  productionPlateFuture: 'production.plate.future',
+  productionSwitchPastOff: 'production.switch.past.off',
+  productionSwitchPastOn: 'production.switch.past.on',
+  productionSwitchPresentOff: 'production.switch.present.off',
+  productionSwitchPresentOn: 'production.switch.present.on',
+  productionSwitchFutureOff: 'production.switch.future.off',
+  productionSwitchFutureOn: 'production.switch.future.on',
+  reactorFarPast: 'production.reactor.far.past',
+  reactorFarPresent: 'production.reactor.far.present',
+  reactorFarFuture: 'production.reactor.far.future',
+  reactorMidPast: 'production.reactor.mid.past',
+  reactorMidPresent: 'production.reactor.mid.present',
+  reactorMidFuture: 'production.reactor.mid.future',
+  reactorForeground: 'production.reactor.foreground',
 } as const;
 
 export const AnimationKeys = {
@@ -39,6 +67,8 @@ export const AnimationKeys = {
   eliasJump: 'elias.jump',
   eliasFall: 'elias.fall',
   eliasTimeShift: 'elias.time-shift',
+  rustmitePatrol: 'rustmite.patrol',
+  rustmiteAlert: 'rustmite.alert',
 } as const;
 
 export type TextureKey = (typeof TextureKeys)[keyof typeof TextureKeys];
