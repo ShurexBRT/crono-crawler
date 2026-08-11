@@ -24,6 +24,24 @@ const washByTimeline: Record<TimelineKey, number> = {
   present: 0x103d50,
   future: 0x5a1531,
 };
+const platformKeys: Record<TimelineKey, string> = {
+  past: TextureKeys.productionPlatformPast,
+  present: TextureKeys.productionPlatformPresent,
+  future: TextureKeys.productionPlatformFuture,
+};
+const farKeys: Record<TimelineKey, string> = {
+  past: TextureKeys.reactorFarPast,
+  present: TextureKeys.reactorFarPresent,
+  future: TextureKeys.reactorFarFuture,
+};
+const midKeys: Record<TimelineKey, string> = {
+  past: TextureKeys.reactorMidPast,
+  present: TextureKeys.reactorMidPresent,
+  future: TextureKeys.reactorMidFuture,
+};
+const productionPlatformKeys = new Set(Object.values(platformKeys));
+const productionFarKeys = new Set(Object.values(farKeys));
+const productionMidKeys = new Set(Object.values(midKeys));
 
 const proto = GameScene.prototype as any;
 const previousDrawBackground = proto.drawBackground;
@@ -40,10 +58,10 @@ proto.drawBackground = function refinedProductionBackground(this: RefinedScene):
     .setDepth(-29)
     .setScrollFactor(0.16, 0.035)
     .setDisplaySize(Math.max(this.level.width + 900, 2200), 780)
-    .setAlpha(0.88);
+    .setAlpha(0.92);
 
   const wash = this.add
-    .rectangle(this.level.width / 2, 360, this.level.width + 900, 780, washByTimeline[this.timelineManager.current], 0.13)
+    .rectangle(this.level.width / 2, 360, this.level.width + 900, 780, washByTimeline[this.timelineManager.current], 0.12)
     .setDepth(-28)
     .setScrollFactor(0.16, 0.035)
     .setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -66,16 +84,42 @@ function applyBackdropTimeline(scene: RefinedScene, timeline: TimelineKey, anima
   }
 
   refinement.matte.setTint(tintByTimeline[timeline]);
-  refinement.wash.setFillStyle(washByTimeline[timeline], timeline === 'present' ? 0.1 : 0.16);
+  refinement.wash.setFillStyle(washByTimeline[timeline], timeline === 'present' ? 0.08 : 0.14);
+
+  scene.children.list.forEach((child) => {
+    if (!(child instanceof Phaser.GameObjects.Image)) {
+      return;
+    }
+    const textureKey = child.texture.key;
+
+    if (productionFarKeys.has(textureKey)) {
+      child.setAlpha(textureKey === farKeys[timeline] ? 0.12 : 0);
+      return;
+    }
+
+    if (productionMidKeys.has(textureKey)) {
+      child.setAlpha(textureKey === midKeys[timeline] ? 0.34 : 0);
+      return;
+    }
+
+    if (Math.abs(child.depth - 8.6) < 0.05 && productionPlatformKeys.has(textureKey)) {
+      child.setTexture(platformKeys[timeline]).setAlpha(0.9);
+      return;
+    }
+
+    if (textureKey === TextureKeys.platformSheet && Math.abs(child.depth - 8) < 0.05) {
+      child.setAlpha(0.08);
+    }
+  });
 
   if (!animate) {
     return;
   }
 
-  refinement.matte.setAlpha(0.7);
+  refinement.matte.setAlpha(0.76);
   scene.tweens.add({
     targets: refinement.matte,
-    alpha: 0.88,
+    alpha: 0.92,
     duration: 210,
     ease: 'Quad.easeOut',
   });
