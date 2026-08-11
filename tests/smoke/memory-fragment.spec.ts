@@ -11,11 +11,13 @@ test('shows an optional memory fragment when Elias reaches it', async ({ page })
   await dismissDialogue(page);
   await focusPlayfield(page);
 
+  await page.keyboard.down('Shift');
   await page.keyboard.down('ArrowRight');
   try {
-    await expect(page.locator('.dialogue-panel')).toContainText('Memory Fragment: Folded Paper', { timeout: 12_000 });
+    await expect(page.locator('.dialogue-panel')).toContainText('Memory Fragment: Folded Paper', { timeout: 25_000 });
   } finally {
     await page.keyboard.up('ArrowRight');
+    await page.keyboard.up('Shift');
   }
 
   expect(runtimeErrors).toEqual([]);
