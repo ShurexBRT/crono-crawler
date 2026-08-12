@@ -6,6 +6,8 @@ export type PlatformVisualFamily =
   | 'reactor-gantry'
   | 'reactor-machine';
 
+export type MemoryArtifactKind = 'note' | 'photo' | 'drawing' | 'document' | 'ticket' | 'map' | 'other';
+
 export interface SettingsState {
   musicVolume: number;
   sfxVolume: number;
@@ -115,10 +117,20 @@ export interface StoryZoneSpec extends RectSpec {
   once?: boolean;
 }
 
+export interface MemoryArtifactSpec {
+  kind: MemoryArtifactKind;
+  image: string;
+  alt: string;
+  date?: string;
+  location?: string;
+  caption?: string;
+}
+
 export interface MemoryFragmentSpec extends Point {
   id: string;
   title: string;
   lines: string[];
+  artifact?: MemoryArtifactSpec;
   width?: number;
   height?: number;
 }
