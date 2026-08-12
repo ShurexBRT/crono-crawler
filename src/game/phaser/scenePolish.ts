@@ -1,12 +1,20 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../assets/manifest';
-import type { LevelData } from '../types';
+import { PlatformVisualRenderer } from '../rendering/PlatformVisualRenderer';
+import type { LevelData, TimelineBlockSpec, TimelineKey } from '../types';
 import { GameScene } from './scenes/GameScene';
+
+type TimelinePlatformVisual = {
+  renderer: PlatformVisualRenderer;
+  spec: TimelineBlockSpec;
+};
 
 type PatchedGameScene = Phaser.Scene & {
   level: LevelData;
   player?: { playTimeShift?: () => void };
   timelineTint?: Phaser.GameObjects.Rectangle;
+  productionStaticPlatformVisuals?: PlatformVisualRenderer[];
+  productionTimelinePlatformVisuals?: TimelinePlatformVisual[];
 };
 
 type SignSpec = {
@@ -87,11 +95,15 @@ proto.drawBackground = function drawBackgroundWithExternalBackdrop(this: Patched
 proto.buildLevel = function buildLevelWithSignage(this: PatchedGameScene): void {
   originalBuildLevel.call(this);
   drawLevelSignage(this);
+  buildProductionPlatformVisuals(this);
 };
 
 proto.onTimelineChanged = function onTimelineChangedWithAnimation(this: PatchedGameScene, timeline: unknown): void {
   originalOnTimelineChanged.call(this, timeline);
   this.player?.playTimeShift?.();
+  if (timeline === 'past' || timeline === 'present' || timeline === 'future') {
+    updateProductionPlatformVisuals(this, timeline);
+  }
 };
 
 function drawExternalBackdrop(scene: PatchedGameScene): void {
@@ -117,6 +129,64 @@ function drawExternalBackdrop(scene: PatchedGameScene): void {
   scene.timelineTint.setScrollFactor(0);
   scene.timelineTint.setDepth(30);
   scene.timelineTint.setBlendMode(Phaser.BlendModes.ADD);
+}
+
+function buildProductionPlatformVisuals(scene: PatchedGameScene): void {
+  destroyProductionPlatformVisuals(scene);
+
+  if (scene.level.id !== 'tutorial') return;
+
+  scene.productionStaticPlatformVisuals = scene.level.platforms.map((platform) => {
+    const renderer = new PlatformVisualRenderer(scene, platform, {
+      family: platform.visualFamily,
+      depth: 8.45,
+      timeline: scene.level.startTimeline,
+    });
+    return renderer;
+  });
+
+  scene.productionTimelinePlatformVisuals = scene.level.timelineBlocks
+    .filter((block) => block.width >= block.height * 1.4)
+    .map((block) => ({
+      spec: block,
+      renderer: new PlatformVisualRenderer(scene, block, {
+        family: block.visualFamily,
+        depth: 9.42,
+        timeline: scene.level.startTimeline,
+      }),
+    }));
+
+  updateProductionPlatformVisuals(scene, scene.level.startTimeline);
+}
+
+function updateProductionPlatformVisuals(scene: PatchedGameScene, timeline: TimelineKey): void {
+  scene.productionStaticPlatformVisuals?.forEach((renderer) => {
+    renderer.setTimeline(timeline);
+    renderer.setVisible(true);
+    renderer.setAlpha(1);
+    renderer.setTint(undefined);
+  });
+
+  scene.productionTimelinePlatformVisuals?.forEach(({ renderer, spec }) => {
+    const state = spec.states[timeline];
+    renderer.setTimeline(timeline);
+    renderer.setVisible(state.visible);
+    renderer.setAlpha(state.visible ? state.alpha ?? 1 : 0);
+    renderer.setTint(state.visible && !state.solid ? timelineAccent(timeline) : undefined);
+  });
+}
+
+function destroyProductionPlatformVisuals(scene: PatchedGameScene): void {
+  scene.productionStaticPlatformVisuals?.forEach((renderer) => renderer.destroy());
+  scene.productionTimelinePlatformVisuals?.forEach(({ renderer }) => renderer.destroy());
+  scene.productionStaticPlatformVisuals = [];
+  scene.productionTimelinePlatformVisuals = [];
+}
+
+function timelineAccent(timeline: TimelineKey): number {
+  if (timeline === 'past') return 0xe0a443;
+  if (timeline === 'future') return 0xe05a8a;
+  return 0x48cee8;
 }
 
 function drawLevelSignage(scene: PatchedGameScene): void {
