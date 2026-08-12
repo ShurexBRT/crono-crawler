@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
 import { TextureKeys } from '../assets/manifest';
+import { memoryArtifactFor } from '../content/memoryArtifacts';
+import { MemoryFragment } from '../entities/MemoryFragment';
 import { PlatformVisualRenderer } from '../rendering/PlatformVisualRenderer';
 import type { LevelData, TimelineBlockSpec, TimelineKey } from '../types';
+import { showMemoryArtifactOverlay } from '../../ui/MemoryArtifactOverlay';
 import { GameScene } from './scenes/GameScene';
 
 type TimelinePlatformVisual = {
@@ -15,6 +18,11 @@ type PatchedGameScene = Phaser.Scene & {
   timelineTint?: Phaser.GameObjects.Rectangle;
   productionStaticPlatformVisuals?: PlatformVisualRenderer[];
   productionTimelinePlatformVisuals?: TimelinePlatformVisual[];
+  memoryFragments?: MemoryFragment[];
+  isPaused?: boolean;
+  saveManager?: { markMemoryCollected: (id: string) => void };
+  audioManager?: { playSfx: (key: string) => void };
+  showDialogue?: (id: string, lines: string[], once: boolean) => void;
 };
 
 type SignSpec = {
@@ -103,6 +111,38 @@ proto.onTimelineChanged = function onTimelineChangedWithAnimation(this: PatchedG
   this.player?.playTimeShift?.();
   if (timeline === 'past' || timeline === 'present' || timeline === 'future') {
     updateProductionPlatformVisuals(this, timeline);
+  }
+};
+
+proto.updateMemoryFragments = function updateMemoryFragmentsWithArtifacts(this: PatchedGameScene): void {
+  const fragments = this.memoryFragments ?? [];
+
+  for (const fragment of fragments) {
+    const memory = fragment.update(this.player as never);
+    if (!memory) continue;
+
+    this.saveManager?.markMemoryCollected(memory.id);
+    this.audioManager?.playSfx('checkpoint');
+
+    const artifact = memory.artifact ?? memoryArtifactFor(memory.id);
+    if (!artifact) {
+      this.showDialogue?.(`memory-${memory.id}`, [memory.title, ...memory.lines], true);
+      break;
+    }
+
+    this.isPaused = true;
+    this.physics.pause();
+    showMemoryArtifactOverlay(
+      {
+        title: memory.title.replace(/^Memory Fragment:\s*/i, ''),
+        artifact,
+      },
+      () => {
+        this.isPaused = false;
+        this.physics.resume();
+      },
+    );
+    break;
   }
 };
 
