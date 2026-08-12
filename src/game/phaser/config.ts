@@ -6,6 +6,7 @@ import './productionBackdropRefinement';
 import './productionInteractables';
 import './productionFx';
 import './productionTutorialPolish';
+import './productionMigrationVisibility';
 import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';
