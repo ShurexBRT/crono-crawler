@@ -8,6 +8,7 @@ import './ui/productionHud';
 import './styles.css';
 import './ui/titleArt.css';
 import './ui/ending.css';
+import './ui/memoryArtifact.css';
 
 const saveManager = new SaveManager();
 const audioManager = new AudioManager(saveManager.getSettings());
