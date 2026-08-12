@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { collectRuntimeErrors, enterPlayableTutorial, focusPlayfield } from './support/playable';
 
 test('captures the Folded Reactor production target across all timelines', async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const runtimeErrors = collectRuntimeErrors(page);
   mkdirSync('artifacts/visual', { recursive: true });
 

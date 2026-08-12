@@ -41,22 +41,26 @@ export async function enterPlayableTutorial(page: Page): Promise<void> {
   await focusPlayfield(page);
 }
 
-export async function seedContinueSave(page: Page, levelId: string): Promise<void> {
-  await page.addInitScript((targetLevelId) => {
-    window.localStorage.setItem(
-      'chrono-crawler.save.v1',
-      JSON.stringify({
-        hasContinue: true,
-        currentLevelId: targetLevelId,
-        timeline: 'present',
-        settings: {
-          musicVolume: 0,
-          sfxVolume: 0,
-          fullscreen: false,
-        },
-      }),
-    );
-  }, levelId);
+export async function seedContinueSave(page: Page, levelId: string, checkpointId?: string): Promise<void> {
+  await page.addInitScript(
+    ({ targetLevelId, targetCheckpointId }) => {
+      window.localStorage.setItem(
+        'chrono-crawler.save.v1',
+        JSON.stringify({
+          hasContinue: true,
+          currentLevelId: targetLevelId,
+          checkpointId: targetCheckpointId,
+          timeline: 'present',
+          settings: {
+            musicVolume: 0,
+            sfxVolume: 0,
+            fullscreen: false,
+          },
+        }),
+      );
+    },
+    { targetLevelId: levelId, targetCheckpointId: checkpointId },
+  );
 }
 
 export async function focusPlayfield(page: Page): Promise<void> {
