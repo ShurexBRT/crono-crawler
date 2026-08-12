@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="18"/>
+      <feOffset dy="18"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .45 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e7d6ae"/>
+      <stop offset="0.52" stop-color="#d6bd8c"/>
+      <stop offset="1" stop-color="#b89b69"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d6849" stop-opacity=".10"/>
+      <stop offset=".5" stop-color="#fff6d7" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#58452f" stop-opacity=".18"/>
+    </linearGradient>
+    <radialGradient id="stain">
+      <stop offset="0" stop-color="#7e512d" stop-opacity=".20"/>
+      <stop offset="1" stop-color="#7e512d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="900" fill="none"/>
+
+  <g transform="translate(162 92) rotate(-2 438 340)" filter="url(#shadow)">
+    <path d="M42 34 824 18 866 644 65 682 18 123Z" fill="url(#paper)" stroke="#775f3d" stroke-width="5"/>
+    <path d="M18 123 438 338 824 18" fill="none" stroke="#8a724d" stroke-width="4" opacity=".36"/>
+    <path d="M65 682 438 338 866 644" fill="none" stroke="#8a724d" stroke-width="4" opacity=".34"/>
+    <path d="M438 338 430 30 445 670" fill="url(#fold)" opacity=".42"/>
+    <ellipse cx="146" cy="516" rx="115" ry="82" fill="url(#stain)"/>
+    <ellipse cx="738" cy="132" rx="90" ry="62" fill="url(#stain)" opacity=".6"/>
+
+    <g opacity=".20" stroke="#5d462e" stroke-width="2">
+      <path d="M112 184c148-16 301-15 452-12"/>
+      <path d="M102 226c186-18 381-16 573-9"/>
+      <path d="M95 268c198-14 392-15 603-6"/>
+      <path d="M88 310c184-10 366-11 556-2"/>
+      <path d="M82 352c193-7 391-8 594 4"/>
+    </g>
+
+    <text x="126" y="250" fill="#403426" font-size="54" font-family="Segoe Print, Comic Sans MS, cursive" transform="rotate(-1 126 250)">You said soon.</text>
+    <path d="M126 294c155 19 289 18 427 3" fill="none" stroke="#4f4030" stroke-width="4" opacity=".62"/>
+
+    <g transform="translate(156 392)" stroke="#514130" stroke-width="5" fill="none" opacity=".72">
+      <path d="M0 128 68 58 112 103 178 26 232 94 296 48 354 121"/>
+      <path d="M18 128V79M70 128V62M127 128V73M188 128V39M246 128V68M310 128V54"/>
+      <circle cx="334" cy="35" r="23"/>
+      <path d="M334 6v-20M334 84v20M305 35h-22M383 35h22"/>
+    </g>
+
+    <text x="590" y="590" fill="#574535" font-size="34" font-family="Segoe Print, Comic Sans MS, cursive" opacity=".78">M.</text>
+  </g>
+</svg>
