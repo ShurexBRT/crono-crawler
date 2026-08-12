@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { collectRuntimeErrors, dismissDialogue, focusPlayfield, seedContinueSave } from './support/playable';
 
-test('shows an optional memory fragment when Elias reaches it', async ({ page }) => {
+test('opens the Folded Paper artifact when Elias collects the first memory fragment', async ({ page }) => {
+  test.setTimeout(60_000);
   const runtimeErrors = collectRuntimeErrors(page);
   await seedContinueSave(page, 'tutorial', 'reactor-checkpoint');
 
@@ -19,11 +20,17 @@ test('shows an optional memory fragment when Elias reaches it', async ({ page })
   await page.keyboard.down('Shift');
   await page.keyboard.down('ArrowLeft');
   try {
-    await expect(page.locator('.dialogue-panel')).toContainText('Memory Fragment: Folded Paper', { timeout: 25_000 });
+    const artifact = page.locator('[data-memory-artifact]');
+    await expect(artifact).toBeVisible({ timeout: 35_000 });
+    await expect(artifact).toContainText('Folded Paper');
+    await expect(artifact.locator('img')).toHaveAttribute('src', /folded-paper\.svg/);
+    await expect(artifact.locator('img')).toHaveAttribute('alt', /You said soon/i);
   } finally {
     await page.keyboard.up('ArrowLeft');
     await page.keyboard.up('Shift');
   }
 
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-memory-artifact]')).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);
 });
