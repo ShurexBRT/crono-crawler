@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import type { MemoryFragmentSpec } from '../types';
 
+type BoundsActor = Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle };
+type MemoryActor = BoundsActor | { sprite: BoundsActor };
+
 export class MemoryFragment {
   readonly id: string;
   private collected: boolean;
@@ -19,8 +22,9 @@ export class MemoryFragment {
     this.core.setDepth(10.6);
   }
 
-  update(actor: Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle }): MemoryFragmentSpec | undefined {
-    if (this.collected || !overlaps(actor, this.bounds())) {
+  update(actor: MemoryActor): MemoryFragmentSpec | undefined {
+    const boundsActor = 'sprite' in actor ? actor.sprite : actor;
+    if (this.collected || !overlaps(boundsActor, this.bounds())) {
       return undefined;
     }
 
@@ -38,6 +42,6 @@ export class MemoryFragment {
   }
 }
 
-function overlaps(actor: Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle }, target: Phaser.Geom.Rectangle): boolean {
+function overlaps(actor: BoundsActor, target: Phaser.Geom.Rectangle): boolean {
   return Phaser.Geom.Intersects.RectangleToRectangle(actor.getBounds(), target);
 }
