@@ -1,5 +1,11 @@
 export type TimelineKey = 'past' | 'present' | 'future';
 
+export type PlatformVisualFamily =
+  | 'reactor-heavy'
+  | 'reactor-catwalk'
+  | 'reactor-gantry'
+  | 'reactor-machine';
+
 export interface SettingsState {
   musicVolume: number;
   sfxVolume: number;
@@ -58,10 +64,12 @@ export interface TimelineVisualState {
 export interface PlatformSpec extends RectSpec {
   id: string;
   color?: number;
+  visualFamily?: PlatformVisualFamily;
 }
 
 export interface TimelineBlockSpec extends RectSpec {
   id: string;
+  visualFamily?: PlatformVisualFamily;
   states: Record<TimelineKey, TimelineVisualState>;
 }
 
