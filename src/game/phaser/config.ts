@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import './scenePolish';
 import './productionArt';
 import './productionLoadOptimization';
+import './reactorPlatformArt';
 import './productionBackdropRefinement';
 import './productionInteractables';
 import './productionFx';
