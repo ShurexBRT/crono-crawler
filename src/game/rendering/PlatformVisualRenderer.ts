@@ -3,12 +3,31 @@ import { TextureKeys } from '../assets/manifest';
 import type { PlatformVisualFamily, RectSpec, TimelineKey } from '../types';
 
 const MODULE_WIDTH = 128;
-const TOP_STRIP_HEIGHT = 5;
+const TOP_STRIP_HEIGHT = 4;
 
-const textureForTimeline = (timeline: TimelineKey): string => {
-  if (timeline === 'past') return TextureKeys.productionPlatformPast;
-  if (timeline === 'future') return TextureKeys.productionPlatformFuture;
-  return TextureKeys.productionPlatformPresent;
+type RectWithId = RectSpec & { id?: string };
+
+const moduleTextureKeys: Record<PlatformVisualFamily, Record<TimelineKey, string>> = {
+  'reactor-heavy': {
+    past: TextureKeys.reactorHeavyPast,
+    present: TextureKeys.reactorHeavyPresent,
+    future: TextureKeys.reactorHeavyFuture,
+  },
+  'reactor-catwalk': {
+    past: TextureKeys.reactorCatwalkPast,
+    present: TextureKeys.reactorCatwalkPresent,
+    future: TextureKeys.reactorCatwalkFuture,
+  },
+  'reactor-gantry': {
+    past: TextureKeys.reactorGantryPast,
+    present: TextureKeys.reactorGantryPresent,
+    future: TextureKeys.reactorGantryFuture,
+  },
+  'reactor-machine': {
+    past: TextureKeys.reactorMachinePast,
+    present: TextureKeys.reactorMachinePresent,
+    future: TextureKeys.reactorMachineFuture,
+  },
 };
 
 const accentForTimeline = (timeline: TimelineKey): number => {
@@ -35,7 +54,7 @@ export interface PlatformVisualOptions {
  */
 export class PlatformVisualRenderer {
   private readonly scene: Phaser.Scene;
-  private readonly rect: RectSpec;
+  private readonly rect: RectWithId;
   private readonly family: PlatformVisualFamily;
   private readonly depth: number;
   private readonly root: Phaser.GameObjects.Container;
@@ -44,7 +63,7 @@ export class PlatformVisualRenderer {
   private readonly supportGraphics: Phaser.GameObjects.Graphics;
   private timeline: TimelineKey;
 
-  constructor(scene: Phaser.Scene, rect: RectSpec, options: PlatformVisualOptions = {}) {
+  constructor(scene: Phaser.Scene, rect: RectWithId, options: PlatformVisualOptions = {}) {
     this.scene = scene;
     this.rect = rect;
     this.family = options.family ?? inferFamily(rect);
@@ -60,7 +79,7 @@ export class PlatformVisualRenderer {
 
   setTimeline(timeline: TimelineKey): void {
     this.timeline = timeline;
-    const texture = textureForTimeline(timeline);
+    const texture = moduleTextureKeys[this.family][timeline];
     const accent = accentForTimeline(timeline);
 
     for (const image of this.moduleImages) {
@@ -73,7 +92,7 @@ export class PlatformVisualRenderer {
     }
 
     for (const bar of this.accentBars) {
-      bar.setFillStyle(accent, timeline === 'future' ? 0.7 : 0.78);
+      bar.setFillStyle(accent, timeline === 'future' ? 0.58 : 0.72);
     }
 
     this.drawSupports();
@@ -110,7 +129,7 @@ export class PlatformVisualRenderer {
       const width = Math.min(MODULE_WIDTH, remaining);
       const centerX = moduleLeft + width / 2;
 
-      const texture = textureForTimeline(this.timeline);
+      const texture = moduleTextureKeys[this.family][this.timeline];
       const image = this.scene.add.image(centerX, topY, texture);
       image.setOrigin(0.5, 0);
       image.setDisplaySize(width + 1, visualHeight);
@@ -119,95 +138,86 @@ export class PlatformVisualRenderer {
       this.moduleImages.push(image);
 
       if (index === 0 || index === moduleCount - 1) {
-        const capWidth = Math.min(8, Math.max(4, width * 0.08));
+        const capWidth = Math.min(7, Math.max(4, width * 0.07));
         const capX = index === 0 ? moduleLeft + capWidth / 2 : moduleLeft + width - capWidth / 2;
-        const cap = this.scene.add.rectangle(capX, topY + visualHeight * 0.48, capWidth, visualHeight * 0.88, 0x080b0f, 0.66);
-        cap.setStrokeStyle(1, accentForTimeline(this.timeline), 0.55);
+        const cap = this.scene.add.rectangle(capX, topY + visualHeight * 0.46, capWidth, visualHeight * 0.78, 0x05070a, 0.68);
+        cap.setStrokeStyle(1, accentForTimeline(this.timeline), 0.42);
         cap.setDepth(this.depth + 0.01);
         this.root.add(cap);
       }
     }
 
+    // Thin gameplay edge line keeps the true collision top readable even on busy art.
     const topStrip = this.scene.add.rectangle(
       this.rect.x,
       topY + TOP_STRIP_HEIGHT / 2,
       Math.max(8, this.rect.width - 4),
       TOP_STRIP_HEIGHT,
       accentForTimeline(this.timeline),
-      0.76,
+      0.7,
     );
     topStrip.setDepth(this.depth + 0.04);
     this.root.add(topStrip);
     this.accentBars.push(topStrip);
-
-    if (this.family === 'reactor-heavy' || this.family === 'reactor-machine') {
-      const lowerStrip = this.scene.add.rectangle(
-        this.rect.x,
-        topY + visualHeight - 5,
-        Math.max(8, this.rect.width - 18),
-        3,
-        accentForTimeline(this.timeline),
-        0.24,
-      );
-      lowerStrip.setDepth(this.depth + 0.04);
-      this.root.add(lowerStrip);
-      this.accentBars.push(lowerStrip);
-    }
   }
 
   private drawSupports(): void {
     this.supportGraphics.clear();
 
     const color = supportColorForTimeline(this.timeline);
-    const alpha = this.timeline === 'future' ? 0.62 : 0.76;
+    const alpha = this.timeline === 'future' ? 0.54 : 0.7;
     const topY = this.rect.y - this.rect.height / 2;
     const visualHeight = platformFaceHeight(this.family, this.rect.height);
-    const supportTop = topY + Math.max(18, visualHeight - 7);
-
-    this.supportGraphics.lineStyle(this.family === 'reactor-heavy' ? 7 : 4, color, alpha);
+    const supportTop = topY + Math.max(20, visualHeight - 9);
 
     if (this.family === 'reactor-catwalk' || this.family === 'reactor-gantry') {
-      const spacing = this.family === 'reactor-gantry' ? 150 : 110;
-      const supportDepth = this.family === 'reactor-gantry' ? 54 : 38;
-      const left = this.rect.x - this.rect.width / 2 + 20;
-      const right = this.rect.x + this.rect.width / 2 - 20;
+      const spacing = this.family === 'reactor-gantry' ? 160 : 118;
+      const supportDepth = this.family === 'reactor-gantry' ? 55 : 38;
+      const left = this.rect.x - this.rect.width / 2 + 18;
+      const right = this.rect.x + this.rect.width / 2 - 18;
 
+      this.supportGraphics.lineStyle(this.family === 'reactor-gantry' ? 5 : 4, color, alpha);
       for (let x = left; x < right; x += spacing) {
-        const next = Math.min(x + spacing * 0.72, right);
+        const next = Math.min(x + spacing * 0.76, right);
         this.supportGraphics.lineBetween(x, supportTop, next, supportTop + supportDepth);
         this.supportGraphics.lineBetween(next, supportTop, x, supportTop + supportDepth);
       }
 
       if (this.family === 'reactor-gantry') {
-        this.supportGraphics.lineStyle(3, color, alpha * 0.86);
-        this.supportGraphics.lineBetween(left, supportTop - 80, left + 16, supportTop);
-        this.supportGraphics.lineBetween(right, supportTop - 80, right - 16, supportTop);
+        this.supportGraphics.lineStyle(3, color, alpha * 0.82);
+        this.supportGraphics.lineBetween(left, supportTop - 72, left + 14, supportTop);
+        this.supportGraphics.lineBetween(right, supportTop - 72, right - 14, supportTop);
       }
       return;
     }
 
-    const spacing = this.family === 'reactor-machine' ? 190 : 150;
-    const supportDepth = this.family === 'reactor-machine' ? 72 : 58;
+    const spacing = this.family === 'reactor-machine' ? 200 : 158;
+    const supportDepth = this.family === 'reactor-machine' ? 68 : 54;
     const left = this.rect.x - this.rect.width / 2 + 34;
     const right = this.rect.x + this.rect.width / 2 - 34;
 
+    this.supportGraphics.lineStyle(this.family === 'reactor-machine' ? 8 : 6, color, alpha);
     for (let x = left; x <= right; x += spacing) {
       this.supportGraphics.lineBetween(x, supportTop, x, supportTop + supportDepth);
-      this.supportGraphics.lineBetween(x - 24, supportTop + supportDepth, x, supportTop + 10);
-      this.supportGraphics.lineBetween(x + 24, supportTop + supportDepth, x, supportTop + 10);
+      this.supportGraphics.lineBetween(x - 25, supportTop + supportDepth, x, supportTop + 9);
+      this.supportGraphics.lineBetween(x + 25, supportTop + supportDepth, x, supportTop + 9);
     }
   }
 }
 
-const inferFamily = (rect: RectSpec): PlatformVisualFamily => {
+const inferFamily = (rect: RectWithId): PlatformVisualFamily => {
+  const id = rect.id?.toLowerCase() ?? '';
+  if (id.includes('bridge') || id.includes('span')) return 'reactor-gantry';
+  if (id.includes('step') || id.includes('catwalk')) return 'reactor-catwalk';
+  if (id.includes('machine') || id.includes('housing')) return 'reactor-machine';
   if (rect.height <= 26) return 'reactor-catwalk';
   if (rect.height >= 72) return 'reactor-machine';
   return 'reactor-heavy';
 };
 
 const platformFaceHeight = (family: PlatformVisualFamily, sourceHeight: number): number => {
-  if (family === 'reactor-catwalk') return Math.max(24, Math.min(34, sourceHeight + 10));
-  if (family === 'reactor-gantry') return Math.max(30, Math.min(40, sourceHeight + 12));
-  if (family === 'reactor-machine') return Math.max(54, Math.min(82, sourceHeight));
-  return Math.max(42, Math.min(62, sourceHeight));
+  if (family === 'reactor-catwalk') return Math.max(30, Math.min(48, sourceHeight + 18));
+  if (family === 'reactor-gantry') return Math.max(44, Math.min(64, sourceHeight + 30));
+  if (family === 'reactor-machine') return Math.max(62, Math.min(92, sourceHeight + 18));
+  return Math.max(54, Math.min(78, sourceHeight + 14));
 };
