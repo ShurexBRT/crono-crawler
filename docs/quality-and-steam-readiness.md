@@ -6,13 +6,15 @@ Date: 2026-09-10. Status: CAMPAIGN ALPHA, NOT RELEASE APPROVED.
 
 The current twelve-stage campaign has not been played end to end. Browser access was explicitly denied again on September 10 by this task's saved preference, despite the user's chat authorization and expanded filesystem permissions. No alternate browser or indirect browsing workaround was attempted. Existing screenshot locations contain no current locally reviewed in-game capture set. Source illustrations can be inspected locally, but they cannot prove in-game framing, animation, puzzle readability, or frame rate.
 
-The standard production build and 32 browser-independent checks pass. All 57 browser tests are discoverable, not locally executed. Git access now works; local metadata was aligned to remote main 56a4f2b4dfc344795c660ea7db94418dd183d4d3 while preserving the working source. Publication/deployment evidence is tracked in release-status.md, separately from local browser and full-campaign sign-off.
+The standard production build and 32 browser-independent checks pass. All 57 browser tests are discoverable, not locally executed. Main commits 59b87f6 and 5df763c were pushed. The normal Pages workflow passed its first 38 browser cases before the agent prematurely canceled the slow run; no visual review or full campaign completion is inferred from that partial CI result. Publication/deployment evidence is tracked in release-status.md, separately from local browser and full-campaign sign-off.
 
 ## Findings
 
 1. RELEASE BLOCKER: no continuous ordinary-input campaign completion evidence. Static geometry and satisfiable flags are necessary but do not prove that timing, collision and echo puzzles are actually playable.
 2. RELEASE BLOCKER: no in-game aesthetic sign-off. Gameplay platforms/devices use crisp generated vector textures, while characters and backgrounds use painterly imagery. Their combined visual consistency needs inspection at gameplay scale; this is a risk, not a claim of a verified rendered defect.
 3. ART FIX REQUIRED: the Elias source atlas visibly has small red/yellow edge artifacts around coat and hair silhouettes. Inspect the runtime alpha composite on both dark reactor and bright rooftop backgrounds, then clean the source and re-test. Do not replace it with a baked-checkerboard asset.
+
+   Two September 10 ImageGen cleanup candidates were rejected: both were RGB PNGs with a painted checkerboard rather than real alpha. Neither was copied into the repository or referenced by the game. The original transparent source remains unchanged.
 4. ANIMATION FIX REQUIRED: activation repeats one source pose; landing/jump frames are repacked from a small pose set. The source pose quality is not enough to certify timing, foot sliding or loop smoothness. A dedicated animation pass is needed before a premium release claim.
 5. AUDIO POLISH REQUIRED: the current AudioManager has three sustained ambience oscillators and short synthesized cues. It is a functional sound system, not yet a reviewed level-by-level soundscape or final mix. Listening review remains outstanding.
 6. DESKTOP RELEASE MISSING: the repository builds a web application. There is no packaged, tested desktop distribution or verified Steam launch configuration. Do not advertise desktop, controller, Cloud, achievements or Deck support beyond implemented and tested features.

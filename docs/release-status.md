@@ -32,7 +32,8 @@ Updated September 10, 2026. This is an expanded, integrated campaign alpha, NOT 
 | Local Vite startup | Started on port 5173; recent rebuild/reload activity appears in server logs |
 | Actual browser smoke/visual execution | BLOCKED, not passed |
 | Full keyboard traversal through the campaign | NOT PERFORMED |
-| Main publication / production deploy | Preparing publication from origin/main 56a4f2b; no deployment success claimed in this snapshot |
+| Main publication | PUSHED: 59b87f6 (24 art assets/provenance) and 5df763c (campaign, book, tests) |
+| Production deploy | First run 34479518727 canceled before deployment; replacement run pending |
 
 Source images were inspected as generated. That is NOT an in-game visual pass. Added browser coverage includes 24 stage/viewport combinations with three timeline screenshots each, actual renderer pixel sampling, HUD overlap, the memory journal, saved switches, ending, and eight real hotel staircase jumps. The staircase case intentionally isolates movement from story popups; it is not a full campaign playthrough.
 
@@ -44,7 +45,7 @@ Remote main was read at 56a4f2b4dfc344795c660ea7db94418dd183d4d3 and reconciled 
 
 Git access is now available. Fetch succeeded, the old local HEAD was verified as an ancestor of origin/main, and a mixed reset aligned local metadata to 56a4f2b without changing any working source or untracked files. Earlier Git/GitHub write denials are historical, not the current publication blocker.
 
-The local Pages workflow now requires build, systems tests, and browser smoke tests before deployment and uploads playtest evidence. This workflow change is not active remotely yet.
+The Pages workflow now requires build, systems tests, and browser smoke tests before deployment and uploads playtest evidence. It is active on main. First run 34479518727 passed build, all 32 systems checks and its first 38 browser cases (including all 24 stage/viewport cases). The agent canceled it prematurely after mistaking slow software rendering for a stall. No browser failure preceded cancellation, and no new version deployed. CI now uses two isolated test workers, an explicit time limit and an early stop on repeated failures. CI screenshots have not been inspected as a workaround for the saved local browser denial.
 
 User-owned .agents/, AGENTS.md, and docs/game-architecture.md were left untouched and must not be included accidentally in a release commit.
 

@@ -3,11 +3,13 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/smoke',
   timeout: 60_000,
-  workers: 1,
+  workers: process.env.CI ? 2 : 1,
+  maxFailures: process.env.CI ? 5 : undefined,
+  globalTimeout: process.env.CI ? 30 * 60_000 : undefined,
   expect: {
     timeout: 7_500,
   },
-  fullyParallel: false,
+  fullyParallel: true,
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:5173',
