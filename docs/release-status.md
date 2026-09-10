@@ -64,4 +64,6 @@ Details: docs/art/campaign-production-manifest.md and docs/art/campaign-asset-pr
 
 Memory Vault review fixes: fresh gamepad button edges now work; held buttons do not repeat; book padding follows the actual book width; save failure status refreshes when the suspended menu returns; reopening a page retries a failed bookmark write. Eight new browser-independent checks cover these model/save/input contracts and the book source asset. Three added browser scenarios are authored but not locally executed.
 
+Dependency audit: the September 10 install reported two vulnerable development dependencies. A focused lockfile update changes PostCSS 8.5.15 to 8.5.28 and Nano ID 3.3.12 to 3.3.18 without changing Phaser or Vite. Production build and all 32 system checks still pass; npm audit reports zero known vulnerabilities for this lockfile. Relevant advisories: [PostCSS](https://github.com/advisories/GHSA-fxqj-rqcc-2cmp) and [Nano ID](https://github.com/advisories/GHSA-2v37-7h3g-55p8). This is an audit result, not a blanket security certification.
+
 Quality findings, per-level playtest ledger and the separate Steam release track: docs/quality-and-steam-readiness.md.
