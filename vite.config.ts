@@ -1,9 +1,11 @@
 import { createReadStream, cpSync, existsSync, statSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 
-const assetRoot = resolve(__dirname, 'assets');
-const distAssetRoot = resolve(__dirname, 'dist/assets');
+const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const assetRoot = resolve(projectRoot, 'assets');
+const distAssetRoot = resolve(projectRoot, 'dist/assets');
 
 function chronoCrawlerAssets(): Plugin {
   return {

@@ -365,6 +365,45 @@ p {
   background-position: center;
 }
 
+.ending-screen {
+  justify-items: start;
+  align-items: safe center;
+  height: 100%;
+  padding: 2rem max(1.25rem, 6%);
+  background: linear-gradient(90deg, rgba(3, 6, 10, 0.94), rgba(3, 6, 10, 0.28));
+  overflow-y: auto;
+}
+
+.ending-screen article {
+  width: min(38rem, 100%);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.ending-screen h2 {
+  font-size: 2.5rem;
+  line-height: 1.08;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.ending-screen .title-kicker {
+  margin-bottom: 1rem;
+  letter-spacing: 0;
+}
+
+.ending-memories {
+  color: #6ee7f2;
+  font-size: 0.875rem;
+}
+
+.ending-screen button {
+  min-width: min(11rem, 100%);
+  max-width: 100%;
+}
+
 .intro-screen::before,
 .intro-screen::after {
   content: "";
@@ -459,7 +498,7 @@ p {
   background:
     linear-gradient(90deg, rgba(2, 4, 9, 0.94), rgba(2, 4, 9, 0.36) 48%, rgba(2, 4, 9, 0.92)),
     linear-gradient(180deg, rgba(5, 8, 14, 0.08), rgba(2, 4, 9, 0.7)),
-    url("../assets/gloomy_industrial_nightscape_with_steam_and_lights.png");
+    var(--reactor-art);
   background-size: cover;
   background-position: center;
   filter: saturate(0.88) contrast(1.08);

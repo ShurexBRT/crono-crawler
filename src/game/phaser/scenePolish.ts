@@ -19,23 +19,6 @@ type SignSpec = {
   alpha?: number;
 };
 
-const backdropByBackground: Record<LevelData['background'], string> = {
-  reactor: TextureKeys.backdropReactor,
-  streets: TextureKeys.backdropStreets,
-  greenhouse: TextureKeys.backdropGreenhouse,
-  station: TextureKeys.backdropStation,
-  canals: TextureKeys.backdropStreets,
-  core: TextureKeys.backdropCore,
-};
-
-const backdropTintByBackground: Record<LevelData['background'], number> = {
-  reactor: 0x08070b,
-  streets: 0x05070c,
-  greenhouse: 0x06100b,
-  station: 0x07090f,
-  canals: 0x041019,
-  core: 0x09070d,
-};
 
 const signsByLevel: Record<string, SignSpec[]> = {
   tutorial: [
@@ -68,6 +51,25 @@ const signsByLevel: Record<string, SignSpec[]> = {
     { x: 1015, y: 638, width: 190, height: 34, text: 'KEYS WHILE YOU WAIT', accent: 0x6ee7f2 },
     { x: 1900, y: 488, width: 230, height: 38, text: 'LOST PHOTOS', accent: 0xe0618a },
   ],
+  'hourglass-hotel': [
+    { x: 245, y: 1120, width: 250, height: 42, text: 'HOURGLASS HOTEL', accent: 0xf0a64d },
+    { x: 850, y: 920, width: 190, height: 34, text: 'FUTURE / SERVICE', accent: 0xe0618a },
+    { x: 1720, y: 475, width: 180, height: 34, text: 'DEPARTURES', accent: 0x6ee7f2 },
+  ],
+  'unsaid-archive': [
+    { x: 430, y: 480, width: 210, height: 36, text: 'PAST / RECORDS', accent: 0xf0a64d },
+    { x: 1040, y: 460, width: 210, height: 36, text: 'PRESENT / TESTIMONY', accent: 0x6ee7f2 },
+    { x: 2050, y: 480, width: 210, height: 36, text: 'FUTURE / RELEASE', accent: 0xe0618a },
+  ],
+  'crownline-rooftops': [
+    { x: 230, y: 390, width: 210, height: 36, text: 'CROWNLINE', accent: 0xf0a64d },
+    { x: 1430, y: 430, width: 200, height: 36, text: 'KEEP GOING', accent: 0x6ee7f2 },
+  ],
+  'core-reliquary': [
+    { x: 330, y: 480, width: 200, height: 36, text: 'I / REMEMBER', accent: 0xf0a64d },
+    { x: 1670, y: 390, width: 200, height: 36, text: 'II / ACCEPT', accent: 0x6ee7f2 },
+    { x: 2180, y: 480, width: 200, height: 36, text: 'III / RELEASE', accent: 0xe0618a },
+  ],
   boss: [
     { x: 410, y: 622, width: 170, height: 34, text: 'ANCHOR I', accent: 0xf0a64d },
     { x: 1285, y: 474, width: 170, height: 34, text: 'ANCHOR II', accent: 0x6ee7f2 },
@@ -80,9 +82,6 @@ const proto = GameScene.prototype as unknown as Record<string, (...args: unknown
 const originalBuildLevel = proto.buildLevel;
 const originalOnTimelineChanged = proto.onTimelineChanged;
 
-proto.drawBackground = function drawBackgroundWithExternalBackdrop(this: PatchedGameScene): void {
-  drawExternalBackdrop(this);
-};
 
 proto.buildLevel = function buildLevelWithSignage(this: PatchedGameScene): void {
   originalBuildLevel.call(this);
@@ -94,30 +93,6 @@ proto.onTimelineChanged = function onTimelineChangedWithAnimation(this: PatchedG
   this.player?.playTimeShift?.();
 };
 
-function drawExternalBackdrop(scene: PatchedGameScene): void {
-  const backdropKey = backdropByBackground[scene.level.background];
-  const tint = backdropTintByBackground[scene.level.background];
-
-  scene.add.rectangle(scene.level.width / 2, 360, scene.level.width + 640, 760, tint, 1).setDepth(-32);
-
-  if (scene.textures.exists(backdropKey)) {
-    const backdrop = scene.add.image(scene.level.width / 2, 360, backdropKey);
-    backdrop.setOrigin(0.5);
-    backdrop.setDepth(-31);
-    backdrop.setAlpha(0.95);
-    backdrop.setScrollFactor(0.12, 0.04);
-    backdrop.setDisplaySize(Math.max(scene.level.width + 900, 2200), 780);
-  }
-
-  scene.add.rectangle(scene.level.width / 2, 360, scene.level.width + 900, 780, 0x05070c, 0.22).setDepth(-30).setScrollFactor(0.12, 0.04);
-  scene.add.rectangle(scene.level.width / 2, 704, scene.level.width, 54, 0x05060a, 0.82).setDepth(-7);
-  scene.add.rectangle(scene.level.width / 2, 675, scene.level.width, 4, 0x6ee7f2, 0.16).setDepth(-6);
-
-  scene.timelineTint = scene.add.rectangle(640, 360, 1280, 720, 0x000000, 0.06);
-  scene.timelineTint.setScrollFactor(0);
-  scene.timelineTint.setDepth(30);
-  scene.timelineTint.setBlendMode(Phaser.BlendModes.ADD);
-}
 
 function drawLevelSignage(scene: PatchedGameScene): void {
   const signs = signsByLevel[scene.level.id] ?? [];

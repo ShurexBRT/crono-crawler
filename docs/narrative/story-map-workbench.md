@@ -320,3 +320,6 @@ Before writing final dialogue, decide in this order:
 10. Final ending prose and timing.
 
 This order matters. Writing polished dialogue before these decisions are stable will produce nice sentences attached to a shaky story.
+## Implemented Campaign Resolution
+
+The September campaign pass in `src/game/content/campaign-story.ts` resolves the Glasshouse girl as Mara's repeating memory signal, not a resurrected child. Required openings connect all twelve stages. Optional memories show her humor, habits, and relationship with Elias; recurring handwriting and gestures foreshadow the Keeper. The ending asks Elias to stop correcting time and accept an imperfect tomorrow. Earlier open questions below are retained as development history; this runtime interpretation supersedes them until a playtest-driven narrative revision.

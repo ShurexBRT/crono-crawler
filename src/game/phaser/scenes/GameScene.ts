@@ -12,20 +12,14 @@ import { AudioManager } from '../../systems/AudioManager';
 import { CheckpointSystem } from '../../systems/CheckpointSystem';
 import { DialogueManager } from '../../systems/DialogueManager';
 import { GhostRecorder } from '../../systems/GhostRecorder';
+import { watchFocusLoss } from '../../systems/FocusLossGuard';
 import { LevelFlowSystem } from '../../systems/LevelFlowSystem';
 import { SaveManager } from '../../systems/SaveManager';
 import { TimelineManager } from '../../systems/TimelineManager';
+import { ParallaxBackdrop, preloadBackdrop } from '../rendering/ParallaxBackdrop';
 import type { LevelData, RectSpec, StoryZoneSpec, TimelineKey } from '../../types';
 import type { UIManager } from '../../../ui/UIManager';
 
-type NoirPalette = {
-  sky: number;
-  horizon: number;
-  far: number;
-  mid: number;
-  near: number;
-  accent: number;
-};
 
 interface GameSceneData {
   levelId?: string;
@@ -34,6 +28,7 @@ interface GameSceneData {
 }
 
 export class GameScene extends Phaser.Scene {
+  private focusPauseRequested = false;
   private saveManager!: SaveManager;
   private audioManager!: AudioManager;
   private uiManager!: UIManager;
@@ -63,9 +58,19 @@ export class GameScene extends Phaser.Scene {
   private storyTriggered = new Set<string>();
   private isPaused = false;
   private isRespawning = false;
+  private backdrop?: ParallaxBackdrop;
+  private mara?: Phaser.GameObjects.Sprite;
 
   constructor() {
     super('GameScene');
+  }
+
+  init(data: GameSceneData): void {
+    this.level = getLevel(data.levelId ?? 'tutorial');
+  }
+
+  preload(): void {
+    preloadBackdrop(this, this.level.id);
   }
 
   create(data: GameSceneData): void {
@@ -74,9 +79,11 @@ export class GameScene extends Phaser.Scene {
     this.uiManager = this.registry.get('uiManager') as UIManager;
     this.resetRuntimeState();
     this.level = getLevel(data.levelId ?? 'tutorial');
-    this.latchedFlags = new Set(this.saveManager.getLevelFlags(this.level.id));
     this.timelineManager = new TimelineManager(data.timeline ?? this.level.startTimeline);
-    this.checkpointSystem = new CheckpointSystem(this.level, this.timelineManager.current, data.checkpointId);
+    const progress = this.saveManager.getProgression();
+    this.latchedFlags = new Set(this.saveManager.getLevelFlags(this.level.id));
+    this.storyTriggered = new Set(progress.levelStoryIds[this.level.id] ?? []);
+    this.checkpointSystem = new CheckpointSystem(this.level, progress?.checkpointTimeline ?? this.timelineManager.current, data.checkpointId);
     this.levelFlowSystem = new LevelFlowSystem(this.level);
     this.dialogueManager = new DialogueManager();
     this.ghostRecorder = new GhostRecorder();
@@ -91,7 +98,7 @@ export class GameScene extends Phaser.Scene {
 
     this.drawBackground();
     this.buildLevel();
-    this.player = new Player(this, this.checkpointSystem.resolveSpawn(this.timelineManager.current, data.checkpointId));
+    this.player = new Player(this, this.checkpointSystem.rewindSpawn());
     this.configurePhysics();
     this.configureCamera();
     this.applyTimeline();
@@ -106,12 +113,22 @@ export class GameScene extends Phaser.Scene {
       ghostProgress: 0,
     });
 
-    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id);
+    this.saveCurrentProgress();
+    this.uiManager.setMemoryVaultAccess(() => this.openMemoryVault());
     this.showDialogue(`start-${this.level.id}`, this.level.startLines, true);
+    const stopWatchingFocus = watchFocusLoss(window, document, () => this.pauseForFocusLoss());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, stopWatchingFocus);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.uiManager.setMemoryVaultAccess());
   }
 
   update(_time: number, delta: number): void {
     if (!this.player || this.levelFlowSystem.isComplete) {
+      return;
+    }
+
+    if (this.uiManager.isMemoryVaultOpen) return;
+    if (this.inputController.justPressed('journal')) {
+      this.openMemoryVault();
       return;
     }
 
@@ -125,6 +142,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const interactPressed = this.inputController.justPressed('interact');
+    this.backdrop?.update(delta, this.saveManager.getSettings().reducedMotion);
     const recordPressed = this.inputController.justPressed('record');
     const rewindPressed = this.inputController.justPressed('rewind');
 
@@ -144,7 +162,7 @@ export class GameScene extends Phaser.Scene {
     if (recordPressed) {
       this.toggleRecording();
     }
-    this.updateRecording(interactPressed);
+    this.updateRecording(interactPressed, delta);
 
     if (rewindPressed) {
       this.rewindToCheckpoint();
@@ -154,9 +172,18 @@ export class GameScene extends Phaser.Scene {
     this.enemies.forEach((enemy) => enemy.update());
     this.updateFlags(interactPressed);
     this.updateHazards();
+    if (this.isRespawning) {
+      return;
+    }
     this.updateCheckpoints();
     this.updateStoryZones();
+    if (this.dialogueManager.isActive) {
+      return;
+    }
     this.updateMemoryFragments();
+    if (this.dialogueManager.isActive) {
+      return;
+    }
     this.updateExit();
     this.updateHud();
 
@@ -171,24 +198,25 @@ export class GameScene extends Phaser.Scene {
     this.doors = this.level.doors.map((door) => new TimelineDoor(this, door, this.solidGroup));
     this.plates = this.level.plates.map((plate) => new PressurePlate(this, plate));
     this.switches = this.level.switches.map((lever) => new LeverSwitch(this, lever));
-    this.checkpoints = this.level.checkpoints.map((checkpoint) => new CheckpointBeacon(this, checkpoint, TextureKeys.checkpoint));
+    this.switches.forEach((lever) => lever.restore(this.latchedFlags.has(lever.flag)));
+    this.checkpoints = this.level.checkpoints.map((checkpoint) => new CheckpointBeacon(this, checkpoint, TextureKeys.productionCheckpoint));
     this.enemies = this.level.enemies.map((enemy) => new Enemy(this, enemy));
     this.hazards = (this.level.hazards ?? []).map((hazard) => new HazardZone(this, hazard));
-    this.memoryFragments = (this.level.memoryFragments ?? []).map(
-      (fragment) => new MemoryFragment(this, fragment, this.saveManager.isMemoryCollected(fragment.id)),
-    );
+    const collected = new Set(this.saveManager.getProgression().collectedMemoryFragmentIds);
+    this.memoryFragments = (this.level.memoryFragments ?? []).filter((fragment) => !collected.has(fragment.id)).map((fragment) => new MemoryFragment(this, fragment));
 
     this.exitZone = this.add.rectangle(this.level.exit.x, this.level.exit.y, this.level.exit.width, this.level.exit.height, 0x6ee7f2, 0.16);
     this.exitZone.setStrokeStyle(1, 0x6ee7f2, 0.6);
     this.exitZone.setDepth(6);
 
     if (this.level.id === 'boss') {
-      this.add.sprite(2265, 590, TextureKeys.keeper).setDepth(13).setDisplaySize(84, 150).setAlpha(0.92);
+      this.add.sprite(2265, 590, TextureKeys.keeper).setDepth(13).setDisplaySize(66, 140).setTintFill(0x111b1d).setAlpha(0.92);
       this.add.sprite(2180, 505, TextureKeys.core).setDepth(5).setScale(1.45).setAlpha(0.64);
     }
 
-    if (this.level.id === 'level-2') {
-      this.add.sprite(530, 637, TextureKeys.girl).setDepth(10).setDisplaySize(56, 96).setAlpha(0.88);
+    if (this.level.id === 'level-2' && !this.storyTriggered.has('girl-vanish')) {
+      this.mara = this.add.sprite(530, 615, TextureKeys.girl).setDepth(10).setAlpha(0.7);
+      this.mara.setScale(86 / this.mara.height);
     }
   }
 
@@ -205,11 +233,14 @@ export class GameScene extends Phaser.Scene {
     this.exitZone = undefined;
     this.timelineTint = undefined;
     this.recordingAura = undefined;
+    this.backdrop = undefined;
+    this.mara = undefined;
     this.latchedFlags.clear();
     this.heldFlags.clear();
     this.storyTriggered.clear();
     this.isPaused = false;
     this.isRespawning = false;
+    this.focusPauseRequested = false;
   }
 
   private configurePhysics(): void {
@@ -224,115 +255,15 @@ export class GameScene extends Phaser.Scene {
 
   private configureCamera(): void {
     const camera = this.level.camera;
-    const followLerp = camera?.followLerp ?? { x: 0.08, y: 0.08 };
-    const deadzone = camera?.deadzone ?? { width: 220, height: 120 };
-    const followOffset = camera?.followOffset ?? { x: 0, y: 0 };
-
-    this.cameras.main.startFollow(this.player.sprite, true, followLerp.x, followLerp.y);
-    this.cameras.main.setDeadzone(deadzone.width, deadzone.height);
-    this.cameras.main.setFollowOffset(followOffset.x, followOffset.y);
+    const follow = camera?.followLerp ?? { x: 0.08, y: 0.08 };
+    this.cameras.main.startFollow(this.player.sprite, true, follow.x, follow.y);
+    this.cameras.main.setDeadzone(camera?.deadzone?.width ?? 220, camera?.deadzone?.height ?? 120);
+    if (camera?.followOffset) this.cameras.main.setFollowOffset(camera.followOffset.x, camera.followOffset.y);
     this.cameras.main.setZoom(camera?.zoom ?? 1);
   }
 
   private drawBackground(): void {
-    const palettes: Record<LevelData['background'], NoirPalette> = {
-      reactor: { sky: 0x08070b, horizon: 0x51311d, far: 0x10131b, mid: 0x151b25, near: 0x080a10, accent: 0xe19a46 },
-      streets: { sky: 0x07080d, horizon: 0x5b351e, far: 0x11131c, mid: 0x171d29, near: 0x08090f, accent: 0xf0a64d },
-      greenhouse: { sky: 0x070c0b, horizon: 0x4a3a21, far: 0x101a18, mid: 0x192720, near: 0x090d0c, accent: 0xd5a85a },
-      station: { sky: 0x07090f, horizon: 0x493021, far: 0x10141d, mid: 0x18202b, near: 0x080a10, accent: 0xe0a04f },
-      canals: { sky: 0x05090f, horizon: 0x173c49, far: 0x08121a, mid: 0x102231, near: 0x06090e, accent: 0x6ee7f2 },
-      core: { sky: 0x09070d, horizon: 0x432038, far: 0x12111c, mid: 0x1c1a2b, near: 0x08070d, accent: 0xd05b78 },
-    };
-    const palette = palettes[this.level.background];
-
-    this.drawNoirSky(palette);
-    this.drawSearchlights(palette);
-    this.drawDecoSkyline(palette, -16, 0.22, 115, 250, 0.95);
-    this.drawDecoSkyline(palette, -13, 0.38, 150, 330, 0.9);
-    this.drawDecoSkyline(palette, -10, 0.56, 200, 420, 0.88);
-
-    this.add.rectangle(this.level.width / 2, 704, this.level.width, 54, 0x05060a, 0.72).setDepth(-7);
-    this.add.rectangle(this.level.width / 2, 675, this.level.width, 4, palette.accent, 0.2).setDepth(-6);
-    this.drawRainStreaks(palette);
-
-    this.timelineTint = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.06);
-    this.timelineTint.setScrollFactor(0);
-    this.timelineTint.setDepth(30);
-    this.timelineTint.setBlendMode(Phaser.BlendModes.ADD);
-  }
-
-  private drawNoirSky(palette: Pick<NoirPalette, 'sky' | 'horizon' | 'accent'>): void {
-    this.add.rectangle(this.level.width / 2, 360, this.level.width, 720, palette.sky).setDepth(-24);
-    this.add.rectangle(this.level.width / 2, 500, this.level.width, 360, palette.horizon, 0.34).setDepth(-23);
-    this.add.circle(this.level.width * 0.78, 170, 82, palette.accent, 0.16).setScrollFactor(0.18).setDepth(-22);
-    this.add.circle(this.level.width * 0.78, 170, 42, palette.accent, 0.18).setScrollFactor(0.18).setDepth(-22);
-  }
-
-  private drawSearchlights(palette: Pick<NoirPalette, 'accent'>): void {
-    for (let i = 0; i < Math.ceil(this.level.width / 720) + 1; i += 1) {
-      const baseX = 280 + i * 720;
-      const beamA = this.add.polygon(baseX, 470, [0, 0, 34, 0, -180, -430, -230, -430], palette.accent, 0.1);
-      const beamB = this.add.polygon(baseX + 320, 490, [0, 0, 30, 0, 210, -430, 260, -430], 0x9ad7ff, 0.07);
-      beamA.setScrollFactor(0.24).setDepth(-21);
-      beamB.setScrollFactor(0.2).setDepth(-21);
-    }
-  }
-
-  private drawDecoSkyline(
-    palette: Pick<NoirPalette, 'far' | 'mid' | 'near' | 'accent'>,
-    depth: number,
-    scrollFactor: number,
-    minHeight: number,
-    maxHeight: number,
-    alpha: number,
-  ): void {
-    const color = depth <= -15 ? palette.far : depth <= -12 ? palette.mid : palette.near;
-    const count = Math.ceil(this.level.width / 112) + 6;
-
-    for (let i = 0; i < count; i += 1) {
-      const width = 70 + ((i * 29 + depth * 7) % 62);
-      const heightRange = maxHeight - minHeight;
-      const height = minHeight + ((i * 71 + Math.abs(depth) * 19) % heightRange);
-      const x = i * 106 - 140;
-      const y = 690 - height / 2;
-      const building = this.add.rectangle(x, y, width, height, color, alpha);
-      building.setOrigin(0, 0.5).setScrollFactor(scrollFactor).setDepth(depth);
-
-      const capHeight = 18 + ((i * 11) % 26);
-      const cap = this.add.triangle(x + width / 2, y - height / 2 - capHeight / 2, 0, capHeight, width * 0.5, 0, width, capHeight, color, alpha);
-      cap.setScrollFactor(scrollFactor).setDepth(depth);
-
-      const trimY = y - height / 2 + 42;
-      this.add.rectangle(x + width / 2, trimY, width * 0.84, 3, palette.accent, 0.16).setScrollFactor(scrollFactor).setDepth(depth + 0.1);
-
-      if (depth > -15) {
-        const columns = Math.max(2, Math.floor(width / 24));
-        const rows = Math.max(3, Math.floor(height / 44));
-        for (let column = 0; column < columns; column += 1) {
-          for (let row = 0; row < rows; row += 1) {
-            if ((column + row + i) % 3 === 0) {
-              continue;
-            }
-            const wx = x + 14 + column * 22;
-            const wy = y - height / 2 + 58 + row * 38;
-            this.add.rectangle(wx, wy, 5, 13, palette.accent, depth === -10 ? 0.42 : 0.24).setScrollFactor(scrollFactor).setDepth(depth + 0.2);
-          }
-        }
-      }
-    }
-  }
-
-  private drawRainStreaks(palette: Pick<NoirPalette, 'accent'>): void {
-    for (let i = 0; i < Math.ceil(this.level.width / 72); i += 1) {
-      const x = i * 72 + 26;
-      const y = 70 + ((i * 47) % 360);
-      const streak = this.add.rectangle(x, y, 2, 34, 0xa8c0d0, 0.11);
-      streak.setAngle(-16).setScrollFactor(0.62).setDepth(-5);
-    }
-
-    for (let i = 0; i < Math.ceil(this.level.width / 190); i += 1) {
-      this.add.rectangle(i * 190 + 48, 666, 78, 2, palette.accent, 0.15).setDepth(-4);
-    }
+    this.backdrop = new ParallaxBackdrop(this, this.level, this.timelineManager.current);
   }
 
   private handleTimelineInput(): void {
@@ -365,7 +296,7 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.flash(110, timeline === 'past' ? 180 : 80, timeline === 'present' ? 210 : 90, timeline === 'future' ? 230 : 190);
     }
     this.emitTimelinePulse(timeline);
-    this.saveManager.saveProgress(this.level.id, timeline, this.checkpointSystem.activeCheckpoint?.id);
+    this.saveCurrentProgress();
     this.uiManager.updateHud({ timeline });
   }
 
@@ -425,6 +356,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyTimeline(): void {
+    this.backdrop?.setTimeline(this.timelineManager.current);
     this.timelineBlocks.forEach((block) => block.applyTimeline(this.timelineManager.current));
     this.hazards.forEach((hazard) => hazard.applyTimeline(this.timelineManager.current));
     this.applyDoors();
@@ -462,7 +394,6 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    let progressionChanged = false;
     this.switches.forEach((lever) => {
       if (
         lever.update(
@@ -472,27 +403,21 @@ export class GameScene extends Phaser.Scene {
           this.ghost?.sprite,
           Boolean(this.ghost?.isInteracting),
           this.ghost?.timeline,
+          this.combinedFlags(),
         )
       ) {
-        if (!this.latchedFlags.has(lever.flag)) {
-          progressionChanged = true;
-        }
         this.latchedFlags.add(lever.flag);
+        lever.latchesFlags.forEach((flag) => this.latchedFlags.add(flag));
+        this.saveCurrentProgress();
         this.audioManager.playSfx('switch');
         this.uiManager.showToast('A circuit remembers the choice.');
       }
 
       if (lever.isToggled) {
-        if (!this.latchedFlags.has(lever.flag)) {
-          progressionChanged = true;
-        }
         this.latchedFlags.add(lever.flag);
       }
     });
 
-    if (progressionChanged) {
-      this.saveManager.saveLevelFlags(this.level.id, this.latchedFlags);
-    }
     this.applyDoors();
   }
 
@@ -503,8 +428,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.audioManager.playSfx('checkpoint');
     this.uiManager.showToast('Checkpoint stabilized.');
-    this.persistLevelProgress();
-    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, checkpoint.id);
+    this.saveCurrentProgress();
   }
 
   private updateHazards(): void {
@@ -521,6 +445,8 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.overlaps(this.player.sprite, zone)) {
         this.storyTriggered.add(zone.id);
+        if (zone.id === 'girl-vanish') this.mara?.setVisible(false);
+        this.saveCurrentProgress();
         this.showDialogue(zone.id, zone.lines, zone.once ?? true);
         break;
       }
@@ -533,9 +459,16 @@ export class GameScene extends Phaser.Scene {
       if (!memory) {
         continue;
       }
-      this.saveManager.markMemoryCollected(memory.id);
       this.audioManager.playSfx('checkpoint');
-      this.showDialogue(`memory-${memory.id}`, [memory.title, ...memory.lines], true);
+      this.saveManager.markMemoryCollected(memory.id);
+      this.uiManager.setMemoryVaultAccess(() => this.openMemoryVault());
+      this.dialogueManager.tryShow(`memory-${memory.id}`, memory.lines, true, (_lines, done) => {
+        this.physics.pause();
+        this.uiManager.showMemory(memory, () => {
+          done();
+          this.finishBlockingOverlay();
+        });
+      });
       break;
     }
   }
@@ -548,7 +481,7 @@ export class GameScene extends Phaser.Scene {
     const attempt = this.levelFlowSystem.attemptExit(this.combinedFlags(), performance.now());
     if (attempt.status === 'blocked') {
       if (attempt.showToast) {
-        this.uiManager.showToast('The Keeper still has anchors in this hour.');
+        this.uiManager.showToast('The route is still locked. Complete the remaining circuits.');
       }
       return;
     }
@@ -557,7 +490,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.persistLevelProgress();
+    this.physics.pause();
     this.saveManager.markLevelCompleted(this.level.id);
     this.saveManager.saveProgress(attempt.nextLevelId ?? this.level.id, 'present');
     this.audioManager.playSfx('checkpoint');
@@ -587,6 +520,9 @@ export class GameScene extends Phaser.Scene {
       checkpoint: this.checkpointSystem.checkpointLabel(),
       ghostLabel,
       ghostProgress,
+      objective: this.level.objectives
+        ? this.level.objectives.map((step) => `${this.combinedFlags().has(step.flag) ? '[+]' : '[ ]'} ${step.label}`).join('  /  ')
+        : this.level.objective,
     });
   }
 
@@ -604,7 +540,7 @@ export class GameScene extends Phaser.Scene {
     this.uiManager.showToast('Echo recording started.');
   }
 
-  private updateRecording(interactPressed: boolean): void {
+  private updateRecording(interactPressed: boolean, deltaMs: number): void {
     if (!this.ghostRecorder.isRecording) {
       return;
     }
@@ -620,6 +556,7 @@ export class GameScene extends Phaser.Scene {
       interactPressed,
       this.timelineManager.current,
       heldPlateFlags,
+      deltaMs,
     );
     if (frames) {
       this.spawnGhost(frames);
@@ -660,7 +597,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private respawn(message: string): void {
-    if (this.isRespawning) {
+    if (this.isRespawning || this.levelFlowSystem.isComplete) {
       return;
     }
 
@@ -690,6 +627,44 @@ export class GameScene extends Phaser.Scene {
     this.openPauseMenu();
   }
 
+  private pauseForFocusLoss(): void {
+    if (this.levelFlowSystem.isComplete) return;
+    this.focusPauseRequested = true;
+    this.inputController.reset();
+    this.player.sprite.setVelocityX(0);
+    this.physics.pause();
+    if (this.isPaused || this.dialogueManager.isActive || this.uiManager.isMemoryVaultOpen) return;
+    this.isPaused = true;
+    this.openPauseMenu();
+  }
+
+  private finishBlockingOverlay(): void {
+    this.inputController.reset();
+    if (this.focusPauseRequested) {
+      this.isPaused = true;
+      this.openPauseMenu();
+    } else {
+      this.physics.resume();
+    }
+  }
+
+  private openMemoryVault(): void {
+    if (this.levelFlowSystem.isComplete || this.uiManager.isMemoryVaultOpen) return;
+    const wasPaused = this.isPaused;
+    this.inputController.reset();
+    this.physics.pause();
+    this.uiManager.showMemoryVault(() => {
+      this.inputController.reset();
+      if (wasPaused || this.dialogueManager.isActive) return;
+      if (this.focusPauseRequested) {
+        this.isPaused = true;
+        this.openPauseMenu();
+      } else {
+        this.physics.resume();
+      }
+    });
+  }
+
   private openPauseMenu(): void {
     this.uiManager.showPause(
       this.saveManager.getContinueSummary(),
@@ -708,16 +683,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   private saveCurrentProgress() {
-    this.persistLevelProgress();
-    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id);
+    this.saveManager.saveProgress(this.level.id, this.timelineManager.current, this.checkpointSystem.activeCheckpoint?.id, {
+      latchedFlags: [...this.latchedFlags],
+      seenStoryIds: [...this.storyTriggered],
+      checkpointTimeline: this.checkpointSystem.checkpointTimeline,
+    });
     return this.saveManager.getContinueSummary();
   }
 
-  private persistLevelProgress(): void {
-    this.saveManager.saveLevelFlags(this.level.id, this.latchedFlags);
-  }
-
   private resumeFromPause(): void {
+    this.focusPauseRequested = false;
+    this.inputController.reset();
     this.isPaused = false;
     this.physics.resume();
     this.uiManager.clearOverlay();
@@ -727,8 +703,8 @@ export class GameScene extends Phaser.Scene {
     this.dialogueManager.tryShow(id, lines, once, (dialogueLines, done) => {
       this.physics.pause();
       this.uiManager.showDialogue(dialogueLines, () => {
-        this.physics.resume();
         done();
+        this.finishBlockingOverlay();
       });
     });
   }

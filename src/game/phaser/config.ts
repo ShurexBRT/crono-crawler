@@ -1,11 +1,7 @@
 import Phaser from 'phaser';
 import './scenePolish';
-import './productionArt';
-import './productionLoadOptimization';
-import './productionBackdropRefinement';
 import './productionInteractables';
 import './productionFx';
-import './productionTutorialPolish';
 import { BootScene } from './scenes/BootScene';
 import { EndingScene } from './scenes/EndingScene';
 import { GameScene } from './scenes/GameScene';

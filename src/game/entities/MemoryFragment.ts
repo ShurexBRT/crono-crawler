@@ -1,22 +1,17 @@
 import Phaser from 'phaser';
+import { TextureKeys } from '../assets/manifest';
 import type { MemoryFragmentSpec } from '../types';
 
 export class MemoryFragment {
   readonly id: string;
   private collected: boolean;
-  private glow: Phaser.GameObjects.Arc;
-  private core: Phaser.GameObjects.Arc;
+  private visual: Phaser.GameObjects.Image;
 
   constructor(scene: Phaser.Scene, private readonly spec: MemoryFragmentSpec, collected = false) {
     this.id = spec.id;
     this.collected = collected;
-    this.glow = scene.add.circle(spec.x, spec.y, 20, 0xf0a64d, collected ? 0.04 : 0.12);
-    this.glow.setStrokeStyle(2, 0x6ee7f2, collected ? 0.12 : 0.34);
-    this.glow.setDepth(10.5);
-
-    this.core = scene.add.circle(spec.x, spec.y, 7, collected ? 0x6ee7f2 : 0xf0a64d, collected ? 0.16 : 0.72);
-    this.core.setStrokeStyle(1, 0xf2ead4, collected ? 0.18 : 0.72);
-    this.core.setDepth(10.6);
+    this.visual = scene.add.image(spec.x, spec.y, TextureKeys.productionMemoryFragment)
+      .setDisplaySize(32, 40).setDepth(11.4).setAlpha(collected ? 0.12 : 1);
   }
 
   update(actor: Phaser.GameObjects.GameObject & { getBounds: () => Phaser.Geom.Rectangle }): MemoryFragmentSpec | undefined {
@@ -25,9 +20,7 @@ export class MemoryFragment {
     }
 
     this.collected = true;
-    this.glow.setAlpha(0.04);
-    this.core.setAlpha(0.22);
-    this.core.setFillStyle(0x6ee7f2, 0.28);
+    this.visual.setAlpha(0.12).setTint(0x6ee7f2);
     return this.spec;
   }
 

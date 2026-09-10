@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { AnimationKeys, TextureKeys } from '../../assets/manifest';
+import { AnimationKeys, AssetPaths, TextureKeys } from '../../assets/manifest';
+import { prepareProductionElias } from '../../assets/characterAtlas';
+import { loadProductionTextures, registerProductionAnimations } from '../productionArt';
 import type { TimelineKey } from '../../types';
 
 const assetPath = (fileName: string): string => `assets/${fileName}`;
@@ -61,23 +63,18 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKeys.eliasSheet, assetPath('sprites/elias-sheet.png'));
+    loadProductionTextures(this);
+    this.load.image(TextureKeys.eliasProductionSource, AssetPaths.eliasSource);
+    this.load.image(TextureKeys.storyCharactersSheet, AssetPaths.storyCharacters);
     this.load.image(TextureKeys.platformSheet, assetPath('sprites/platforms-sheet.png'));
-    this.load.image(TextureKeys.keeperSheet, assetPath('sprites/keeper-sheet.png'));
-    this.load.image(TextureKeys.girlSheet, assetPath('sprites/daughter-sheet.png'));
     this.load.image(TextureKeys.doorSheet, assetPath('sprites/doors-gates-barriers-sheet.png'));
     this.load.image(TextureKeys.puzzleDevicesSheet, assetPath('sprites/puzzle-devices-switches-sheet.png'));
     this.load.image(TextureKeys.uiSignPanel, assetPath('ui/sign-panel.png'));
-    this.load.image(TextureKeys.titleBackdrop, assetPath('chrono_crawler_title_screen_concept.png'));
-    this.load.image(TextureKeys.backdropReactor, assetPath('gloomy_industrial_nightscape_with_steam_and_lights.png'));
-    this.load.image(TextureKeys.backdropStreets, assetPath('misty_alley_in_a_futuristic_city.png'));
-    this.load.image(TextureKeys.backdropGreenhouse, assetPath('steampunk_observatory_with_glowing_machinery.png'));
-    this.load.image(TextureKeys.backdropStation, assetPath('fading_clockwork_city_in_ruins.png'));
-    this.load.image(TextureKeys.backdropCore, assetPath('ruins_of_a_fractured_city_skyline.png'));
   }
 
   create(): void {
     this.createGeneratedTextures();
+    registerProductionAnimations(this);
     try {
       this.normalizeEliasAtlas();
       this.normalizePlatformAtlas();
@@ -91,6 +88,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   private normalizeEliasAtlas(): void {
+    if (prepareProductionElias(this)) return;
     if (!this.textures.exists(TextureKeys.eliasSheet)) {
       return;
     }
@@ -193,8 +191,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   private extractSpritePackTextures(): void {
-    this.extractCharacterPose(TextureKeys.keeperSheet, TextureKeys.keeper, 0);
-    this.extractCharacterPose(TextureKeys.girlSheet, TextureKeys.girl, 0);
+    this.extractSheetTexture(TextureKeys.storyCharactersSheet, TextureKeys.keeper, { column: 0, row: 0, columns: 2, rows: 1 }, 4);
+    this.extractSheetTexture(TextureKeys.storyCharactersSheet, TextureKeys.girl, { column: 1, row: 0, columns: 2, rows: 1 }, 4);
     this.extractTimelineRow(TextureKeys.doorSheet, doorTextureKeys, 1, 4, 8);
     this.extractTimelineRow(TextureKeys.puzzleDevicesSheet, plateTextureKeys, 0, 5, 6);
     this.extractSheetTexture(TextureKeys.puzzleDevicesSheet, TextureKeys.switchOff, { column: 1, row: 1, columns: 3, rows: 5 }, 6);

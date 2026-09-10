@@ -9,11 +9,14 @@ The canonical development branch is `main`.
 ## What Is Implemented
 
 - Main menu with New Game, Continue, Options, and Credits
+- Memory journal available from the main and pause menus; starting again confirms before replacing progress
+- Nine illustrated memory reveals: photographs, Mara's letter, Elias's unfinished reply, a drawing and keepsakes, all replayable from the journal
 - Data-driven intro and ending sequences
-- Eight playable levels from The Folded Reactor through The Still Hour
+- Twelve playable levels from The Folded Reactor through The Still Hour
 - Versioned local save system with automatic v1 migration
 - Persistent checkpoint, timeline, settings, completed levels, latched puzzle flags, and memory fragments
 - Pause menu with Resume, Save Now, Options, and Main Menu actions
+- Focus-loss pause with explicit resume, and visible save-failure feedback instead of false success messages
 - Music/SFX volume, fullscreen, text scale, reduced motion, and reduced flashes
 - Keyboard controls plus basic gamepad support
 - Walk, run, jump, platform collision, camera follow, death, and checkpoint rewind
@@ -24,9 +27,11 @@ The canonical development branch is `main`.
 - Pressure plates, switches, checkpoint beacons, locked doors, exit zones, hazards, and memory fragments
 - Patrolling rustmite enemies
 - Final Keeper encounter built as a three-anchor puzzle rather than a combat boss
-- Noir-deco layered city backdrops with rain, searchlights, industrial silhouettes, and timeline accent colors
+- Twelve original painted environment backdrops, one per stage, with independently scrolling architecture, ceiling details, and timeline-dependent weather
+- New transparent Elias, Mara, and Keeper source atlases with stable runtime frame packing
 - Runtime sprite-sheet processing through stable asset manifest keys
-- Playwright smoke coverage plus pull-request CI validation
+- Pure system regression tests and Playwright smoke coverage
+- Main-branch deployment gated by build, system tests, and browser smoke tests
 
 ## Current Playable Sequence
 
@@ -37,9 +42,13 @@ The canonical development branch is `main`.
 5. **Platform 13** (`level-3`)
 6. **Bellweather Canals** (`bellweather-canals`)
 7. **The Minute Market** (`minute-market`)
-8. **The Still Hour** (`boss`)
+8. **The Hourglass Hotel** (`hourglass-hotel`)
+9. **Archive of Unsaid Things** (`unsaid-archive`)
+10. **Crownline Rooftops** (`crownline-rooftops`)
+11. **The Core Reliquary** (`core-reliquary`)
+12. **The Still Hour** (`boss`)
 
-Level behavior is authored primarily in `src/game/content/levels.ts`.
+Level behavior is authored in `src/game/content/levels.ts` and `src/game/content/final-act.ts`. Ordered switches, permanent echo-backed anchor locks, and per-level camera settings connect the final act.
 
 ## Narrative Canon
 
@@ -138,8 +147,11 @@ Persisted:
 - reduced flashes
 - completed level IDs
 - collected memory fragment IDs
+- read memory IDs and the last opened Memory Vault page
 - latched per-level puzzle flags such as activated switches
 - whether the ending has been completed
+- visited story zones per level
+- checkpoint timeline independently of the current timeline
 
 Intentionally runtime-only:
 
@@ -177,10 +189,16 @@ src/
 
 ## Current Limitations
 
+This revision is an expanded campaign alpha, not a release-certified finished game. The production build and browser-independent checks cover the campaign, saves and the new Memory Vault book. The full campaign and in-game visual review still need ordinary-input playtesting. See [docs/release-status.md](docs/release-status.md) for exact verification and publication evidence, and [docs/quality-and-steam-readiness.md](docs/quality-and-steam-readiness.md) for the quality audit and Steam release gates.
+
 - Ending prose and exact scene pacing still need the dedicated narrative pass.
 - Persisted switch logic is richer than v1, but temporary echo/plate puzzle state intentionally remains runtime-only.
 - Levels are still rectangle-authored rather than tilemap/editor-authored.
 - Enemy behavior is limited to a simple patrol hazard.
 - Gamepad support exists, but control remapping and complete controller UX do not.
 - Touch controls are not implemented.
-- Art and audio are still a mix of prototype/generated/runtime-processed assets rather than a final production pass.
+- Source art is integrated, but sprite motion, every authored route, and final UI framing still need an in-game visual pass. Audio remains synthesized rather than a recorded soundtrack.
+
+## Restricted Windows Runtime
+
+When Vite's config subprocess is unavailable in a restricted Windows environment, `npm run dev:local` and `npm run build:local` load the same config directly with Node. This does not grant browser access. `npm run test:systems` validates content, saves, and echo timing without a browser. Visual sign-off still requires screenshot inspection and an interactive playtest.

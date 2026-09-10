@@ -15,6 +15,7 @@ export interface EndingBeat {
   }>;
   durationMs: number;
   waitForInput?: boolean;
+  actionLabel?: string;
 }
 
 // This is the current canonical spine, not locked final prose.
@@ -46,6 +47,8 @@ export const endingBeats: EndingBeat[] = [
   },
   {
     id: 'refuse-correction',
+    waitForInput: true,
+    actionLabel: 'No More Corrections',
     visual: 'choice',
     kicker: 'Correction available',
     title: 'One more loop would keep the Still Hour alive.',

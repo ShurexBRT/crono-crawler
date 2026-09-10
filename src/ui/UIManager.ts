@@ -2,6 +2,15 @@ import type { AudioManager } from '../game/systems/AudioManager';
 import type { ContinueSummary, SaveManager } from '../game/systems/SaveManager';
 import type { SettingsState, TimelineKey } from '../game/types';
 import { introBeats, type IntroBeat } from '../game/content/intro';
+import { EndingSequenceView } from './EndingSequenceView';
+import { levels } from '../game/content/levels';
+import { AssetPaths } from '../game/assets/manifest';
+import { getBackdrop } from '../game/assets/backdrops';
+import { getMemoryArtifact } from '../game/content/memory-artifacts';
+import { MemoryArtifactView } from './MemoryArtifactView';
+import type { MemoryFragmentSpec } from '../game/types';
+import { MemoryVaultModel } from './MemoryVaultModel';
+import { MemoryVaultView } from './MemoryVaultView';
 
 interface MainMenuActions {
   onNewGame: () => void;
@@ -37,6 +46,10 @@ export class UIManager {
   private dialogueKeyHandler?: (event: KeyboardEvent) => void;
   private introKeyHandler?: (event: KeyboardEvent) => void;
   private introTimeout?: number;
+  private endingView?: EndingSequenceView;
+  private memoryView?: MemoryArtifactView;
+  private vaultView?: MemoryVaultView;
+  private vaultReturn?: { nodes: DocumentFragment; active: boolean; focus: Element | null };
 
   constructor(saveManager: SaveManager, audioManager: AudioManager) {
     const root = document.getElementById('ui-root');
@@ -45,6 +58,13 @@ export class UIManager {
     }
 
     this.root = root;
+    for (const [key, path] of Object.entries({
+      '--elias-art': AssetPaths.eliasSource,
+      '--story-character-art': AssetPaths.storyCharacters,
+      '--reactor-art': getBackdrop('tutorial').path,
+      '--ending-art': getBackdrop('boss').path,
+      '--dawn-art': getBackdrop('crownline-rooftops').path,
+    })) this.root.style.setProperty(key, `url('${path}')`);
     this.saveManager = saveManager;
     this.audioManager = audioManager;
     this.root.innerHTML = `
@@ -56,6 +76,10 @@ export class UIManager {
     this.overlayLayer = this.mustFind('[data-layer="overlay"]');
     this.toastLayer = this.mustFind('[data-layer="toast"]');
     this.applyAccessibilitySettings(this.saveManager.getSettings());
+    this.saveManager.onPersistenceChange((status) => {
+      this.root.querySelectorAll<HTMLElement>('[data-save-error]').forEach((element) => { element.hidden = status !== 'error'; });
+      if (status === 'error') this.showToast('Saving failed. Progress is only in this session.');
+    });
   }
 
   showMainMenu(actions: MainMenuActions): void {
@@ -71,9 +95,9 @@ export class UIManager {
 
     this.clearHud();
     this.setOverlay(`
-      <div class="menu-shell title-screen" style="background-image: linear-gradient(90deg, rgba(0,0,0,0.78), rgba(0,0,0,0.22)), url('assets/chrono_crawler_title_screen_concept.png');">
+      <div class="menu-shell title-screen" style="background-image: linear-gradient(90deg, rgba(0,0,0,0.78), rgba(0,0,0,0.16)), url('assets/backgrounds/production/lock-street-far.png');">
         <div class="title-mark">
-          <span class="title-kicker">Broken Time Side-Scroller</span>
+          <span class="title-kicker">The Still Hour</span>
           <h1>Chrono Crawler</h1>
           <p>The Core did not explode. It pulled every version of the city into the same dying second.</p>
         </div>
@@ -81,15 +105,21 @@ export class UIManager {
           <button data-action="new">New Game</button>
           <button data-action="continue" ${this.saveManager.hasContinue() ? '' : 'disabled'}>Continue</button>
           ${continueDetails}
+          ${this.renderStorageStatus()}
           <button data-action="options">Options</button>
           <button data-action="credits">Credits</button>
+          <button data-action="journal">Memory Vault</button>
         </nav>
       </div>
     `);
 
     this.bindClick('[data-action="new"]', () => {
       this.audioManager.playSfx('click');
-      actions.onNewGame();
+      if (this.saveManager.hasContinue() || this.saveManager.getProgression().collectedMemoryFragmentIds.length > 0) {
+        this.confirmNewGame(actions);
+      } else {
+        actions.onNewGame();
+      }
     });
     this.bindClick('[data-action="continue"]', () => {
       this.audioManager.playSfx('click');
@@ -103,6 +133,7 @@ export class UIManager {
       this.audioManager.playSfx('click');
       actions.onCredits();
     });
+    this.bindClick('[data-action="journal"]', () => this.showJournal(() => this.showMainMenu(actions)));
   }
 
   showOptions(onBack: () => void): void {
@@ -140,6 +171,7 @@ export class UIManager {
         <div class="settings-note">
           Gamepad: Left stick/D-pad move, South jump, East interact, West echo, North rewind, shoulders shift time, Start pause.
         </div>
+        ${this.renderStorageStatus()}
         <footer class="modal-actions">
           <button data-action="back">Back</button>
         </footer>
@@ -184,11 +216,12 @@ export class UIManager {
     this.setOverlay(`
       <div class="modal-panel credits-panel">
         <header>
-          <span class="title-kicker">Prototype Credits</span>
+          <span class="title-kicker">Credits</span>
           <h2>Chrono Crawler</h2>
         </header>
-        <p>Design direction: noir-deco ruins, broken timelines, quiet industrial grief, and time powers that change the route instead of just the color palette.</p>
-        <p>Current build: Phaser, TypeScript, Vite, custom level data, external backdrop art, and an Elias animation sheet pass.</p>
+        <p>Chrono Crawler: The Still Hour</p>
+        <p>Original campaign artwork created with OpenAI ImageGen. Environment devices, visual effects, and sound synthesized for the game.</p>
+        <p>Built with Phaser, TypeScript, and Vite.</p>
         <footer class="modal-actions">
           <button data-action="back">Back</button>
         </footer>
@@ -273,21 +306,9 @@ export class UIManager {
 
   showEnding(onMenu: () => void): void {
     this.clearHud();
-    this.setOverlay(`
-      <div class="story-screen ending-screen">
-        <article>
-          <span class="title-kicker">End of Vertical Slice</span>
-          <h2>Time Cannot Be Owned</h2>
-          <p>The Keeper removes his mask, and Elias sees what grief was trying to turn him into.</p>
-          <p>The city still breaks. The Core still hurts. But the next second is no longer a cage.</p>
-          <button data-action="menu">Main Menu</button>
-        </article>
-      </div>
-    `);
-    this.bindClick('[data-action="menu"]', () => {
-      this.audioManager.playSfx('click');
-      onMenu();
-    });
+    this.endingView?.destroy();
+    this.endingView = new EndingSequenceView(this.audioManager);
+    this.endingView.show(onMenu);
   }
 
   showHud(state: HudState): void {
@@ -310,6 +331,7 @@ export class UIManager {
       </div>
       <div class="level-chip">
         <span>${state.levelTitle}</span>
+        <small>Stage ${levels.findIndex((level) => level.title === state.levelTitle) + 1} / ${levels.length}</small>
         <small data-hud="checkpoint">${state.checkpoint}</small>
       </div>
     `;
@@ -392,6 +414,7 @@ export class UIManager {
           <div class="pause-save-summary" data-pause-save-summary>
             ${this.renderSaveSummary(saveSummary)}
           </div>
+          ${this.renderStorageStatus()}
           <div class="controls-grid">
             <span>Move</span><strong>A/D or Arrows</strong>
             <span>Jump</span><strong>Space/W</strong>
@@ -404,6 +427,7 @@ export class UIManager {
           <footer class="modal-actions">
             <button data-action="resume">Resume</button>
             <button data-action="save">Save Now</button>
+            <button data-action="journal">Memory Vault</button>
             <button data-action="options">Options</button>
             <button data-action="menu">Main Menu</button>
           </footer>
@@ -416,10 +440,12 @@ export class UIManager {
       this.clearOverlay();
       actions.onResume();
     });
+    this.bindClick('[data-action="journal"]', () => this.showJournal(() => this.showPause(saveSummary, actions)));
     this.bindClick('[data-action="save"]', () => {
-      this.audioManager.playSfx('checkpoint');
       this.updatePauseSaveSummary(actions.onSave());
-      this.showToast('Progress saved.');
+      const saved = this.saveManager.getPersistenceStatus() === 'ready';
+      if (saved) this.audioManager.playSfx('checkpoint');
+      this.showToast(saved ? 'Progress saved.' : 'Saving failed. Progress is only in this session.');
     });
     this.bindClick('[data-action="options"]', () => {
       this.audioManager.playSfx('click');
@@ -431,6 +457,88 @@ export class UIManager {
     });
   }
 
+  showMemory(memory: MemoryFragmentSpec, onDone: () => void, recovered = true): void {
+    const artifact = getMemoryArtifact(memory.id);
+    if (!artifact) {
+      this.showDialogue([memory.title, ...memory.lines], onDone);
+      return;
+    }
+    this.clearDialogueKeyHandler();
+    this.clearIntroPlayback();
+    this.setOverlay('');
+    this.memoryView = new MemoryArtifactView(this.overlayLayer, artifact, memory.lines, recovered, () => {
+      this.audioManager.playSfx('click');
+      this.clearOverlay();
+      onDone();
+    });
+  }
+
+  get isMemoryVaultOpen(): boolean { return Boolean(this.vaultView); }
+
+  showJournal(_onBack?: () => void, focusMemoryId?: string): void {
+    this.showMemoryVault(() => {}, focusMemoryId);
+  }
+
+  setMemoryVaultAccess(onOpen?: () => void): void {
+    this.hudLayer.querySelector('.hud-vault-action')?.remove();
+    if (!onOpen) return;
+    const parent = this.hudLayer.querySelector('.hud-v2-level') ?? this.hudLayer;
+    const button = document.createElement('button');
+    button.className = 'hud-vault-action';
+    button.dataset.action = 'vault-open';
+    button.setAttribute('aria-keyshortcuts', 'J');
+    button.setAttribute('title', 'Memory Vault');
+    button.innerHTML = 'Memory Vault <small data-vault-unread></small>';
+    button.addEventListener('click', onOpen);
+    parent.append(button);
+    this.updateVaultUnread();
+  }
+
+  showMemoryVault(onClose: () => void, memoryId?: string): void {
+    if (this.vaultView) return;
+    const progress = this.saveManager.getProgression();
+    const entries = levels.flatMap((level) => (level.memoryFragments ?? []).map((memory) => ({ ...memory, levelTitle: level.title, artifact: getMemoryArtifact(memory.id) })));
+    const model = new MemoryVaultModel(entries, progress.collectedMemoryFragmentIds, progress.readMemoryFragmentIds, memoryId ?? progress.lastViewedMemoryId);
+    const nodes = document.createDocumentFragment();
+    const focus = document.activeElement;
+    while (this.overlayLayer.firstChild) nodes.append(this.overlayLayer.firstChild);
+    this.vaultReturn = { nodes, active: this.overlayLayer.classList.contains('is-active'), focus };
+    this.memoryView?.suspend();
+    this.overlayLayer.classList.add('is-active');
+    this.vaultView = new MemoryVaultView(this.overlayLayer, model, {
+      onRead: (id) => { this.saveManager.visitMemory(id); this.updateVaultUnread(); },
+      onTurn: () => this.audioManager.playSfx('click'),
+      onClose: () => {
+        const previous = this.vaultReturn;
+        this.vaultView = undefined;
+        this.vaultReturn = undefined;
+        this.overlayLayer.replaceChildren(...(previous ? [previous.nodes] : []));
+        this.overlayLayer.classList.toggle('is-active', previous?.active ?? false);
+        this.memoryView?.resume();
+        this.root.querySelectorAll<HTMLElement>('[data-save-error]').forEach((element) => {
+          element.hidden = this.saveManager.getPersistenceStatus() !== 'error';
+        });
+        onClose();
+        if (previous?.focus instanceof HTMLElement && previous.focus.isConnected) previous.focus.focus({ preventScroll: true });
+        else if (!this.overlayLayer.classList.contains('is-active')) this.releaseOverlayFocus();
+      },
+    });
+  }
+
+  private updateVaultUnread(): void {
+    const progress = this.saveManager.getProgression();
+    const count = progress.collectedMemoryFragmentIds.filter((id) => !progress.readMemoryFragmentIds.includes(id)).length;
+    const total = levels.reduce((sum, level) => sum + (level.memoryFragments?.length ?? 0), 0);
+    const badge = this.hudLayer.querySelector('[data-vault-unread]');
+    if (badge) badge.textContent = count ? `${count} new` : `${progress.collectedMemoryFragmentIds.length} / ${total}`;
+  }
+
+  private confirmNewGame(actions: MainMenuActions): void {
+    this.setOverlay(`<div class="modal-panel"><h2>Begin Again?</h2><p>The current journey and recovered memories will be replaced. Options will stay unchanged.</p><footer class="modal-actions"><button data-action="cancel-new">Keep Journey</button><button data-action="confirm-new">New Game</button></footer></div>`);
+    this.bindClick('[data-action="cancel-new"]', () => this.showMainMenu(actions));
+    this.bindClick('[data-action="confirm-new"]', actions.onNewGame);
+  }
+
   showToast(message: string): void {
     window.clearTimeout(this.toastTimeout);
     this.toastLayer.innerHTML = `<div class="toast">${message}</div>`;
@@ -440,6 +548,13 @@ export class UIManager {
   }
 
   clearOverlay(): void {
+    this.vaultView?.destroy();
+    this.vaultView = undefined;
+    this.vaultReturn = undefined;
+    this.memoryView?.destroy();
+    this.memoryView = undefined;
+    this.endingView?.destroy();
+    this.endingView = undefined;
     this.clearDialogueKeyHandler();
     this.clearIntroPlayback();
     this.overlayLayer.innerHTML = '';
@@ -452,6 +567,11 @@ export class UIManager {
   }
 
   private setOverlay(html: string): void {
+    this.vaultView?.destroy();
+    this.vaultView = undefined;
+    this.vaultReturn = undefined;
+    this.memoryView?.destroy();
+    this.memoryView = undefined;
     this.overlayLayer.innerHTML = html;
     this.overlayLayer.classList.add('is-active');
   }
@@ -601,6 +721,10 @@ export class UIManager {
       <strong>${this.escapeHtml(summary.levelTitle)}</strong>
       <small>${this.escapeHtml(summary.checkpointLabel)} / ${this.escapeHtml(summary.timelineLabel)} / ${this.escapeHtml(summary.savedAtLabel)}</small>
     `;
+  }
+
+  private renderStorageStatus(): string {
+    return `<p class="save-error" data-save-error role="alert" ${this.saveManager.getPersistenceStatus() === 'error' ? '' : 'hidden'}>Saving failed. Current progress is only available in this session.</p>`;
   }
 
   private updatePauseSaveSummary(summary: ContinueSummary | undefined): void {

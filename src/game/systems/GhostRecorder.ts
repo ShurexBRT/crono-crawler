@@ -13,7 +13,7 @@ export interface GhostFrame {
 export class GhostRecorder {
   readonly maxDurationMs = 8000;
   private frames: GhostFrame[] = [];
-  private recordingStartedAt = 0;
+  private elapsedMs = 0;
   private active = false;
 
   get isRecording(): boolean {
@@ -28,12 +28,12 @@ export class GhostRecorder {
   }
 
   get elapsed(): number {
-    return performance.now() - this.recordingStartedAt;
+    return this.elapsedMs;
   }
 
   start(): void {
     this.frames = [];
-    this.recordingStartedAt = performance.now();
+    this.elapsedMs = 0;
     this.active = true;
   }
 
@@ -44,12 +44,14 @@ export class GhostRecorder {
     interact: boolean,
     timeline: TimelineKey,
     heldPlateFlags: string[],
+    deltaMs: number,
   ): GhostFrame[] | undefined {
     if (!this.active) {
       return undefined;
     }
 
-    const t = this.elapsed;
+    this.elapsedMs += deltaMs;
+    const t = Math.min(this.elapsed, this.maxDurationMs);
     this.frames.push({ t, x, y, flipX, interact, timeline, heldPlateFlags: [...heldPlateFlags] });
 
     if (t >= this.maxDurationMs) {
@@ -62,13 +64,6 @@ export class GhostRecorder {
     this.active = false;
     if (this.frames.length === 0) {
       return [];
-    }
-    const last = this.frames[this.frames.length - 1];
-    if (last.t < this.maxDurationMs) {
-      this.frames.push({
-        ...last,
-        t: this.maxDurationMs,
-      });
     }
     return [...this.frames];
   }

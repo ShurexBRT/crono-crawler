@@ -43,7 +43,7 @@ type PatchedUi = {
           <span class="hud-v2-node node-future">3</span>
         </div>
         <div class="hud-v2-timeline-copy">
-          <small>Q · Shift Timeline</small>
+          <small>Chronal State</small>
           <strong data-hud="timeline">${timelineName(state.timeline)}</strong>
         </div>
         <div class="hud-v2-echo">

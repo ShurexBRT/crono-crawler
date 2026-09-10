@@ -12,8 +12,18 @@ export interface SettingsState {
 export interface ProgressionState {
   completedLevelIds: string[];
   collectedMemoryFragmentIds: string[];
+  readMemoryFragmentIds: string[];
+  lastViewedMemoryId?: string;
   levelFlags: Record<string, string[]>;
   endingSeen: boolean;
+  levelStoryIds: Record<string, string[]>;
+  checkpointTimeline?: TimelineKey;
+}
+
+export interface LevelProgress {
+  latchedFlags: string[];
+  seenStoryIds: string[];
+  checkpointTimeline?: TimelineKey;
 }
 
 export interface SaveState {
@@ -81,6 +91,8 @@ export interface SwitchSpec extends RectSpec {
   id: string;
   flag: string;
   timelines?: TimelineKey[];
+  requiresFlags?: string[];
+  latchesFlags?: string[];
 }
 
 export interface EnemySpec extends Point {
@@ -99,6 +111,7 @@ export interface HazardSpec extends RectSpec {
 
 export interface CheckpointSpec extends Point {
   id: string;
+  label?: string;
 }
 
 export interface StoryZoneSpec extends RectSpec {
@@ -128,6 +141,7 @@ export interface LevelData {
   startLines: string[];
   background: 'reactor' | 'streets' | 'greenhouse' | 'station' | 'canals' | 'core';
   camera?: CameraSpec;
+  objectives?: { flag: string; label: string }[];
   platforms: PlatformSpec[];
   timelineBlocks: TimelineBlockSpec[];
   doors: DoorSpec[];

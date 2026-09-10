@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:local": "node --experimental-strip-types scripts/local-vite.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:local": "tsc --noEmit && node --experimental-strip-types scripts/local-vite.mjs build",
     "preview": "vite preview --host 127.0.0.1",
     "test:smoke": "playwright test",
+    "test:systems": "node tests/run-systems.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

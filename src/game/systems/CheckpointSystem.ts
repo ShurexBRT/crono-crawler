@@ -24,7 +24,7 @@ export class CheckpointSystem {
   }
 
   checkpointLabel(): string {
-    return this.active ? `Checkpoint: ${this.active.id}` : this.level.subtitle;
+    return this.active ? `Checkpoint: ${this.active.label ?? this.active.id}` : this.level.subtitle;
   }
 
   resolveSpawn(timeline: TimelineKey, checkpointId?: string): Point {

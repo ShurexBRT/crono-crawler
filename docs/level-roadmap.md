@@ -32,7 +32,7 @@ This roadmap extends the current playable sequence without replacing it. The exi
    - Uses alternate Past, Present, and Future routes through one district.
    - Adds a Present key/switch and optional memory fragment routing.
 
-8. **The Still Hour** (`boss`)
+12. **The Still Hour** (`boss`)
    - Current finale shell.
    - Requires `anchor_past`, `anchor_present`, and `anchor_future` to open the Keeper barrier.
    - Remains a puzzle encounter, not a combat boss.
@@ -50,9 +50,9 @@ Required first:
 - Integrate the canonical ending instead of the current short vertical-slice ending.
 - Introduce a richer, versioned save model before adding progression that players reasonably expect to survive reloads.
 
-## Planned Expansion Arc
+## Implemented Expansion Arc
 
-### 9. The Hourglass Hotel
+### 8. The Hourglass Hotel
 
 Role: Mid-game vertical level.
 
@@ -69,7 +69,7 @@ Implementation needs:
 - Per-level camera metadata or a vertical camera mode if the existing deadzone becomes awkward.
 - Reuse existing timeline blocks, switches, checkpoints, and echo rules before inventing a new platform entity.
 
-### 10. Archive of Unsaid Things
+### 9. Archive of Unsaid Things
 
 Role: Story-heavy puzzle level.
 
@@ -86,7 +86,7 @@ Implementation needs:
 - Existing story zones and memory fragments should carry the first pass.
 - Add a dedicated lore-terminal interactable only if the current interaction model cannot express the scene cleanly.
 
-### 11. Crownline Rooftops
+### 10. Crownline Rooftops
 
 Role: High-mobility skill check.
 
@@ -103,7 +103,7 @@ Implementation needs:
 - Keep checkpoint spacing generous during the first tuning pass.
 - Timeline-shift readability matters more than raw difficulty.
 
-### 12. The Core Reliquary
+### 11. The Core Reliquary
 
 Role: Final pre-finale rehearsal.
 
@@ -136,3 +136,7 @@ Implementation needs:
 A new level should justify itself with a new combination, pacing role, or narrative function. Do not add mechanics merely because a new entity type is technically easy to implement.
 
 When possible, prove a level using existing `LevelData` primitives first. Extract or add systems only when the design repeats a real need.
+
+## September Integration
+
+The four expansion stages are now authored in `final-act.ts` between Minute Market and The Still Hour. Hotel includes a vertical camera, Archive enforces switch order, Crownline tests timeline traversal, and Reliquary rehearses persistent anchor binding. Save v2 persists their switches and visited story zones. Checkpoint safety and the 12-stage chain have automated coverage; geometric tests do not replace a real traversal playtest. Final visual and full-campaign validation remain release gates.

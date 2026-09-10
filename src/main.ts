@@ -3,11 +3,12 @@ import { gameConfig } from './game/phaser/config';
 import { SaveManager } from './game/systems/SaveManager';
 import { AudioManager } from './game/systems/AudioManager';
 import { UIManager } from './ui/UIManager';
-import './ui/uiPolish';
 import './ui/productionHud';
 import './styles.css';
-import './ui/titleArt.css';
 import './ui/ending.css';
+import './ui/campaign.css';
+import './ui/memories.css';
+import './ui/memory-vault.css';
 
 const saveManager = new SaveManager();
 const audioManager = new AudioManager(saveManager.getSettings());
@@ -16,7 +17,7 @@ const uiManager = new UIManager(saveManager, audioManager);
 window.addEventListener('pointerdown', () => audioManager.unlock(), { once: true });
 window.addEventListener('keydown', () => audioManager.unlock(), { once: true });
 
-const game = new Phaser.Game(
+export const game = new Phaser.Game(
   gameConfig({
     parent: 'game-root',
     saveManager,

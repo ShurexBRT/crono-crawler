@@ -121,8 +121,9 @@ export class Player {
 
   respawn(point: Point): void {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
-    this.sprite.setPosition(point.x, point.y);
+    body.reset(point.x, point.y);
+    this.coyoteMs = 0;
+    this.jumpBufferMs = 0;
     this.wasOnGround = false;
     this.animationLockMs = 0;
     this.sprite.setScale(this.baseScale);

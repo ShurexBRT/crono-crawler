@@ -8,7 +8,7 @@ export class EndingSequenceView {
   private timeout?: number;
   private keyHandler?: (event: KeyboardEvent) => void;
 
-  constructor(private readonly audioManager: AudioManager) {
+  constructor(private readonly audioManager: AudioManager, private readonly memories?: { recovered: number; total: number }) {
     const overlay = document.querySelector<HTMLElement>('[data-layer="overlay"]');
     if (!overlay) {
       throw new Error('Missing ending overlay layer.');
@@ -89,7 +89,7 @@ export class EndingSequenceView {
 
   private renderBeat(beat: EndingBeat, index: number, total: number): string {
     const isLast = index === total - 1;
-    const actionLabel = isLast ? 'Main Menu' : 'Continue';
+    const actionLabel = isLast ? 'Main Menu' : beat.actionLabel ?? 'Continue';
     return `
       <div class="ending-sequence ending-beat-${beat.visual}" data-ending-beat="${this.escapeHtml(beat.id)}">
         <div class="ending-stage" aria-hidden="true">
@@ -103,6 +103,7 @@ export class EndingSequenceView {
         </div>
         <article class="ending-card">
           ${this.renderBody(beat)}
+          ${isLast && this.memories ? `<p data-ending-memories>Memories recovered: ${this.memories.recovered} / ${this.memories.total}</p>` : ''}
         </article>
         <footer class="ending-controls">
           ${isLast ? '' : '<button data-action="ending-skip">Skip to Epilogue</button>'}

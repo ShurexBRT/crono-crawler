@@ -1,11 +1,19 @@
+export const AssetPaths = {
+  memoryVaultBook: 'assets/ui/memory-vault-book.png',
+  eliasSource: 'assets/sprites/elias-production-source.png',
+  storyCharacters: 'assets/sprites/story-characters-production.png',
+} as const;
+
 export const TextureKeys = {
   elias: 'character.elias',
   eliasSheet: 'character.elias-sheet',
+  eliasProductionSource: 'character.elias-production-source',
   ghost: 'character.echo',
   keeper: 'character.keeper',
   keeperSheet: 'character.keeper-sheet',
   girl: 'character.girl',
   girlSheet: 'character.girl-sheet',
+  storyCharactersSheet: 'character.story-production-source',
   enemy: 'character.rustmite',
   core: 'fx.chrono-core',
   particle: 'fx.time-particle',

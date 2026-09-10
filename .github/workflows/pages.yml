@@ -33,6 +33,25 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Check campaign and save systems
+        run: npm run test:systems
+
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify gameplay before deployment
+        run: npm run test:smoke
+
+      - name: Upload playtest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playtest-evidence
+          path: |
+            test-results/
+            artifacts/visual/
+          retention-days: 7
+
       - name: Copy runtime art assets
         run: |
           mkdir -p dist/assets

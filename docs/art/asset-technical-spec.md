@@ -25,7 +25,7 @@ Gameplay collision dimensions are never inferred from visible art.
 Production normalized cell:
 
 - frame cell: `320 x 300`
-- feet baseline inside frame: `y = 278`
+- feet baseline inside frame: `y = 289` for the campaign production atlas (legacy source used 278)
 - gameplay rendered height: approximately `58–72 px` depending on camera framing
 
 Existing animation sets retained for this pass:
@@ -47,7 +47,7 @@ Future authored additions:
 ## Temporal Anchor Beacon
 
 - source canvas: `192 x 256`
-- intended gameplay display: `52–68 px wide`, `86–112 px tall`
+- intended gameplay display in the current campaign: `54 x 72 px`
 - collision / activation overlap remains authored separately
 - visual states:
   - dormant
@@ -68,8 +68,8 @@ For the first production pass, one base SVG is used with runtime pulse/ring/ligh
 ## Rustmite
 
 - frame cell: `128 x 96`
-- gameplay display: approximately `62–76 px wide`, `46–56 px tall`
-- collision body target: approximately `44 x 26 px` at gameplay scale
+- gameplay display: `54 x 40.5 px`
+- collision body: approximately `32 x 18 px` at gameplay scale
 - first-pass frames:
   - patrol A
   - patrol B

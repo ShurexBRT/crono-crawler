@@ -9,6 +9,7 @@ type InputAction =
   | 'timelinePast'
   | 'timelinePresent'
   | 'timelineFuture'
+  | 'journal'
   | 'pause';
 
 export class InputController {
@@ -43,6 +44,7 @@ export class InputController {
       timelineFuture: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
       pause: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC),
       pauseAlt: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P),
+      journal: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.J),
     };
 
     this.keyDownHandler = (event: KeyboardEvent) => {
@@ -82,6 +84,16 @@ export class InputController {
       return 1;
     }
     return 0;
+  }
+
+  reset(): void {
+    Object.values(this.keys).forEach((key) => key.reset());
+    this.fallbackJustPressed.clear();
+    this.gamepadPressed.clear();
+    this.previousGamepadButtons.clear();
+    this.connectedGamepads.forEach((pad) => pad.buttons.forEach((button, index) => {
+      if (button.pressed) this.previousGamepadButtons.add(index);
+    }));
   }
 
   get running(): boolean {
@@ -173,6 +185,8 @@ function gamepadActionForButton(index: number): InputAction | undefined {
       return 'timelineFuture';
     case 9:
       return 'pause';
+    case 8:
+      return 'journal';
     default:
       return undefined;
   }
@@ -204,6 +218,8 @@ function fallbackActionForKey(event: KeyboardEvent): InputAction | undefined {
     case 'Escape':
     case 'KeyP':
       return 'pause';
+    case 'KeyJ':
+      return 'journal';
     default:
       return undefined;
   }

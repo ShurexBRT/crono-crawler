@@ -1,5 +1,11 @@
 # Chrono Crawler TODO
 
+## September Campaign Candidate
+
+The twelve-stage expansion, connected Mara/Keeper narrative, persistent story zones, memory journal, original background/character art, parallax renderer, and seven-beat ending are implemented locally. The older planning items below are historical context where they overlap these delivered features.
+
+The immediate gate is validation and publication, not another level wave: 24 system checks and the production build pass, while browser visual tests and remote writes are blocked by task permissions. Nine illustrated memory popups, focus-loss pause and save-failure reporting are now implemented. See `docs/release-status.md` and `docs/quality-and-steam-readiness.md` for remaining requirements, art findings and the remote-baseline warning.
+
 ## Priority 0 — Reliable Vertical Slice
 
 - Keep `npm run build` green.

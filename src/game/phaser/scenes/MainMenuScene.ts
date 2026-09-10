@@ -23,6 +23,10 @@ export class MainMenuScene extends Phaser.Scene {
         },
         onContinue: () => {
           const state = save.getState();
+          if (state.currentLevelId === 'boss' && state.progression.completedLevelIds.includes('boss')) {
+            this.scene.start('EndingScene');
+            return;
+          }
           this.scene.start('GameScene', {
             levelId: state.currentLevelId,
             checkpointId: state.checkpointId,

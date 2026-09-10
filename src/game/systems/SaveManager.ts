@@ -1,5 +1,5 @@
-import type { ProgressionState, SaveState, SettingsState, TimelineKey } from '../types';
-import { getLevel } from '../content/levels';
+import type { LevelProgress, ProgressionState, SaveState, SettingsState, TimelineKey } from '../types';
+import { getLevel, levels } from '../content/levels';
 
 const STORAGE_KEY = 'chrono-crawler.save.v2';
 const LEGACY_STORAGE_KEY = 'chrono-crawler.save.v1';
@@ -16,8 +16,10 @@ const defaultSettings: SettingsState = {
 const defaultProgression: ProgressionState = {
   completedLevelIds: [],
   collectedMemoryFragmentIds: [],
+  readMemoryFragmentIds: [],
   levelFlags: {},
   endingSeen: false,
+  levelStoryIds: {},
 };
 
 const defaultSave: SaveState = {
@@ -43,8 +45,12 @@ interface LoadResult {
   migrated: boolean;
 }
 
+export type PersistenceStatus = 'ready' | 'error';
+
 export class SaveManager {
   private state: SaveState;
+  private persistenceStatus: PersistenceStatus = 'ready';
+  private readonly persistenceListeners = new Set<(status: PersistenceStatus) => void>();
 
   constructor() {
     const loaded = this.load();
@@ -56,6 +62,15 @@ export class SaveManager {
 
   getState(): SaveState {
     return cloneSave(this.state);
+  }
+
+  getPersistenceStatus(): PersistenceStatus {
+    return this.persistenceStatus;
+  }
+
+  onPersistenceChange(listener: (status: PersistenceStatus) => void): () => void {
+    this.persistenceListeners.add(listener);
+    return () => this.persistenceListeners.delete(listener);
   }
 
   hasContinue(): boolean {
@@ -70,9 +85,10 @@ export class SaveManager {
     const level = this.safeLevel(this.state.currentLevelId);
     return {
       levelTitle: level.title,
-      checkpointLabel: this.state.checkpointId ? `Checkpoint: ${this.state.checkpointId}` : 'Start of level',
+      checkpointLabel: this.state.currentLevelId === 'boss' && this.state.progression.completedLevelIds.includes('boss') ? 'Journey complete'
+        : this.state.checkpointId ? `Checkpoint: ${level.checkpoints.find((point) => point.id === this.state.checkpointId)?.label ?? this.state.checkpointId}` : 'Start of level',
       timelineLabel: timelineLabel(this.state.timeline),
-      savedAtLabel: savedAtLabel(this.state.updatedAt),
+      savedAtLabel: this.persistenceStatus === 'error' ? 'Not saved to disk' : savedAtLabel(this.state.updatedAt),
     };
   }
 
@@ -111,6 +127,21 @@ export class SaveManager {
 
   isMemoryCollected(fragmentId: string): boolean {
     return this.state.progression.collectedMemoryFragmentIds.includes(fragmentId);
+  }
+
+  visitMemory(fragmentId: string): void {
+    if (!this.isMemoryCollected(fragmentId)) return;
+    const progress = this.state.progression;
+    if (progress.lastViewedMemoryId === fragmentId && progress.readMemoryFragmentIds.includes(fragmentId) && this.persistenceStatus === 'ready') return;
+    this.state = {
+      ...this.state,
+      progression: {
+        ...progress,
+        lastViewedMemoryId: fragmentId,
+        readMemoryFragmentIds: uniqueStrings([...progress.readMemoryFragmentIds, fragmentId]),
+      },
+    };
+    this.persist();
   }
 
   markMemoryCollected(fragmentId: string): void {
@@ -199,13 +230,19 @@ export class SaveManager {
     return this.getState();
   }
 
-  saveProgress(currentLevelId: string, timeline: TimelineKey, checkpointId?: string): void {
+  saveProgress(currentLevelId: string, timeline: TimelineKey, checkpointId?: string, snapshot?: LevelProgress): void {
     this.state = {
       ...this.state,
       hasContinue: true,
       currentLevelId,
       timeline,
       checkpointId,
+      progression: {
+        ...this.state.progression,
+        checkpointTimeline: snapshot?.checkpointTimeline ?? (currentLevelId === this.state.currentLevelId ? this.state.progression.checkpointTimeline : undefined),
+        levelFlags: snapshot ? { ...this.state.progression.levelFlags, [currentLevelId]: uniqueStrings(snapshot.latchedFlags) } : this.state.progression.levelFlags,
+        levelStoryIds: snapshot ? { ...this.state.progression.levelStoryIds, [currentLevelId]: uniqueStrings(snapshot.seenStoryIds) } : this.state.progression.levelStoryIds,
+      },
       updatedAt: Date.now(),
     };
     this.persist();
@@ -222,6 +259,7 @@ export class SaveManager {
 
   private load(): LoadResult {
     if (!this.canUseStorage()) {
+      this.setPersistenceStatus('error');
       return { state: freshDefaultSave(), migrated: false };
     }
 
@@ -247,19 +285,28 @@ export class SaveManager {
       const parsed = JSON.parse(raw) as unknown;
       return isRecord(parsed) ? parsed : undefined;
     } catch {
+      this.setPersistenceStatus('error');
       return undefined;
     }
   }
 
   private persist(): void {
     if (!this.canUseStorage()) {
+      this.setPersistenceStatus('error');
       return;
     }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      this.setPersistenceStatus('ready');
     } catch {
-      // Storage can be present but unavailable in private or restricted browser contexts.
+      this.setPersistenceStatus('error');
     }
+  }
+
+  private setPersistenceStatus(status: PersistenceStatus): void {
+    if (this.persistenceStatus === status) return;
+    this.persistenceStatus = status;
+    this.persistenceListeners.forEach((listener) => listener(status));
   }
 
   private canUseStorage(): boolean {
@@ -276,15 +323,30 @@ export class SaveManager {
 }
 
 function normalizeSave(parsed: Record<string, unknown>): SaveState {
+  const level = levels.find((candidate) => candidate.id === parsed.currentLevelId) ?? getLevel('tutorial');
+  const progression = normalizeProgression(isRecord(parsed.progression) ? parsed.progression : undefined);
+  // Preserve the expanded local v1 campaign as well as the earlier public v1 format.
+  if (isRecord(parsed.progress)) {
+    progression.levelFlags[level.id] = uniqueStrings(Array.isArray(parsed.progress.latchedFlags) ? parsed.progress.latchedFlags : []);
+    progression.levelStoryIds[level.id] = uniqueStrings(Array.isArray(parsed.progress.seenStoryIds) ? parsed.progress.seenStoryIds : []);
+    progression.checkpointTimeline = isTimelineKey(parsed.progress.checkpointTimeline) ? parsed.progress.checkpointTimeline : undefined;
+  }
+  if (Array.isArray(parsed.collectedMemoryIds)) {
+    progression.collectedMemoryFragmentIds = uniqueStrings([...progression.collectedMemoryFragmentIds, ...parsed.collectedMemoryIds]);
+  }
+  if (parsed.completed === true && level.id === 'boss') {
+    progression.completedLevelIds = uniqueStrings([...progression.completedLevelIds, 'boss']);
+  }
+  const normalized = normalizeProgression(progression as unknown as Record<string, unknown>);
   return {
     version: 2,
     hasContinue: Boolean(parsed.hasContinue),
-    currentLevelId: typeof parsed.currentLevelId === 'string' ? parsed.currentLevelId : defaultSave.currentLevelId,
-    checkpointId: typeof parsed.checkpointId === 'string' ? parsed.checkpointId : undefined,
+    currentLevelId: level.id,
+    checkpointId: level.checkpoints.find((point) => point.id === parsed.checkpointId)?.id,
     timeline: isTimelineKey(parsed.timeline) ? parsed.timeline : defaultSave.timeline,
-    updatedAt: typeof parsed.updatedAt === 'number' && Number.isFinite(parsed.updatedAt) ? parsed.updatedAt : undefined,
+    updatedAt: typeof parsed.updatedAt === 'number' && Number.isFinite(new Date(parsed.updatedAt).getTime()) ? parsed.updatedAt : undefined,
     settings: normalizeSettings(isRecord(parsed.settings) ? (parsed.settings as Partial<SettingsState>) : undefined),
-    progression: normalizeProgression(isRecord(parsed.progression) ? parsed.progression : undefined),
+    progression: normalized,
   };
 }
 
@@ -293,17 +355,29 @@ function normalizeProgression(progression?: Record<string, unknown>): Progressio
   const levelFlags: Record<string, string[]> = {};
   Object.entries(rawFlags).forEach(([levelId, flags]) => {
     if (Array.isArray(flags)) {
-      levelFlags[levelId] = uniqueStrings(flags);
+      const level = levels.find((candidate) => candidate.id === levelId);
+      const validFlags = new Set(level?.switches.flatMap((lever) => [lever.flag, ...(lever.latchesFlags ?? [])]));
+      if (level) levelFlags[levelId] = uniqueStrings(flags).filter((flag) => validFlags.has(flag));
     }
   });
 
+  const rawStories = isRecord(progression?.levelStoryIds) ? progression.levelStoryIds : {};
+  const levelStoryIds: Record<string, string[]> = {};
+  for (const level of levels) {
+    const values = rawStories[level.id];
+    if (Array.isArray(values)) levelStoryIds[level.id] = uniqueStrings(values).filter((id) => level.storyZones.some((zone) => zone.id === id));
+  }
+  const memories = new Set(levels.flatMap((level) => (level.memoryFragments ?? []).map((memory) => memory.id)));
+  const collectedMemoryFragmentIds = uniqueStrings(Array.isArray(progression?.collectedMemoryFragmentIds) ? progression.collectedMemoryFragmentIds : []).filter((id) => memories.has(id));
   return {
-    completedLevelIds: uniqueStrings(Array.isArray(progression?.completedLevelIds) ? progression.completedLevelIds : []),
-    collectedMemoryFragmentIds: uniqueStrings(
-      Array.isArray(progression?.collectedMemoryFragmentIds) ? progression.collectedMemoryFragmentIds : [],
-    ),
+    completedLevelIds: uniqueStrings(Array.isArray(progression?.completedLevelIds) ? progression.completedLevelIds : []).filter((id) => levels.some((level) => level.id === id)),
+    collectedMemoryFragmentIds,
+    readMemoryFragmentIds: uniqueStrings(Array.isArray(progression?.readMemoryFragmentIds) ? progression.readMemoryFragmentIds : []).filter((id) => collectedMemoryFragmentIds.includes(id)),
+    lastViewedMemoryId: typeof progression?.lastViewedMemoryId === 'string' && collectedMemoryFragmentIds.includes(progression.lastViewedMemoryId) ? progression.lastViewedMemoryId : undefined,
     levelFlags,
     endingSeen: Boolean(progression?.endingSeen),
+    levelStoryIds,
+    checkpointTimeline: isTimelineKey(progression?.checkpointTimeline) ? progression.checkpointTimeline : undefined,
   };
 }
 
@@ -372,8 +446,12 @@ function cloneProgression(progression: ProgressionState): ProgressionState {
   return {
     completedLevelIds: [...progression.completedLevelIds],
     collectedMemoryFragmentIds: [...progression.collectedMemoryFragmentIds],
+    readMemoryFragmentIds: [...progression.readMemoryFragmentIds],
+    lastViewedMemoryId: progression.lastViewedMemoryId,
     levelFlags: Object.fromEntries(Object.entries(progression.levelFlags).map(([levelId, flags]) => [levelId, [...flags]])),
     endingSeen: progression.endingSeen,
+    levelStoryIds: Object.fromEntries(Object.entries(progression.levelStoryIds).map(([id, stories]) => [id, [...stories]])),
+    checkpointTimeline: progression.checkpointTimeline,
   };
 }
 

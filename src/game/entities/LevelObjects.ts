@@ -23,9 +23,9 @@ export class StaticPlatform {
   constructor(scene: Phaser.Scene, spec: PlatformSpec, group: Phaser.Physics.Arcade.StaticGroup) {
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, spec.color ?? 0x222a31);
     this.rectangle.setDepth(7.9);
-    if (scene.textures.exists(TextureKeys.platformSheet) && scene.textures.get(TextureKeys.platformSheet).has('present')) {
+    if (scene.textures.exists(TextureKeys.productionPlatformPresent)) {
       this.rectangle.setAlpha(0.01);
-      this.visual = scene.add.image(spec.x, platformVisualY(spec), TextureKeys.platformSheet, 'present');
+      this.visual = scene.add.image(spec.x, platformVisualY(spec), TextureKeys.productionPlatformPresent);
       this.visual.setOrigin(0.5, 0);
       this.visual.setDepth(8);
       this.visual.setDisplaySize(spec.width, platformVisualHeight(spec.height));
@@ -222,6 +222,7 @@ export class PressurePlate {
 export class LeverSwitch {
   readonly id: string;
   readonly flag: string;
+  readonly latchesFlags: string[];
   readonly rectangle: Phaser.GameObjects.Rectangle;
   private spec: SwitchSpec;
   private toggled = false;
@@ -231,6 +232,7 @@ export class LeverSwitch {
   constructor(scene: Phaser.Scene, spec: SwitchSpec) {
     this.id = spec.id;
     this.flag = spec.flag;
+    this.latchesFlags = spec.latchesFlags ?? [];
     this.spec = spec;
     this.rectangle = scene.add.rectangle(spec.x, spec.y, spec.width, spec.height, 0x67452c);
     this.rectangle.setDepth(11);
@@ -255,8 +257,10 @@ export class LeverSwitch {
     ghost: Actor,
     ghostInteract: boolean,
     ghostTimeline?: TimelineKey,
+    flags: Set<string> = new Set(),
   ): boolean {
     const available = this.isAvailableIn(timeline);
+    const powered = (this.spec.requiresFlags ?? []).every((flag) => flags.has(flag));
     const playerUses = available && interact && actor && boundsOverlap(this.rectangle, actor, 24, 28);
     const ghostUses =
       ghostTimeline !== undefined && this.isAvailableIn(ghostTimeline) && ghostInteract && ghost && boundsOverlap(this.rectangle, ghost, 24, 28);
@@ -271,7 +275,7 @@ export class LeverSwitch {
       this.visual.setAlpha(available ? 1 : 0.28);
       this.visual.setTint(available ? 0xffffff : timelineAccent(timeline));
     }
-    if (!this.toggled && (playerUses || ghostUses)) {
+    if (!this.toggled && powered && (playerUses || ghostUses)) {
       this.toggled = true;
       this.rectangle.setFillStyle(0xe6c36a);
       return true;
@@ -289,6 +293,10 @@ export class LeverSwitch {
     this.toggled = false;
   }
 
+  restore(toggled: boolean): void {
+    this.toggled = toggled;
+  }
+
   get isToggled(): boolean {
     return this.toggled;
   }
@@ -302,6 +310,9 @@ export class CheckpointBeacon {
   constructor(scene: Phaser.Scene, spec: CheckpointSpec, texture: string) {
     this.id = spec.id;
     this.sprite = scene.physics.add.staticSprite(spec.x, spec.y, texture);
+    if (texture === TextureKeys.productionCheckpoint) {
+      this.sprite.setDisplaySize(54, 72).setY(spec.y + 4).refreshBody();
+    }
     this.sprite.setDepth(10);
     this.sprite.setAlpha(0.65);
   }

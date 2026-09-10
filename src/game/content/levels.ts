@@ -1,4 +1,6 @@
 import type { LevelData, TimelineVisualState } from '../types';
+import { finalActLevels } from './final-act';
+import { withCampaignStory } from './campaign-story';
 
 const gone: TimelineVisualState = { solid: false, visible: false, color: 0x000000, alpha: 0 };
 const pastSolid: TimelineVisualState = { solid: true, visible: true, color: 0x8d6b42 };
@@ -8,7 +10,7 @@ const brokenPresent: TimelineVisualState = { solid: false, visible: true, color:
 const overgrown: TimelineVisualState = { solid: true, visible: true, color: 0x426b48 };
 const ruinedGhost: TimelineVisualState = { solid: false, visible: true, color: 0x522b33, alpha: 0.36 };
 
-export const levels: LevelData[] = [
+const levelGeometry: LevelData[] = [
   {
     id: 'tutorial',
     title: 'The Folded Reactor',
@@ -21,7 +23,7 @@ export const levels: LevelData[] = [
     startTimeline: 'present',
     background: 'reactor',
     startLines: [
-      'The clock above Elias has stopped. The thing in his chest has not.',
+      'The clock above Elias has stopped. The gauntlet on his wrist has not.',
       'Q bends the hour. 1, 2, 3 force it: Past, Present, Future.',
     ],
     platforms: [
@@ -110,6 +112,7 @@ export const levels: LevelData[] = [
       { id: 'street-left', x: 400, y: 690, width: 800, height: 60 },
       { id: 'street-right', x: 1525, y: 690, width: 1050, height: 60 },
       { id: 'street-awning', x: 690, y: 560, width: 190, height: 22, color: 0x273844 },
+      { id: 'street-awning-step', x: 525, y: 610, width: 130, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -143,7 +146,7 @@ export const levels: LevelData[] = [
     plates: [{ id: 'street-pressure-plate', flag: 'street_plate', x: 420, y: 656, width: 82, height: 12 }],
     switches: [],
     enemies: [{ id: 'first-rustmite', x: 1480, y: 620, patrolMinX: 1310, patrolMaxX: 1690, speed: 68 }],
-    checkpoints: [{ id: 'street-checkpoint', x: 1320, y: 620 }],
+    checkpoints: [{ id: 'street-checkpoint', label: 'East Gate', x: 1240, y: 620 }],
     storyZones: [
       {
         id: 'echo-hint',
@@ -195,6 +198,7 @@ export const levels: LevelData[] = [
       { id: 'rain-crossing-center', x: 1370, y: 690, width: 520, height: 60 },
       { id: 'rain-crossing-right', x: 2050, y: 690, width: 540, height: 60 },
       { id: 'rain-crossing-awning', x: 650, y: 560, width: 180, height: 22, color: 0x273844 },
+      { id: 'rain-awning-step', x: 490, y: 615, width: 120, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -292,6 +296,7 @@ export const levels: LevelData[] = [
       { id: 'greenhouse-middle', x: 1260, y: 690, width: 250, height: 60 },
       { id: 'greenhouse-right', x: 1810, y: 690, width: 860, height: 60 },
       { id: 'greenhouse-roof', x: 520, y: 520, width: 190, height: 24, color: 0x344647 },
+      { id: 'greenhouse-roof-step', x: 350, y: 600, width: 145, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -380,6 +385,7 @@ export const levels: LevelData[] = [
       { id: 'station-center', x: 1470, y: 690, width: 820, height: 60 },
       { id: 'station-right', x: 2200, y: 690, width: 440, height: 60 },
       { id: 'station-roof', x: 720, y: 510, width: 170, height: 22, color: 0x38434a },
+      { id: 'station-roof-step', x: 540, y: 590, width: 150, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -440,7 +446,7 @@ export const levels: LevelData[] = [
       { id: 'station-rustmite-a', x: 1420, y: 620, patrolMinX: 1290, patrolMaxX: 1580, speed: 80 },
       { id: 'station-rustmite-b', x: 2150, y: 620, patrolMinX: 1990, patrolMaxX: 2300, speed: 86 },
     ],
-    checkpoints: [{ id: 'platform-checkpoint', x: 1260, y: 490 }],
+    checkpoints: [{ id: 'platform-checkpoint', label: 'Platform Concourse', x: 1160, y: 620 }],
     storyZones: [
       {
         id: 'keeper-message',
@@ -475,6 +481,8 @@ export const levels: LevelData[] = [
       { id: 'canal-right-bank', x: 2055, y: 690, width: 1030, height: 60 },
       { id: 'canal-maintenance-awning', x: 590, y: 545, width: 180, height: 22, color: 0x273844 },
       { id: 'canal-overlook', x: 1770, y: 535, width: 210, height: 22, color: 0x263743 },
+      { id: 'canal-awning-step', x: 650, y: 610, width: 130, height: 20 },
+      { id: 'canal-overlook-step', x: 1930, y: 600, width: 140, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -504,7 +512,7 @@ export const levels: LevelData[] = [
       {
         id: 'past-service-sign',
         x: 1830,
-        y: 590,
+        y: 565,
         width: 190,
         height: 22,
         states: {
@@ -552,7 +560,7 @@ export const levels: LevelData[] = [
         message: 'The flooded drain folds back to the last checkpoint.',
       },
     ],
-    checkpoints: [{ id: 'canal-checkpoint', x: 1740, y: 620 }],
+    checkpoints: [{ id: 'canal-checkpoint', label: 'Dry Bank', x: 1810, y: 620 }],
     storyZones: [
       {
         id: 'canal-drain-lesson',
@@ -592,7 +600,7 @@ export const levels: LevelData[] = [
     height: 720,
     spawn: { x: 95, y: 600 },
     objective: 'Find the market key in the Present. Cross the stalls through the wrong years.',
-    nextLevelId: 'boss',
+    nextLevelId: 'hourglass-hotel',
     startTimeline: 'present',
     background: 'streets',
     startLines: [
@@ -605,6 +613,8 @@ export const levels: LevelData[] = [
       { id: 'market-exit-street', x: 2320, y: 690, width: 840, height: 60 },
       { id: 'market-present-awning', x: 760, y: 548, width: 210, height: 22, color: 0x273844 },
       { id: 'market-clock-balcony', x: 1880, y: 520, width: 210, height: 22, color: 0x38434a },
+      { id: 'market-awning-step', x: 590, y: 610, width: 140, height: 20 },
+      { id: 'market-balcony-step', x: 2030, y: 600, width: 140, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -672,12 +682,13 @@ export const levels: LevelData[] = [
       },
     ],
     plates: [],
-    switches: [{ id: 'market-key-switch', flag: 'market_key', x: 935, y: 644, width: 42, height: 34, timelines: ['present'] }],
+    switches: [{ id: 'market-key-switch', flag: 'market_key', x: 720, y: 644, width: 42, height: 34, timelines: ['present'] }],
+    requiredExitFlags: ['market_key'],
     enemies: [
       { id: 'market-rustmite-a', x: 1430, y: 620, patrolMinX: 1310, patrolMaxX: 1620, speed: 78 },
       { id: 'market-rustmite-b', x: 2250, y: 620, patrolMinX: 2090, patrolMaxX: 2490, speed: 86 },
     ],
-    checkpoints: [{ id: 'market-clock-checkpoint', x: 1820, y: 620 }],
+    checkpoints: [{ id: 'market-clock-checkpoint', label: 'Clock Square', x: 1915, y: 620 }],
     storyZones: [
       {
         id: 'market-choice-route',
@@ -690,7 +701,7 @@ export const levels: LevelData[] = [
       },
       {
         id: 'market-key-lesson',
-        x: 925,
+        x: 715,
         y: 600,
         width: 150,
         height: 140,
@@ -709,6 +720,7 @@ export const levels: LevelData[] = [
     ],
     exit: { x: 2645, y: 600, width: 70, height: 130 },
   },
+  ...finalActLevels,
   {
     id: 'boss',
     title: 'The Still Hour',
@@ -717,6 +729,7 @@ export const levels: LevelData[] = [
     height: 720,
     spawn: { x: 95, y: 600 },
     objective: 'Break the three anchors. Reach the Keeper.',
+    objectives: [{ flag: 'anchor_past', label: 'Past echo' }, { flag: 'anchor_present', label: 'Present bond' }, { flag: 'anchor_future', label: 'Future released' }],
     startTimeline: 'present',
     background: 'core',
     startLines: [
@@ -728,6 +741,7 @@ export const levels: LevelData[] = [
       { id: 'core-middle', x: 1420, y: 690, width: 760, height: 60 },
       { id: 'core-right', x: 2220, y: 690, width: 600, height: 60 },
       { id: 'core-upper', x: 1230, y: 520, width: 180, height: 22, color: 0x2f414e },
+      { id: 'core-upper-step', x: 1085, y: 600, width: 130, height: 20 },
     ],
     timelineBlocks: [
       {
@@ -784,11 +798,11 @@ export const levels: LevelData[] = [
     ],
     plates: [{ id: 'past-anchor-plate', flag: 'anchor_past', x: 410, y: 656, width: 86, height: 12, timelines: ['past'] }],
     switches: [
-      { id: 'present-anchor-switch', flag: 'anchor_present', x: 1285, y: 506, width: 42, height: 34, timelines: ['present'] },
-      { id: 'future-anchor-switch', flag: 'anchor_future', x: 1770, y: 644, width: 42, height: 34, timelines: ['future'] },
+      { id: 'present-anchor-switch', flag: 'anchor_present', x: 1285, y: 493, width: 42, height: 34, timelines: ['present'], requiresFlags: ['anchor_past'], latchesFlags: ['anchor_past'] },
+      { id: 'future-anchor-switch', flag: 'anchor_future', x: 1770, y: 644, width: 42, height: 34, timelines: ['future'], requiresFlags: ['anchor_present'] },
     ],
     enemies: [{ id: 'core-rustmite', x: 1520, y: 620, patrolMinX: 1370, patrolMaxX: 1690, speed: 90 }],
-    checkpoints: [{ id: 'core-checkpoint', x: 1120, y: 620 }],
+    checkpoints: [{ id: 'core-checkpoint', label: 'Anchor Dais', x: 1190, y: 620 }],
     storyZones: [
       {
         id: 'boss-plate',
@@ -806,7 +820,7 @@ export const levels: LevelData[] = [
         width: 180,
         height: 170,
         once: true,
-        lines: ['Anchor two answers only to the Present.'],
+        lines: ['The Present can bind the old echo. Both anchors will remember, even if Elias falls.'],
       },
       {
         id: 'boss-future',
@@ -831,6 +845,8 @@ export const levels: LevelData[] = [
     requiredExitFlags: ['anchor_past', 'anchor_present', 'anchor_future'],
   },
 ];
+
+export const levels: LevelData[] = levelGeometry.map(withCampaignStory);
 
 export function getLevel(id: string): LevelData {
   const level = levels.find((candidate) => candidate.id === id);
