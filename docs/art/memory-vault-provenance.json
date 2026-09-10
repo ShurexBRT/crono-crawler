@@ -1,0 +1,10 @@
+{
+  "createdDate": "2026-09-10",
+  "generator": "OpenAI ImageGen",
+  "path": "assets/ui/memory-vault-book.png",
+  "width": 1536,
+  "height": 1024,
+  "sha256": "f4cca0e079ea9f0425a7ff58054f2d681ad934aa7eef0ad9dbae7ed00ce3719a",
+  "prompt": "Use case: illustration-story. Production UI art for Chrono Crawler's Memory Vault: one open, large clothbound keepsake journal viewed PERFECTLY straight from above. Landscape 1536x1024. Book fills the canvas with only a very narrow dark charcoal-teal tabletop margin. Deep burgundy cloth cover visible only as a thin edge, pale cool ivory paper, subtly worn layered page edges, realistic central stitched spine. Two entirely BLANK facing pages with broad flat clean writing areas: left interior from x=8% to46%, right from54% to92%, both y=8% to90%. Keep the page centers evenly lit, extremely low contrast paper fibers, no stains in text areas. A narrow dark green ribbon bookmark extends just below bottom edge near center. Art-deco restrained painterly physical artifact, refined lighting, believable binding. NO writing, NO letters, NO sketches, NO UI, NO symbols, NO objects on pages, NO hands, NO gradients, NO watermark. All actual contents will be placed by the game as live text and images. Keep full book and all corners visible, pages not tilted, no perspective distortion.",
+  "notes": "Original blank UI book background. All memory images and prose are rendered separately; no text is baked into this asset. Source image inspected as generated. In-game layout review remains outstanding."
+}

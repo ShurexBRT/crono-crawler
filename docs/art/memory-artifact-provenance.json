@@ -1,0 +1,117 @@
+{
+  "created": "2026-09-09",
+  "purpose": "Nine illustrated, inspectable memory collectibles for Chrono Crawler",
+  "textPolicy": "All narrative inscriptions and letter copy are live DOM text. Generated images intentionally contain no required readable writing.",
+  "validation": "Source illustrations visually inspected as generated; dimensions, PNG decode and SHA-256 checked locally. In-game browser rendering remains unverified because existing browser permission is denied.",
+  "totalBytes": 23660266,
+  "assets": [
+    {
+      "path": "assets/memories/three-suns.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 3198363,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "67fac927447550b0034dd48f18e75684b736b3ec41ac139b742a46a2c17ce0ef",
+      "id": "three-suns",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. A slightly creased off-white sheet containing a sincere child's wax-crayon drawing: a fanciful art-deco city with a tram, exactly THREE large sunny circles across the sky in gold, pink and soft blue; at bottom a small dark-bob-haired girl in a mustard cardigan and teal dress holding hands with a taller bespectacled father in a pale coat. Uneven childlike crayon pressure, rainbow window boxes, visible paper fibers. The drawing is joyful and ordinary, not eerie. Straight overhead sheet aligned nearly square, no written words."
+    },
+    {
+      "path": "assets/memories/window-seat.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2541216,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "e33449cfea0d65e40a2a1de3b30af0fea9f7e4b817620b22f6393bec79752079",
+      "id": "window-seat",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. One old square color photograph with a slim worn off-white paper border, lying on the desktop. Within photograph: Mara, a girl about nine with dark brown bobbed hair, a mustard cardigan over a teal dress with white Peter Pan collar, sitting in a green velvet tram window seat, smiling toward camera and saving the empty seat beside her with one hand. Rain on glass, art-deco city beyond, late afternoon diffuse light. Believable anatomy, exactly two arms. Gentle everyday happiness. No other people, no words."
+    },
+    {
+      "path": "assets/memories/mara-letter.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2257411,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "24207040d41fdf74cc8ba550085e718240325981706ed873c43e06f3ab371eec",
+      "id": "mara-letter",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. An opened ivory letter sheet with softly irregular edges, perfectly front-facing and square to camera, fills almost entire image; one fine vertical and two horizontal fold creases. Entire central 75 percent MUST be clean unmarked pale ivory paper, reserved for live text overlay. Only extreme corners: a small child's handdrawn three-sun doodle at lower right, tiny cornflower pencil stroke at upper left. A burgundy-lined open envelope peeks behind lower left edge, never across paper center. No handwriting or text whatsoever. Very low-contrast paper texture and generous clean blank writing space."
+    },
+    {
+      "path": "assets/memories/spare-token.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 3095829,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "8ae3ca637712fdc60ebf23dc0efabb2b61029ca219d7917cba3701a514d93f40",
+      "id": "spare-token",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. One worn brass tram token threaded onto a short faded teal cotton cord. Token has a deeply engraved geometric tram-window emblem with four tiny squares, decorative concentric linework and a distinct small notch in its edge, NO letters or numbers. Beside it lies one small torn plain pink ticket corner, no text. Intimate almost macro view of burnished metal edges smoothed by a child's thumb, delicate cord fibers. Main coin 65 percent of canvas, not treasure or magical glowing object."
+    },
+    {
+      "path": "assets/memories/photo-strip.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2511022,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "bfbfce9c10403fc0eb9a846d2c2aaa14e243efdd29e95f7c82bbb549ece03149",
+      "id": "photo-strip",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. A single tall vertical photo-booth strip with FOUR clearly separated frames stacked vertically, fully visible and fills canvas height with generous dark petrol margins left and right. Consistent people in all four frames: father Elias with short dark hair, round wire spectacles, pale coat and burgundy waistcoat; daughter Mara about nine, dark bob, mustard cardigan, teal dress with white collar. Frame1 father blinking while daughter watches. Frame2 girl laughing, father smiling. Frame3 crooked folded ticket-paper crown on girl's head, father adjusting his own glasses. Frame4 both trying and failing to look serious. Warm faded color booth photographs, visible fine film grain. No writing or numbers, no duplicate limbs."
+    },
+    {
+      "path": "assets/memories/room-key.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2813786,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "d70000033ba115836ad06d2c45bb89ccc4a5ceb4d357795d23c82c8a2936c9da",
+      "id": "room-key",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. A small old brass hotel key with a long rectangular chipped jade-green enamel key fob attached on a metal ring, the fob blank with no lettering or numbers. Key and fob arranged in a gentle diagonal across a folded piece of pale hotel stationery, soft rectangular dust trace next to key as if it has not moved for years. A single faded burgundy thread tied to ring. Fine intimate gouache material detail, quiet sadness, no fantasy mechanisms, no extra keys."
+    },
+    {
+      "path": "assets/memories/unsent-letter.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2494005,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "2e965d1acb7547369936211615a8755f5ec4a9cbfd0efdd59d21ce0e2b411f49",
+      "id": "unsent-letter",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. An unfinished letter sheet of cool pale grey-white paper, perfectly straight and face-on, fills almost entire square image. Fine center fold and faint water ring at extreme upper right. Central 75 percent MUST be blank unmarked paper reserved for live text. A capped dark fountain pen rests beyond far right paper edge; a small closed burgundy envelope peeks from beneath lower left edge, not across writing area. A subtle thumb smudge at extreme bottom corner. No handwriting, lines, text or numbers anywhere. Clean high-contrast writing surface."
+    },
+    {
+      "path": "assets/memories/paper-crown.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2460881,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "d972503f7ea56beb8f09507a69ba7bdbc44bec9aadcf426a64e9e3f405f9bab2",
+      "id": "paper-crown",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. A small homemade paper crown folded from old pale tram tickets. Clearly three slightly wonky tall points, careful child's folds, one corner repaired with a tiny scrap of translucent tape. Faded pink and jade ticket blocks with geometric perforation marks but NO letters or numbers. Crown lies at a three-quarter angle, tactile humble object, not metal or jewelry. A loose short teal thread beside it. Soft morning light on creased paper and crisp readable silhouette."
+    },
+    {
+      "path": "assets/memories/first-second.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2287753,
+      "transparentSampleRatio": 0,
+      "opaqueSampleRatio": 1,
+      "sha256": "d9c1d0d38b89f9a943b9abccbdde4e53ca3993ee1b95f3aeeb02b52982050f89",
+      "id": "first-second",
+      "tool": "built-in image_gen",
+      "prompt": "Use case: illustration-story. Production collectible illustration for Chrono Crawler, an intimate Dark Deco narrative game. Square 1024x1024 raster artwork, painterly gouache and fine ink, beautifully tactile restrained animation-art realism, not pixel art, not UI mockup. Top-down carefully composed single keepsake on a flat muted deep petrol-grey desktop, subtle soft contact shadows, evenly illuminated and clearly inspectable. Main object fills 85 percent of image, all edges inside canvas. Rich but quiet teal, burgundy, faded jade, off-white and small ochre accents. No glowing effects, no extra props except explicitly requested. No watermark, logos or captions. Text will be added by the game, so avoid any legible text, labels, numbers or pseudo-writing unless specifically requested. A small open laboratory notebook with burgundy cloth cover, pale pages completely blank in their central areas, neatly stitched binding and slightly bent outer corner. On the left page only a delicate geometric calibration circle at upper left margin, faint small tickmarks, NO equations, letters or numbers. The right page is completely empty and catches clear soft morning light. A brass mechanical pencil rests horizontally below the book, not over pages. The blank future and breathing room are the emotional subject, no magical glow."
+    }
+  ]
+}
