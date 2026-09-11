@@ -4,7 +4,7 @@ import { collectRuntimeErrors } from './support/playable';
 
 for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
   test(`all nine vault spreads render at ${viewport.width}x${viewport.height}`, async ({ page }, testInfo) => {
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     const errors = collectRuntimeErrors(page);
     await page.setViewportSize(viewport);
     await page.addInitScript((ids) => {
@@ -16,8 +16,11 @@ for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 
     await page.goto('/');
     await page.locator('[data-action="journal"]').click();
     await expect(page.locator('[data-memory-count]')).toHaveText('9 / 9');
+    await expect(page.locator('[data-vault-book]')).toHaveAttribute('data-vault-entry-id', 'contents');
+
     for (const artifact of memoryArtifacts) {
       const opener = page.locator(`[data-vault-entry="${artifact.id}"]`);
+      await expect(opener).toBeVisible();
       await opener.click();
       const dialog = page.getByRole('dialog');
       await expect(page.locator('[data-vault-book]')).toHaveAttribute('data-vault-entry-id', artifact.id);
@@ -46,10 +49,16 @@ for (const viewport of [{ width: 1366, height: 900 }, { width: 390, height: 844 
         expect(item.rect.x).toBeGreaterThanOrEqual(0);
         expect(item.rect.right).toBeLessThanOrEqual(viewport.width + 1);
       }
-      await page.screenshot({ path: testInfo.outputPath(`${artifact.id}-top.png`) });
+
+      // Keep one visual artifact per memory while avoiding a second full viewport capture
+      // after scrolling. The old double-screenshot loop made this correctness test exceed
+      // its budget on GitHub's software-rendered browser even when the UI was healthy.
+      await page.screenshot({ path: testInfo.outputPath(`${artifact.id}.png`) });
       await dialog.locator('.vault-prose p').last().scrollIntoViewIfNeeded();
-      await page.screenshot({ path: testInfo.outputPath(`${artifact.id}-reading-end.png`) });
+      await expect(dialog.locator('.vault-prose p').last()).toBeVisible();
+
       await page.locator('[data-action="vault-contents"]').click();
+      await expect(page.locator('[data-vault-book]')).toHaveAttribute('data-vault-entry-id', 'contents');
       await expect(page.locator(`[data-vault-entry="${artifact.id}"] .vault-unread`)).toHaveCount(0);
     }
     await page.keyboard.press('Escape');
