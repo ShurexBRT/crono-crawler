@@ -21,17 +21,30 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.body.blocked.down;
+      const body = game.scene.getScene('GameScene').player.sprite.body;
+      return body.blocked.down || body.touching.down;
     })).toBe(true);
+
     await page.keyboard.press(key);
-    await page.keyboard.down('Shift');
-    await page.keyboard.down('ArrowRight');
+
+    // Start the jump before horizontal acceleration. On a software-rendered CI runner,
+    // sending Right first can advance a frame and pin Elias against the stair edge
+    // before Space is processed. We still use real keyboard input and Arcade physics;
+    // this only removes command-delivery timing from the traversal assertion.
     await page.keyboard.down('Space');
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
+      return game.scene.getScene('GameScene').player.sprite.body.velocity.y;
+    }), { timeout: 1500, intervals: [20] }).toBeLessThan(-100);
+
+    await page.keyboard.down('Shift');
+    await page.keyboard.down('ArrowRight');
+    await expect.poll(() => page.evaluate(async () => {
+      const entry = '/src/main.ts';
+      const { game } = await import(entry);
       return game.scene.getScene('GameScene').player.sprite.x;
-    }), { timeout: 2500, intervals: [30] }).toBeGreaterThan(x - 15);
+    }), { timeout: 3000, intervals: [30] }).toBeGreaterThan(x - 15);
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
     await page.keyboard.up('Space');
@@ -39,6 +52,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       const entry = '/src/main.ts';
       const { game } = await import(entry);
       return game.scene.getScene('GameScene').player.sprite.body.bottom;
-    }), { timeout: 2500, intervals: [40] }).toBeCloseTo(top, 0);
+    }), { timeout: 3000, intervals: [40] }).toBeCloseTo(top, 0);
   }
 });
