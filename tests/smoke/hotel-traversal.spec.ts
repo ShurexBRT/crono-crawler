@@ -51,6 +51,15 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       const { game } = await import(entry);
       return game.scene.getScene('GameScene').timelineManager.current;
     })).toBe(target.timeline);
+
+    // Timeline changes stabilize Elias twice: immediately and again on the next Phaser tick.
+    // A Playwright command can otherwise inject Space into that tiny gap and have the queued
+    // support snap zero the new upward velocity. Waiting two browser frames models a real human
+    // transition between timeline and jump inputs without adding arbitrary wall-clock sleeps.
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
