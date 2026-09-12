@@ -99,17 +99,17 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       releaseMovement();
       for (let pass = 0; pass < 4; pass += 1) {
         const delta = targetX - bodyCenterX();
-        if (Math.abs(delta) <= 8) break;
+        if (Math.abs(delta) <= 18) break;
         const code = delta > 0 ? 'ArrowRight' : 'ArrowLeft';
         emitKey('keydown', code);
-        const reached = await waitUntil(() => delta > 0 ? bodyCenterX() >= targetX - 5 : bodyCenterX() <= targetX + 5, 120);
+        const reached = await waitUntil(() => delta > 0 ? bodyCenterX() >= targetX - 10 : bodyCenterX() <= targetX + 10, 120);
         emitKey('keyup', code);
         await waitFrames(5);
         if (!reached) break;
       }
       releaseMovement();
       await waitFrames(4);
-      return Math.abs(targetX - bodyCenterX()) <= 16 && grounded();
+      return Math.abs(targetX - bodyCenterX()) <= 28 && grounded();
     };
 
     const diagnostics: Array<Record<string, unknown>> = [];
@@ -123,7 +123,11 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', state: physicsState(), diagnostics };
       }
 
-      const takeoffX = previousCenter ?? 350;
+      // Use a safe takeoff zone rather than demanding pixel-perfect centering. On every stair
+      // after the lobby, 20px left of center leaves generous edge clearance and keeps Elias out
+      // from under the overlapping lip of the next 80px rise. The ±28px acceptance still leaves
+      // at least 40px of usable support even on the narrowest 160px hotel platforms.
+      const takeoffX = previousCenter === null ? 350 : previousCenter - 20;
       const positioned = await moveToX(takeoffX);
       if (!positioned) {
         const nearbySolids = scene.solidGroup.getChildren().map((child: any) => child.body).filter((candidate: any) => {
