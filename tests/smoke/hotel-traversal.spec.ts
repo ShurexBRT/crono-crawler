@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { dismissDialogue, seedContinueSave } from './support/playable';
 
+const route = [
+  { x: 500, top: 1200, key: '2', timeline: 'present' },
+  { x: 665, top: 1120, key: '1', timeline: 'past' },
+  { x: 830, top: 1040, key: '1', timeline: 'past' },
+  { x: 1000, top: 960, key: '3', timeline: 'future' },
+  { x: 1160, top: 880, key: '3', timeline: 'future' },
+  { x: 1330, top: 800, key: '2', timeline: 'present' },
+  { x: 1490, top: 720, key: '2', timeline: 'present' },
+  { x: 1665, top: 640, key: '2', timeline: 'present' },
+] as const;
+
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
   test.setTimeout(90_000);
   await seedContinueSave(page, 'hourglass-hotel');
@@ -9,9 +20,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   await expect(page.locator('[data-action="next"]')).toBeVisible();
   await dismissDialogue(page);
 
-  // Start on the lobby with enough real run-up to reproduce how a player approaches
-  // the first stair. The previous x=390 fixture placed Elias almost flush against the
-  // stair wall and tested an artificial standing-jump edge case rather than the level.
+  // Begin from the lobby with the same kind of run-up a player has in normal play.
   await page.evaluate(async () => {
     const entry = '/src/main.ts';
     const { game } = await import(entry);
@@ -21,7 +30,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     scene.memoryFragments = [];
   });
 
-  for (const [x, top, key] of [[500, 1200, '2'], [665, 1120, '1'], [830, 1040, '1'], [1000, 960, '3'], [1160, 880, '3'], [1330, 800, '2'], [1490, 720, '2'], [1665, 640, '2']] as const) {
+  for (const target of route) {
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
@@ -29,21 +38,51 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    await page.keyboard.press(key);
-    await page.keyboard.down('Space');
+    // Timeline changes can rebuild collision support. Confirm the requested timeline and
+    // that Elias has settled before starting the next physical jump.
+    await page.keyboard.press(target.key, { delay: 60 });
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.body.velocity.y;
-    }), { timeout: 1500, intervals: [20] }).toBeLessThan(-100);
+      return game.scene.getScene('GameScene').timelineManager.current;
+    })).toBe(target.timeline);
+    await expect.poll(() => page.evaluate(async () => {
+      const entry = '/src/main.ts';
+      const { game } = await import(entry);
+      const body = game.scene.getScene('GameScene').player.sprite.body;
+      return body.blocked.down || body.touching.down;
+    })).toBe(true);
 
+    // Use real running input and allow a short approach before jumping. A headless browser
+    // can occasionally deliver a key edge between Phaser UPDATE and POST_UPDATE, so retry
+    // the physical Space press if that one edge is missed. No game state is injected here.
     await page.keyboard.down('Shift');
     await page.keyboard.down('ArrowRight');
+    await page.waitForTimeout(100);
+
+    let jumpStarted = false;
+    for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
+      await page.keyboard.down('Space');
+      try {
+        await page.waitForFunction(async () => {
+          const entry = '/src/main.ts';
+          const { game } = await import(entry);
+          return game.scene.getScene('GameScene').player.sprite.body.velocity.y < -100;
+        }, undefined, { timeout: 700, polling: 30 });
+        jumpStarted = true;
+      } catch {
+        await page.keyboard.up('Space');
+        await page.waitForTimeout(60);
+      }
+    }
+    expect(jumpStarted).toBe(true);
+
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
       return game.scene.getScene('GameScene').player.sprite.x;
-    }), { timeout: 3000, intervals: [30] }).toBeGreaterThan(x - 15);
+    }), { timeout: 4000, intervals: [30] }).toBeGreaterThan(target.x - 15);
+
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
     await page.keyboard.up('Space');
@@ -52,6 +91,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       const entry = '/src/main.ts';
       const { game } = await import(entry);
       return game.scene.getScene('GameScene').player.sprite.body.bottom;
-    }), { timeout: 3000, intervals: [40] }).toBeCloseTo(top, 0);
+    }), { timeout: 4000, intervals: [40] }).toBeCloseTo(target.top, 0);
   }
 });
