@@ -123,11 +123,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', state: physicsState(), diagnostics };
       }
 
-      // Use a safe takeoff zone rather than demanding pixel-perfect centering. On every stair
-      // after the lobby, 20px left of center leaves generous edge clearance and keeps Elias out
-      // from under the overlapping lip of the next 80px rise. The ±28px acceptance still leaves
-      // at least 40px of usable support even on the narrowest 160px hotel platforms.
-      const takeoffX = previousCenter === null ? 350 : previousCenter - 20;
+      // The lobby needs a little extra approach distance for the first 80px rise. After that,
+      // aim for the center of the current support but accept a broad safe zone. This gives every
+      // jump enough horizontal reach without reintroducing a load-sensitive timed ground run-up.
+      const takeoffX = previousCenter ?? 350;
       const positioned = await moveToX(takeoffX);
       if (!positioned) {
         const nearbySolids = scene.solidGroup.getChildren().map((child: any) => child.body).filter((candidate: any) => {
