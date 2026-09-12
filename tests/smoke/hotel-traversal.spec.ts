@@ -57,8 +57,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     const waitFrames = async (count: number) => {
       for (let index = 0; index < count; index += 1) await nextFrame();
     };
-    const grounded = () => sprite.body.blocked.down || sprite.body.touching.down;
-    const bodyBottom = () => sprite.body.bottom as number;
+    const body = () => sprite.body;
+    const grounded = () => body().blocked.down || body().touching.down;
+    const bodyBottom = () => body().bottom as number;
+    const bodyCenterX = () => body().center.x as number;
     const releaseMovement = () => {
       emitKey('keyup', 'ArrowLeft');
       emitKey('keyup', 'ArrowRight');
@@ -78,21 +80,36 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       emitKey('keyup', code);
       await waitFrames(2);
     };
+    const physicsState = () => ({
+      spriteX: sprite.x,
+      bodyCenterX: bodyCenterX(),
+      bodyLeft: body().left,
+      bodyRight: body().right,
+      bottom: bodyBottom(),
+      velocityX: body().velocity.x,
+      velocityY: body().velocity.y,
+      blockedLeft: body().blocked.left,
+      blockedRight: body().blocked.right,
+      blockedDown: body().blocked.down,
+      touchingLeft: body().touching.left,
+      touchingRight: body().touching.right,
+      touchingDown: body().touching.down,
+    });
     const moveToX = async (targetX: number) => {
       releaseMovement();
       for (let pass = 0; pass < 4; pass += 1) {
-        const delta = targetX - sprite.x;
+        const delta = targetX - bodyCenterX();
         if (Math.abs(delta) <= 8) break;
         const code = delta > 0 ? 'ArrowRight' : 'ArrowLeft';
         emitKey('keydown', code);
-        const reached = await waitUntil(() => delta > 0 ? sprite.x >= targetX - 5 : sprite.x <= targetX + 5, 120);
+        const reached = await waitUntil(() => delta > 0 ? bodyCenterX() >= targetX - 5 : bodyCenterX() <= targetX + 5, 120);
         emitKey('keyup', code);
         await waitFrames(5);
         if (!reached) break;
       }
       releaseMovement();
       await waitFrames(4);
-      return Math.abs(targetX - sprite.x) <= 16 && grounded();
+      return Math.abs(targetX - bodyCenterX()) <= 16 && grounded();
     };
 
     const diagnostics: Array<Record<string, unknown>> = [];
@@ -103,17 +120,22 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       releaseMovement();
 
       if (!(await waitUntil(grounded, 120))) {
-        return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', diagnostics };
+        return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', state: physicsState(), diagnostics };
       }
 
       if (previousCenter !== null) {
         const centered = await moveToX(previousCenter);
         if (!centered) {
+          const nearbySolids = scene.solidGroup.getChildren().map((child: any) => child.body).filter((candidate: any) => {
+            if (!candidate?.enable || candidate.checkCollision.none) return false;
+            return candidate.bottom >= body().top - 80 && candidate.top <= body().bottom + 80 && candidate.right >= body().left - 80 && candidate.left <= body().right + 80;
+          }).map((candidate: any) => ({ left: candidate.left, right: candidate.right, top: candidate.top, bottom: candidate.bottom }));
           return {
             ok: false,
             failedAt: index,
             reason: 'could-not-center-on-support',
-            state: { x: sprite.x, bottom: bodyBottom(), velocityX: sprite.body.velocity.x },
+            state: physicsState(),
+            nearbySolids,
             diagnostics,
           };
         }
@@ -127,21 +149,21 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
           ok: false,
           failedAt: index,
           reason: 'timeline-not-stable',
-          state: { timeline: scene.timelineManager.current, grounded: grounded(), bottom: bodyBottom() },
+          state: { timeline: scene.timelineManager.current, ...physicsState() },
           diagnostics,
         };
       }
 
       const timelineBlock = scene.timelineBlocks.find((block: any) => Math.abs(block.rectangle.x - target.x) < 1);
       const colliderBefore = timelineBlock ? (() => {
-        const body = timelineBlock.rectangle.body;
+        const targetBody = timelineBlock.rectangle.body;
         return {
           x: timelineBlock.rectangle.x,
-          top: body.top,
-          left: body.left,
-          right: body.right,
-          enabled: body.enable,
-          collisionNone: body.checkCollision.none,
+          top: targetBody.top,
+          left: targetBody.left,
+          right: targetBody.right,
+          enabled: targetBody.enable,
+          collisionNone: targetBody.checkCollision.none,
         };
       })() : null;
 
@@ -150,14 +172,14 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       await waitFrames(5);
       emitKey('keydown', 'Space');
 
-      const jumpStarted = await waitUntil(() => sprite.body.velocity.y < -100, 30);
+      const jumpStarted = await waitUntil(() => body().velocity.y < -100, 30);
       if (!jumpStarted) {
         releaseMovement();
         return {
           ok: false,
           failedAt: index,
           reason: 'jump-did-not-start',
-          state: { x: sprite.x, bottom: bodyBottom(), velocityX: sprite.body.velocity.x, velocityY: sprite.body.velocity.y, grounded: grounded() },
+          state: physicsState(),
           colliderBefore,
           diagnostics,
         };
@@ -169,14 +191,14 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         if (frame % 4 === 0) {
           flight.push({
             frame,
-            x: sprite.x,
+            bodyCenterX: bodyCenterX(),
             bottom: bodyBottom(),
-            velocityX: sprite.body.velocity.x,
-            velocityY: sprite.body.velocity.y,
+            velocityX: body().velocity.x,
+            velocityY: body().velocity.y,
             grounded: grounded(),
           });
         }
-        if (grounded() && Math.abs(bodyBottom() - target.top) <= 1.5 && sprite.body.velocity.y >= 0) {
+        if (grounded() && Math.abs(bodyBottom() - target.top) <= 1.5 && body().velocity.y >= 0) {
           landed = true;
           break;
         }
@@ -188,7 +210,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       const landingState = {
         targetX: target.x,
         targetTop: target.top,
-        actualX: sprite.x,
+        actualBodyCenterX: bodyCenterX(),
+        actualSpriteX: sprite.x,
         actualBottom: bodyBottom(),
         grounded: grounded(),
         timeline: scene.timelineManager.current,
