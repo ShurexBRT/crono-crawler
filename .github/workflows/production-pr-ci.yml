@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -31,6 +35,9 @@ jobs:
 
       - name: Verify production boot
         run: npx playwright test tests/smoke/00-production-boot.spec.ts
+
+      - name: Verify release-gate regressions
+        run: npx playwright test tests/smoke/hotel-traversal.spec.ts tests/smoke/memory-artifacts.spec.ts --workers=1 --max-failures=1
 
       - name: Run smoke and visual QA
         run: npm run test:smoke

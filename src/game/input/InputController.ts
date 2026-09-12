@@ -15,9 +15,11 @@ type InputAction =
 export class InputController {
   private keys: Record<string, Phaser.Input.Keyboard.Key>;
   private fallbackJustPressed = new Set<InputAction>();
+  private fallbackAtFrameStart = new Set<InputAction>();
   private gamepadPressed = new Set<InputAction>();
   private previousGamepadButtons = new Set<number>();
   private readonly keyDownHandler: (event: KeyboardEvent) => void;
+  private readonly preUpdateHandler: () => void;
   private readonly postUpdateHandler: () => void;
 
   constructor(scene: Phaser.Scene) {
@@ -56,19 +58,28 @@ export class InputController {
         this.fallbackJustPressed.add(action);
       }
     };
+    this.preUpdateHandler = () => {
+      // Snapshot edge inputs that existed before this gameplay frame. If gameplay does not
+      // consume one of these actions during update (for example because dialogue is open),
+      // it can safely expire at POST_UPDATE. A keydown that arrives later in the frame is
+      // intentionally absent from this snapshot so it survives until the next update and
+      // gets one fair chance to be consumed instead of being dropped by frame timing.
+      this.fallbackAtFrameStart = new Set(this.fallbackJustPressed);
+    };
     this.postUpdateHandler = () => {
-      // Browser keydown is a fallback for edge-triggered actions only. Clear anything
-      // that gameplay did not consume this frame so input pressed during dialogue or
-      // another blocking overlay cannot fire later when gameplay resumes.
-      this.fallbackJustPressed.clear();
+      this.fallbackAtFrameStart.forEach((action) => this.fallbackJustPressed.delete(action));
+      this.fallbackAtFrameStart.clear();
     };
 
     window.addEventListener('keydown', this.keyDownHandler);
+    scene.events.on(Phaser.Scenes.Events.PRE_UPDATE, this.preUpdateHandler);
     scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener('keydown', this.keyDownHandler);
+      scene.events.off(Phaser.Scenes.Events.PRE_UPDATE, this.preUpdateHandler);
       scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.postUpdateHandler);
       this.fallbackJustPressed.clear();
+      this.fallbackAtFrameStart.clear();
     });
   }
 
@@ -89,6 +100,7 @@ export class InputController {
   reset(): void {
     Object.values(this.keys).forEach((key) => key.reset());
     this.fallbackJustPressed.clear();
+    this.fallbackAtFrameStart.clear();
     this.gamepadPressed.clear();
     this.previousGamepadButtons.clear();
     this.connectedGamepads.forEach((pad) => pad.buttons.forEach((button, index) => {
