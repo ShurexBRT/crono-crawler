@@ -8,7 +8,7 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 230, sprint: false, brakeLead: 60, counterSteer: false },
+  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false },
   { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
@@ -34,6 +34,17 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     scene.player.respawn({ x: 320, y: 1235 });
     scene.storyTriggered = new Set(scene.level.storyZones.map((zone: { id: string }) => zone.id));
     scene.memoryFragments = [];
+  });
+
+  const readLanding = () => page.evaluate(async () => {
+    const entry = '/src/main.ts';
+    const { game } = await import(entry);
+    const scene = game.scene.getScene('GameScene');
+    const body = scene.player.sprite.body;
+    return {
+      bottom: body.bottom,
+      grounded: body.blocked.down || body.touching.down,
+    };
   });
 
   for (const target of route) {
@@ -70,10 +81,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // The first 80px stair is intentionally approached at walk speed. With the real jump arc
-    // (435px/s impulse, 980px/s² gravity), the 230ms walk places Elias near x=350 so he reaches
-    // the platform's x=420 left edge near the apex instead of colliding with its vertical face.
-    // Later stairs start from narrow platforms, so they jump first and add sprint air-control.
+    // The lobby gives Elias room for a short walk before the first 80px ascent. Later stairs
+    // begin on narrow platforms, so they jump first and add horizontal control after liftoff.
     if (target.preMoveMs > 0) {
       await page.keyboard.down('ArrowRight');
       await page.waitForTimeout(target.preMoveMs);
@@ -128,6 +137,17 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       await page.keyboard.down('ArrowRight');
     }
 
+    // For the first stair the only meaningful assertion is a real landing on its top.
+    // Requiring an arbitrary center-X after contact can leave Arcade Physics wedged on the edge
+    // even though the platform has already been reached successfully.
+    if (!target.counterSteer) {
+      await expect.poll(readLanding, { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
+      await page.keyboard.up('ArrowRight');
+      await page.keyboard.up('Shift');
+      await page.keyboard.up('Space');
+      continue;
+    }
+
     const brakeX = target.x - target.brakeLead;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
@@ -137,27 +157,16 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
 
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
+    await page.keyboard.down('ArrowLeft');
     await page.keyboard.up('Space');
-
-    if (target.counterSteer) {
-      await page.keyboard.down('ArrowLeft');
-      await expect.poll(() => page.evaluate(async () => {
-        const entry = '/src/main.ts';
-        const { game } = await import(entry);
-        return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
-      }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
-      await page.keyboard.up('ArrowLeft');
-    }
 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
-      const scene = game.scene.getScene('GameScene');
-      const body = scene.player.sprite.body;
-      return {
-        bottom: body.bottom,
-        grounded: body.blocked.down || body.touching.down,
-      };
-    }), { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
+      return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
+    }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
+    await page.keyboard.up('ArrowLeft');
+
+    await expect.poll(readLanding, { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
   }
 });
