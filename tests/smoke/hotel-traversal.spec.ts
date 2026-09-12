@@ -8,14 +8,14 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', runupMs: 100, brakeLead: 90 },
-  { x: 665, top: 1120, key: '1', timeline: 'past', runupMs: 0, brakeLead: 75 },
-  { x: 830, top: 1040, key: '1', timeline: 'past', runupMs: 0, brakeLead: 75 },
-  { x: 1000, top: 960, key: '3', timeline: 'future', runupMs: 0, brakeLead: 75 },
-  { x: 1160, top: 880, key: '3', timeline: 'future', runupMs: 0, brakeLead: 75 },
-  { x: 1330, top: 800, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
-  { x: 1490, top: 720, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
-  { x: 1665, top: 640, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
+  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false },
+  { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 1160, top: 880, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 1330, top: 800, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 1490, top: 720, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 1665, top: 640, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
 ] as const;
 
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
@@ -27,7 +27,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   await dismissDialogue(page);
 
   // Start well inside the lobby so the first ascent exercises the same jump physics as play.
-  // Keep a small margin from the reception setup while avoiding a needlessly long sprint.
   await page.evaluate(async () => {
     const entry = '/src/main.ts';
     const { game } = await import(entry);
@@ -38,10 +37,11 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   });
 
   for (const target of route) {
-    // Normalize Playwright's key state between landings. The previous jump releases Space in
-    // mid-air, but an explicit key-up here prevents a stale pressed-key state from turning the
-    // next keyboard.down into a repeated keydown event (which InputController deliberately ignores).
+    // Normalize key state between landings so every jump begins from a real key edge.
     await page.keyboard.up('Space');
+    await page.keyboard.up('ArrowLeft');
+    await page.keyboard.up('ArrowRight');
+    await page.keyboard.up('Shift');
 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
@@ -57,10 +57,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return game.scene.getScene('GameScene').timelineManager.current;
     })).toBe(target.timeline);
 
-    // Timeline changes stabilize Elias twice: immediately and again on the next Phaser tick.
-    // A Playwright command can otherwise inject Space into that tiny gap and have the queued
-    // support snap zero the new upward velocity. Waiting two browser frames models a real human
-    // transition between timeline and jump inputs without adding arbitrary wall-clock sleeps.
+    // Timeline changes stabilize Elias immediately and once more on the next Phaser tick.
+    // Waiting two browser frames prevents automation from injecting jump inside that tiny gap.
     await page.evaluate(() => new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     }));
@@ -72,14 +70,13 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // The wide lobby needs a short ground run to reach the first stair. Every later stair
-    // is narrow, so those jumps fire while Elias is still grounded and add horizontal air
-    // control only after liftoff; otherwise the 95ms coyote window can expire at the edge.
-    const hasGroundRunup = target.runupMs > 0;
-    if (hasGroundRunup) {
-      await page.keyboard.down('Shift');
+    // The first 80px stair is intentionally approached at walk speed. With the real jump arc
+    // (435px/s impulse, 980px/s² gravity), sprint reaches the vertical face before Elias has
+    // climbed above it. Later stairs start from narrow platforms, so they jump first and add
+    // sprint air-control only after liftoff.
+    if (target.preMoveMs > 0) {
       await page.keyboard.down('ArrowRight');
-      await page.waitForTimeout(target.runupMs);
+      await page.waitForTimeout(target.preMoveMs);
     }
 
     let jumpStarted = false;
@@ -126,14 +123,11 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       `jump toward hotel platform at x=${target.x}; state=${JSON.stringify(lastJumpState)}`,
     ).toBe(true);
 
-    if (!hasGroundRunup) {
-      await page.keyboard.down('Shift');
+    if (target.preMoveMs === 0) {
+      if (target.sprint) await page.keyboard.down('Shift');
       await page.keyboard.down('ArrowRight');
     }
 
-    // The first stair starts near x=420. Begin counter-steering just before its left edge so
-    // Elias carries momentum onto the top instead of colliding with the vertical face. Later
-    // landings have more horizontal room, so their original 75px lead remains appropriate.
     const brakeX = target.x - target.brakeLead;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
@@ -143,15 +137,17 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
 
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
-    await page.keyboard.down('ArrowLeft');
     await page.keyboard.up('Space');
 
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
-    }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
-    await page.keyboard.up('ArrowLeft');
+    if (target.counterSteer) {
+      await page.keyboard.down('ArrowLeft');
+      await expect.poll(() => page.evaluate(async () => {
+        const entry = '/src/main.ts';
+        const { game } = await import(entry);
+        return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
+      }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
+      await page.keyboard.up('ArrowLeft');
+    }
 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
