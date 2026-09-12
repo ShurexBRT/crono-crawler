@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { dismissDialogue, seedContinueSave } from './support/playable';
 
 // This spec validates the real Phaser keyboard path and real Arcade Physics. The traversal
-// itself runs inside the browser frame loop so CI instrumentation cannot stretch 16ms gameplay
-// frames into hundreds of milliseconds between Playwright round-trips and change the trajectory.
+// itself runs inside the browser frame loop so CI instrumentation cannot stretch gameplay
+// through Playwright round-trips and change the trajectory being tested.
 test.use({ trace: 'off' });
 
 const route = [
@@ -14,7 +14,6 @@ const route = [
   { x: 1160, top: 880, key: 'Digit3', timeline: 'future', sprint: false },
   { x: 1330, top: 800, key: 'Digit2', timeline: 'present', sprint: false },
   { x: 1490, top: 720, key: 'Digit2', timeline: 'present', sprint: false },
-  // The final roof has a wider horizontal gap, so a normal run-jump is appropriate here.
   { x: 1665, top: 640, key: 'Digit2', timeline: 'present', sprint: true },
 ] as const;
 
@@ -30,8 +29,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     const entry = '/src/main.ts';
     const { game } = await import(entry);
     const scene = game.scene.getScene('GameScene') as any;
-    const player = scene.player;
-    const sprite = player.sprite;
+    const sprite = scene.player.sprite;
 
     scene.player.respawn({ x: 320, y: 1235 });
     scene.storyTriggered = new Set(scene.level.storyZones.map((zone: { id: string }) => zone.id));
@@ -49,13 +47,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
 
     const emitKey = (type: 'keydown' | 'keyup', code: string) => {
       const meta = keyMeta[code];
-      const event = new KeyboardEvent(type, {
-        key: meta.key,
-        code,
-        bubbles: true,
-        cancelable: true,
-        repeat: false,
-      });
+      const event = new KeyboardEvent(type, { key: meta.key, code, bubbles: true, cancelable: true, repeat: false });
       Object.defineProperty(event, 'keyCode', { get: () => meta.keyCode });
       Object.defineProperty(event, 'which', { get: () => meta.keyCode });
       window.dispatchEvent(event);
@@ -65,10 +57,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     const waitFrames = async (count: number) => {
       for (let index = 0; index < count; index += 1) await nextFrame();
     };
-    const grounded = () => {
-      const body = sprite.body;
-      return body.blocked.down || body.touching.down;
-    };
+    const grounded = () => sprite.body.blocked.down || sprite.body.touching.down;
     const bodyBottom = () => sprite.body.bottom as number;
     const releaseMovement = () => {
       emitKey('keyup', 'ArrowLeft');
@@ -76,7 +65,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       emitKey('keyup', 'ShiftLeft');
       emitKey('keyup', 'Space');
     };
-
     const waitUntil = async (predicate: () => boolean, maxFrames: number) => {
       for (let frame = 0; frame < maxFrames; frame += 1) {
         if (predicate()) return true;
@@ -84,14 +72,12 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       }
       return predicate();
     };
-
     const tap = async (code: string) => {
       emitKey('keydown', code);
       await waitFrames(2);
       emitKey('keyup', code);
       await waitFrames(2);
     };
-
     const moveToX = async (targetX: number) => {
       releaseMovement();
       for (let pass = 0; pass < 4; pass += 1) {
@@ -99,10 +85,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         if (Math.abs(delta) <= 8) break;
         const code = delta > 0 ? 'ArrowRight' : 'ArrowLeft';
         emitKey('keydown', code);
-        const reached = await waitUntil(
-          () => delta > 0 ? sprite.x >= targetX - 5 : sprite.x <= targetX + 5,
-          120,
-        );
+        const reached = await waitUntil(() => delta > 0 ? sprite.x >= targetX - 5 : sprite.x <= targetX + 5, 120);
         emitKey('keyup', code);
         await waitFrames(5);
         if (!reached) break;
@@ -123,8 +106,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', diagnostics };
       }
 
-      // After each successful landing, walk to the middle of the support before the next jump.
-      // The first jump starts from the lobby at x=320 and uses a short natural walk run-up.
       if (previousCenter !== null) {
         const centered = await moveToX(previousCenter);
         if (!centered) {
@@ -151,8 +132,19 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         };
       }
 
-      // Five ground frames are enough to establish walking momentum without running off the
-      // narrow support. The final roof gap legitimately uses Shift/run.
+      const timelineBlock = scene.timelineBlocks.find((block: any) => Math.abs(block.rectangle.x - target.x) < 1);
+      const colliderBefore = timelineBlock ? (() => {
+        const body = timelineBlock.rectangle.body;
+        return {
+          x: timelineBlock.rectangle.x,
+          top: body.top,
+          left: body.left,
+          right: body.right,
+          enabled: body.enable,
+          collisionNone: body.checkCollision.none,
+        };
+      })() : null;
+
       emitKey('keydown', 'ArrowRight');
       if (target.sprint) emitKey('keydown', 'ShiftLeft');
       await waitFrames(5);
@@ -165,40 +157,56 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
           ok: false,
           failedAt: index,
           reason: 'jump-did-not-start',
-          state: {
+          state: { x: sprite.x, bottom: bodyBottom(), velocityX: sprite.body.velocity.x, velocityY: sprite.body.velocity.y, grounded: grounded() },
+          colliderBefore,
+          diagnostics,
+        };
+      }
+
+      const flight: Array<Record<string, number | boolean>> = [];
+      let landed = false;
+      for (let frame = 0; frame < 120; frame += 1) {
+        if (frame % 4 === 0) {
+          flight.push({
+            frame,
             x: sprite.x,
             bottom: bodyBottom(),
             velocityX: sprite.body.velocity.x,
             velocityY: sprite.body.velocity.y,
             grounded: grounded(),
-            timeline: scene.timelineManager.current,
-          },
-          diagnostics,
-        };
+          });
+        }
+        if (grounded() && Math.abs(bodyBottom() - target.top) <= 1.5 && sprite.body.velocity.y >= 0) {
+          landed = true;
+          break;
+        }
+        await nextFrame();
       }
-
-      const landed = await waitUntil(
-        () => grounded() && Math.abs(bodyBottom() - target.top) <= 1.5 && sprite.body.velocity.y >= 0,
-        120,
-      );
       releaseMovement();
       await waitFrames(4);
 
-      diagnostics.push({
+      const landingState = {
         targetX: target.x,
         targetTop: target.top,
         actualX: sprite.x,
         actualBottom: bodyBottom(),
         grounded: grounded(),
         timeline: scene.timelineManager.current,
-      });
+      };
+      diagnostics.push(landingState);
 
       if (!landed) {
         return {
           ok: false,
           failedAt: index,
           reason: 'missed-landing',
-          state: diagnostics[diagnostics.length - 1],
+          state: landingState,
+          colliderBefore,
+          physics: {
+            fixedStep: scene.physics.world.fixedStep,
+            fps: scene.physics.world.fps,
+          },
+          flight,
           diagnostics,
         };
       }
