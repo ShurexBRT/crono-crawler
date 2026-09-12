@@ -58,8 +58,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     await page.waitForTimeout(100);
 
     // Poll through page.evaluate, the same path used by the rest of the stable gameplay
-    // suite. waitForFunction runs in a different browser evaluation context and proved
-    // unreliable for importing the live Vite module on GitHub's headless runner.
+    // suite. Retry a real Space edge if the headless runner delivers it between frames.
     let jumpStarted = false;
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
@@ -82,11 +81,15 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     }
     expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
 
+    // Brake while Elias is already over the left portion of the destination platform.
+    // Waiting for the platform centre leaves enough sprint inertia to carry him off its
+    // right edge before descent; that was a test-driving mistake, not a collision failure.
+    const brakeX = target.x - 55;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
       return game.scene.getScene('GameScene').player.sprite.x;
-    }), { timeout: 4000, intervals: [30] }).toBeGreaterThan(target.x - 15);
+    }), { timeout: 4000, intervals: [30] }).toBeGreaterThan(brakeX);
 
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
@@ -95,7 +98,12 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.body.bottom;
-    }), { timeout: 4000, intervals: [40] }).toBeCloseTo(target.top, 0);
+      const scene = game.scene.getScene('GameScene');
+      const body = scene.player.sprite.body;
+      return {
+        bottom: body.bottom,
+        grounded: body.blocked.down || body.touching.down,
+      };
+    }), { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
   }
 });
