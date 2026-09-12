@@ -26,7 +26,7 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   await expect(page.locator('[data-action="next"]')).toBeVisible();
   await dismissDialogue(page);
 
-  // Begin from the lobby with the same kind of run-up a player has in normal play.
+  // Start well inside the lobby so the first ascent exercises the same jump physics as play.
   await page.evaluate(async () => {
     const entry = '/src/main.ts';
     const { game } = await import(entry);
@@ -57,10 +57,9 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.down('ArrowRight');
-    await page.waitForTimeout(100);
-
+    // Trigger the jump while Elias is still confirmed grounded. Starting the run-up first
+    // is flaky on narrow hotel stairs because he can step off the edge before Space reaches
+    // Phaser and exhaust the 95ms coyote window. Horizontal movement begins after liftoff.
     let jumpStarted = false;
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
@@ -82,6 +81,9 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       }
     }
     expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
+
+    await page.keyboard.down('Shift');
+    await page.keyboard.down('ArrowRight');
 
     const brakeX = target.x - 75;
     await expect.poll(() => page.evaluate(async () => {
