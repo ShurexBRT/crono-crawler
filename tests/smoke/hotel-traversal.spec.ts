@@ -27,11 +27,12 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   await dismissDialogue(page);
 
   // Start well inside the lobby so the first ascent exercises the same jump physics as play.
+  // Keep a small margin from the reception setup while avoiding a needlessly long sprint.
   await page.evaluate(async () => {
     const entry = '/src/main.ts';
     const { game } = await import(entry);
     const scene = game.scene.getScene('GameScene');
-    scene.player.respawn({ x: 300, y: 1235 });
+    scene.player.respawn({ x: 320, y: 1235 });
     scene.storyTriggered = new Set(scene.level.storyZones.map((zone: { id: string }) => zone.id));
     scene.memoryFragments = [];
   });
