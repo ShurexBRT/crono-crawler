@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { dismissDialogue, seedContinueSave } from './support/playable';
 
+// This test validates real-time Phaser movement. Playwright tracing snapshots the large
+// game canvas around every API call and can stretch a ~30ms steering sample into hundreds
+// of milliseconds on CI, changing the actual trajectory being tested. Keep screenshots on
+// failure, but disable tracing for this one timing-sensitive traversal spec.
+test.use({ trace: 'off' });
+
 const route = [
   { x: 500, top: 1200, key: '2', timeline: 'present' },
   { x: 665, top: 1120, key: '1', timeline: 'past' },
@@ -77,9 +83,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     }
     expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
 
-    // Enter the left side of the landing zone, then use normal air-control to cancel the
-    // sprint momentum. The old test simply released Right and consistently sailed beyond
-    // the narrow stair, even though the same jump is controllable by a player.
     const brakeX = target.x - 75;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
