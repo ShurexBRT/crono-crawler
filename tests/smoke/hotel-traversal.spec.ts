@@ -8,7 +8,7 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false },
+  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: true, brakeLead: 60, counterSteer: false },
   { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
@@ -81,8 +81,9 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // The lobby gives Elias room for a short walk before the first 80px ascent. Later stairs
-    // begin on narrow platforms, so they jump first and add horizontal control after liftoff.
+    // The lobby gives Elias room for a short walking run-up before the first ascent. Sprint is
+    // added only after liftoff so he clears the vertical face first, then carries enough air
+    // momentum to land deeper on the platform. Later stairs jump first, then add the same air control.
     if (target.preMoveMs > 0) {
       await page.keyboard.down('ArrowRight');
       await page.waitForTimeout(target.preMoveMs);
@@ -132,10 +133,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       `jump toward hotel platform at x=${target.x}; state=${JSON.stringify(lastJumpState)}`,
     ).toBe(true);
 
-    if (target.preMoveMs === 0) {
-      if (target.sprint) await page.keyboard.down('Shift');
-      await page.keyboard.down('ArrowRight');
-    }
+    if (target.sprint) await page.keyboard.down('Shift');
+    if (target.preMoveMs === 0) await page.keyboard.down('ArrowRight');
 
     // For the first stair the only meaningful assertion is a real landing on its top.
     // Requiring an arbitrary center-X after contact can leave Arcade Physics wedged on the edge
