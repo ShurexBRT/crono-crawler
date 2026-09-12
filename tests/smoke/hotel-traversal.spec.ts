@@ -38,6 +38,11 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   });
 
   for (const target of route) {
+    // Normalize Playwright's key state between landings. The previous jump releases Space in
+    // mid-air, but an explicit key-up here prevents a stale pressed-key state from turning the
+    // next keyboard.down into a repeated keydown event (which InputController deliberately ignores).
+    await page.keyboard.up('Space');
+
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
@@ -78,15 +83,34 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     }
 
     let jumpStarted = false;
+    let lastJumpState: Record<string, unknown> = {};
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
       for (let sample = 0; sample < 14 && !jumpStarted; sample += 1) {
-        const velocityY = await page.evaluate(async () => {
+        lastJumpState = await page.evaluate(async () => {
           const entry = '/src/main.ts';
           const { game } = await import(entry);
-          return game.scene.getScene('GameScene').player.sprite.body.velocity.y;
+          const scene = game.scene.getScene('GameScene') as any;
+          const body = scene.player.sprite.body;
+          const input = scene.inputController;
+          return {
+            x: scene.player.sprite.x,
+            y: scene.player.sprite.y,
+            bottom: body.bottom,
+            velocityX: body.velocity.x,
+            velocityY: body.velocity.y,
+            blockedDown: body.blocked.down,
+            touchingDown: body.touching.down,
+            coyoteMs: scene.player.coyoteMs,
+            jumpBufferMs: scene.player.jumpBufferMs,
+            spaceIsDown: input.keys.jump.isDown,
+            fallbackJumpPending: input.fallbackJustPressed.has('jump'),
+            paused: scene.isPaused,
+            dialogueActive: scene.dialogueManager.isActive,
+            respawning: scene.isRespawning,
+          };
         });
-        if (velocityY < -100) {
+        if (Number(lastJumpState.velocityY) < -100) {
           jumpStarted = true;
           break;
         }
@@ -97,7 +121,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         await page.waitForTimeout(60);
       }
     }
-    expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
+    expect(
+      jumpStarted,
+      `jump toward hotel platform at x=${target.x}; state=${JSON.stringify(lastJumpState)}`,
+    ).toBe(true);
 
     if (!hasGroundRunup) {
       await page.keyboard.down('Shift');
