@@ -167,10 +167,12 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         };
       })() : null;
 
-      emitKey('keydown', 'ArrowRight');
-      if (target.sprint) emitKey('keydown', 'ShiftLeft');
-      await waitFrames(5);
+      // Start each ascent with the jump edge first, then add horizontal control in the same
+      // browser turn. This avoids a render-frame-based ground run-up whose simulated duration
+      // changes under CI load and can carry Elias underneath the next overlapping stair.
       emitKey('keydown', 'Space');
+      if (target.sprint) emitKey('keydown', 'ShiftLeft');
+      emitKey('keydown', 'ArrowRight');
 
       const jumpStarted = await waitUntil(() => body().velocity.y < -100, 30);
       if (!jumpStarted) {
