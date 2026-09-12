@@ -123,22 +123,22 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
         return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', state: physicsState(), diagnostics };
       }
 
-      if (previousCenter !== null) {
-        const centered = await moveToX(previousCenter);
-        if (!centered) {
-          const nearbySolids = scene.solidGroup.getChildren().map((child: any) => child.body).filter((candidate: any) => {
-            if (!candidate?.enable || candidate.checkCollision.none) return false;
-            return candidate.bottom >= body().top - 80 && candidate.top <= body().bottom + 80 && candidate.right >= body().left - 80 && candidate.left <= body().right + 80;
-          }).map((candidate: any) => ({ left: candidate.left, right: candidate.right, top: candidate.top, bottom: candidate.bottom }));
-          return {
-            ok: false,
-            failedAt: index,
-            reason: 'could-not-center-on-support',
-            state: physicsState(),
-            nearbySolids,
-            diagnostics,
-          };
-        }
+      const takeoffX = previousCenter ?? 350;
+      const positioned = await moveToX(takeoffX);
+      if (!positioned) {
+        const nearbySolids = scene.solidGroup.getChildren().map((child: any) => child.body).filter((candidate: any) => {
+          if (!candidate?.enable || candidate.checkCollision.none) return false;
+          return candidate.bottom >= body().top - 80 && candidate.top <= body().bottom + 80 && candidate.right >= body().left - 80 && candidate.left <= body().right + 80;
+        }).map((candidate: any) => ({ left: candidate.left, right: candidate.right, top: candidate.top, bottom: candidate.bottom }));
+        return {
+          ok: false,
+          failedAt: index,
+          reason: 'could-not-position-for-jump',
+          state: physicsState(),
+          takeoffX,
+          nearbySolids,
+          diagnostics,
+        };
       }
 
       await tap(target.key);
@@ -168,8 +168,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       })() : null;
 
       // Start each ascent with the jump edge first, then add horizontal control in the same
-      // browser turn. This avoids a render-frame-based ground run-up whose simulated duration
-      // changes under CI load and can carry Elias underneath the next overlapping stair.
+      // browser turn. Position-based takeoff replaces render-frame ground run-up so load cannot
+      // carry Elias underneath an overlapping stair before Space is processed.
       emitKey('keydown', 'Space');
       if (target.sprint) emitKey('keydown', 'ShiftLeft');
       emitKey('keydown', 'ArrowRight');
