@@ -8,14 +8,14 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present' },
-  { x: 665, top: 1120, key: '1', timeline: 'past' },
-  { x: 830, top: 1040, key: '1', timeline: 'past' },
-  { x: 1000, top: 960, key: '3', timeline: 'future' },
-  { x: 1160, top: 880, key: '3', timeline: 'future' },
-  { x: 1330, top: 800, key: '2', timeline: 'present' },
-  { x: 1490, top: 720, key: '2', timeline: 'present' },
-  { x: 1665, top: 640, key: '2', timeline: 'present' },
+  { x: 500, top: 1200, key: '2', timeline: 'present', runupMs: 100 },
+  { x: 665, top: 1120, key: '1', timeline: 'past', runupMs: 0 },
+  { x: 830, top: 1040, key: '1', timeline: 'past', runupMs: 0 },
+  { x: 1000, top: 960, key: '3', timeline: 'future', runupMs: 0 },
+  { x: 1160, top: 880, key: '3', timeline: 'future', runupMs: 0 },
+  { x: 1330, top: 800, key: '2', timeline: 'present', runupMs: 0 },
+  { x: 1490, top: 720, key: '2', timeline: 'present', runupMs: 0 },
+  { x: 1665, top: 640, key: '2', timeline: 'present', runupMs: 0 },
 ] as const;
 
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
@@ -57,9 +57,16 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // Trigger the jump while Elias is still confirmed grounded. Starting the run-up first
-    // is flaky on narrow hotel stairs because he can step off the edge before Space reaches
-    // Phaser and exhaust the 95ms coyote window. Horizontal movement begins after liftoff.
+    // The wide lobby needs a short ground run to reach the first stair. Every later stair
+    // is narrow, so those jumps fire while Elias is still grounded and add horizontal air
+    // control only after liftoff; otherwise the 95ms coyote window can expire at the edge.
+    const hasGroundRunup = target.runupMs > 0;
+    if (hasGroundRunup) {
+      await page.keyboard.down('Shift');
+      await page.keyboard.down('ArrowRight');
+      await page.waitForTimeout(target.runupMs);
+    }
+
     let jumpStarted = false;
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
@@ -82,8 +89,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     }
     expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.down('ArrowRight');
+    if (!hasGroundRunup) {
+      await page.keyboard.down('Shift');
+      await page.keyboard.down('ArrowRight');
+    }
 
     const brakeX = target.x - 75;
     await expect.poll(() => page.evaluate(async () => {
