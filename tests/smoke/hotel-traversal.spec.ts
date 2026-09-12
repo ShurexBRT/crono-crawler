@@ -8,14 +8,14 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: true, brakeLead: 60, counterSteer: false },
-  { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 1160, top: 880, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 1330, top: 800, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 1490, top: 720, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
-  { x: 1665, top: 640, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
+  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false, settleX: 510 },
+  { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 1160, top: 880, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 1330, top: 800, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 1490, top: 720, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 1665, top: 640, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
 ] as const;
 
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
@@ -45,6 +45,12 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       bottom: body.bottom,
       grounded: body.blocked.down || body.touching.down,
     };
+  });
+
+  const readX = () => page.evaluate(async () => {
+    const entry = '/src/main.ts';
+    const { game } = await import(entry);
+    return game.scene.getScene('GameScene').player.sprite.x;
   });
 
   for (const target of route) {
@@ -81,9 +87,8 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // The lobby gives Elias room for a short walking run-up before the first ascent. Sprint is
-    // added only after liftoff so he clears the vertical face first, then carries enough air
-    // momentum to land deeper on the platform. Later stairs jump first, then add the same air control.
+    // The lobby gives Elias room for a short walking run-up before the first ascent. Later stairs
+    // begin on narrow platforms, so they jump first and add horizontal control after liftoff.
     if (target.preMoveMs > 0) {
       await page.keyboard.down('ArrowRight');
       await page.waitForTimeout(target.preMoveMs);
@@ -133,26 +138,36 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       `jump toward hotel platform at x=${target.x}; state=${JSON.stringify(lastJumpState)}`,
     ).toBe(true);
 
-    if (target.sprint) await page.keyboard.down('Shift');
-    if (target.preMoveMs === 0) await page.keyboard.down('ArrowRight');
+    if (target.preMoveMs === 0) {
+      if (target.sprint) await page.keyboard.down('Shift');
+      await page.keyboard.down('ArrowRight');
+    }
 
-    // For the first stair the only meaningful assertion is a real landing on its top.
-    // Requiring an arbitrary center-X after contact can leave Arcade Physics wedged on the edge
-    // even though the platform has already been reached successfully.
+    // The first ascent is already proven reachable with a normal walk-jump. After landing,
+    // walk to the middle of the 420..580 platform before attempting the next 80px ascent.
+    // This mirrors normal play and avoids making one jump both climb and perfectly position Elias.
     if (!target.counterSteer) {
       await expect.poll(readLanding, { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
       await page.keyboard.up('ArrowRight');
       await page.keyboard.up('Shift');
       await page.keyboard.up('Space');
+
+      if (target.settleX > 0 && await readX() < target.settleX) {
+        await page.keyboard.down('ArrowRight');
+        await expect.poll(readX, { timeout: 2000, intervals: [30] }).toBeGreaterThanOrEqual(target.settleX);
+        await page.keyboard.up('ArrowRight');
+        await expect.poll(() => page.evaluate(async () => {
+          const entry = '/src/main.ts';
+          const { game } = await import(entry);
+          return Math.abs(game.scene.getScene('GameScene').player.sprite.body.velocity.x);
+        }), { timeout: 1000, intervals: [30] }).toBeLessThanOrEqual(10);
+        await expect.poll(readLanding, { timeout: 1000, intervals: [30] }).toEqual({ bottom: target.top, grounded: true });
+      }
       continue;
     }
 
     const brakeX = target.x - target.brakeLead;
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.x;
-    }), { timeout: 4000, intervals: [30] }).toBeGreaterThan(brakeX);
+    await expect.poll(readX, { timeout: 4000, intervals: [30] }).toBeGreaterThan(brakeX);
 
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
