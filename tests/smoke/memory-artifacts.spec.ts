@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { memoryArtifacts } from '../../src/game/content/memory-artifacts';
 import { collectRuntimeErrors } from './support/playable';
 
@@ -14,7 +14,7 @@ const representativeArtifacts = [
   memoryArtifacts[memoryArtifacts.length - 1],
 ];
 
-async function seedCompleteVault(page: Parameters<typeof test>[0] extends never ? never : any): Promise<void> {
+async function seedCompleteVault(page: Page): Promise<void> {
   await page.addInitScript((ids: string[]) => {
     localStorage.setItem('chrono-crawler.save.v1', JSON.stringify({
       hasContinue: true,
