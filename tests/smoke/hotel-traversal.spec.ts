@@ -8,7 +8,7 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false },
+  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 230, sprint: false, brakeLead: 60, counterSteer: false },
   { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
   { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true },
@@ -71,9 +71,9 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     })).toBe(true);
 
     // The first 80px stair is intentionally approached at walk speed. With the real jump arc
-    // (435px/s impulse, 980px/s² gravity), sprint reaches the vertical face before Elias has
-    // climbed above it. Later stairs start from narrow platforms, so they jump first and add
-    // sprint air-control only after liftoff.
+    // (435px/s impulse, 980px/s² gravity), the 230ms walk places Elias near x=350 so he reaches
+    // the platform's x=420 left edge near the apex instead of colliding with its vertical face.
+    // Later stairs start from narrow platforms, so they jump first and add sprint air-control.
     if (target.preMoveMs > 0) {
       await page.keyboard.down('ArrowRight');
       await page.waitForTimeout(target.preMoveMs);
