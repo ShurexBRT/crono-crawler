@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "projectKey": "CHR",
+  "name": "Chrono Crawler",
+  "repository": "ShurexBRT/crono-crawler",
+  "defaultBranch": "master",
+  "forgeUrl": "https://shurexbrt.github.io/Forge/",
+  "ticketRequired": true,
+  "roles": ["Planner", "Builder", "Reviewer", "QA", "Browser", "Release"],
+  "branchPattern": "agent/{role}/{ticket}-{slug}",
+  "runtime": "Phaser browser game / GitHub Pages",
+  "criticalSurfaces": ["timeline shifts", "echo recording/replay", "save/checkpoints", "puzzle state", "input mapping", "Pages build"]
+}
