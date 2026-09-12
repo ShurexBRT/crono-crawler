@@ -1,21 +1,21 @@
 import { expect, test } from '@playwright/test';
 import { dismissDialogue, seedContinueSave } from './support/playable';
 
-// This test validates real-time Phaser movement. Playwright tracing snapshots the large
-// game canvas around every API call and can stretch a ~30ms steering sample into hundreds
-// of milliseconds on CI, changing the actual trajectory being tested. Keep screenshots on
-// failure, but disable tracing for this one timing-sensitive traversal spec.
+// This spec validates the real Phaser keyboard path and real Arcade Physics. The traversal
+// itself runs inside the browser frame loop so CI instrumentation cannot stretch 16ms gameplay
+// frames into hundreds of milliseconds between Playwright round-trips and change the trajectory.
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', preMoveMs: 100, sprint: false, brakeLead: 60, counterSteer: false, settleX: 510 },
-  { x: 665, top: 1120, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 830, top: 1040, key: '1', timeline: 'past', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 1000, top: 960, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 1160, top: 880, key: '3', timeline: 'future', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 1330, top: 800, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 1490, top: 720, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
-  { x: 1665, top: 640, key: '2', timeline: 'present', preMoveMs: 0, sprint: true, brakeLead: 75, counterSteer: true, settleX: 0 },
+  { x: 500, top: 1200, key: 'Digit2', timeline: 'present', sprint: false },
+  { x: 665, top: 1120, key: 'Digit1', timeline: 'past', sprint: false },
+  { x: 830, top: 1040, key: 'Digit1', timeline: 'past', sprint: false },
+  { x: 1000, top: 960, key: 'Digit3', timeline: 'future', sprint: false },
+  { x: 1160, top: 880, key: 'Digit3', timeline: 'future', sprint: false },
+  { x: 1330, top: 800, key: 'Digit2', timeline: 'present', sprint: false },
+  { x: 1490, top: 720, key: 'Digit2', timeline: 'present', sprint: false },
+  // The final roof has a wider horizontal gap, so a normal run-jump is appropriate here.
+  { x: 1665, top: 640, key: 'Digit2', timeline: 'present', sprint: true },
 ] as const;
 
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
@@ -26,161 +26,189 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
   await expect(page.locator('[data-action="next"]')).toBeVisible();
   await dismissDialogue(page);
 
-  // Start well inside the lobby so the first ascent exercises the same jump physics as play.
-  await page.evaluate(async () => {
+  const result = await page.evaluate(async (targets) => {
     const entry = '/src/main.ts';
     const { game } = await import(entry);
-    const scene = game.scene.getScene('GameScene');
+    const scene = game.scene.getScene('GameScene') as any;
+    const player = scene.player;
+    const sprite = player.sprite;
+
     scene.player.respawn({ x: 320, y: 1235 });
     scene.storyTriggered = new Set(scene.level.storyZones.map((zone: { id: string }) => zone.id));
     scene.memoryFragments = [];
-  });
 
-  const readLanding = () => page.evaluate(async () => {
-    const entry = '/src/main.ts';
-    const { game } = await import(entry);
-    const scene = game.scene.getScene('GameScene');
-    const body = scene.player.sprite.body;
-    return {
-      bottom: body.bottom,
-      grounded: body.blocked.down || body.touching.down,
+    const keyMeta: Record<string, { key: string; keyCode: number }> = {
+      ArrowLeft: { key: 'ArrowLeft', keyCode: 37 },
+      ArrowRight: { key: 'ArrowRight', keyCode: 39 },
+      ShiftLeft: { key: 'Shift', keyCode: 16 },
+      Space: { key: ' ', keyCode: 32 },
+      Digit1: { key: '1', keyCode: 49 },
+      Digit2: { key: '2', keyCode: 50 },
+      Digit3: { key: '3', keyCode: 51 },
     };
-  });
 
-  const readX = () => page.evaluate(async () => {
-    const entry = '/src/main.ts';
-    const { game } = await import(entry);
-    return game.scene.getScene('GameScene').player.sprite.x;
-  });
+    const emitKey = (type: 'keydown' | 'keyup', code: string) => {
+      const meta = keyMeta[code];
+      const event = new KeyboardEvent(type, {
+        key: meta.key,
+        code,
+        bubbles: true,
+        cancelable: true,
+        repeat: false,
+      });
+      Object.defineProperty(event, 'keyCode', { get: () => meta.keyCode });
+      Object.defineProperty(event, 'which', { get: () => meta.keyCode });
+      window.dispatchEvent(event);
+    };
 
-  for (const target of route) {
-    // Normalize key state between landings so every jump begins from a real key edge.
-    await page.keyboard.up('Space');
-    await page.keyboard.up('ArrowLeft');
-    await page.keyboard.up('ArrowRight');
-    await page.keyboard.up('Shift');
-
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      const body = game.scene.getScene('GameScene').player.sprite.body;
+    const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const waitFrames = async (count: number) => {
+      for (let index = 0; index < count; index += 1) await nextFrame();
+    };
+    const grounded = () => {
+      const body = sprite.body;
       return body.blocked.down || body.touching.down;
-    })).toBe(true);
+    };
+    const bodyBottom = () => sprite.body.bottom as number;
+    const releaseMovement = () => {
+      emitKey('keyup', 'ArrowLeft');
+      emitKey('keyup', 'ArrowRight');
+      emitKey('keyup', 'ShiftLeft');
+      emitKey('keyup', 'Space');
+    };
 
-    await page.keyboard.press(target.key, { delay: 60 });
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      return game.scene.getScene('GameScene').timelineManager.current;
-    })).toBe(target.timeline);
+    const waitUntil = async (predicate: () => boolean, maxFrames: number) => {
+      for (let frame = 0; frame < maxFrames; frame += 1) {
+        if (predicate()) return true;
+        await nextFrame();
+      }
+      return predicate();
+    };
 
-    // Timeline changes stabilize Elias immediately and once more on the next Phaser tick.
-    // Waiting two browser frames prevents automation from injecting jump inside that tiny gap.
-    await page.evaluate(() => new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    }));
+    const tap = async (code: string) => {
+      emitKey('keydown', code);
+      await waitFrames(2);
+      emitKey('keyup', code);
+      await waitFrames(2);
+    };
 
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      const body = game.scene.getScene('GameScene').player.sprite.body;
-      return body.blocked.down || body.touching.down;
-    })).toBe(true);
+    const moveToX = async (targetX: number) => {
+      releaseMovement();
+      for (let pass = 0; pass < 4; pass += 1) {
+        const delta = targetX - sprite.x;
+        if (Math.abs(delta) <= 8) break;
+        const code = delta > 0 ? 'ArrowRight' : 'ArrowLeft';
+        emitKey('keydown', code);
+        const reached = await waitUntil(
+          () => delta > 0 ? sprite.x >= targetX - 5 : sprite.x <= targetX + 5,
+          120,
+        );
+        emitKey('keyup', code);
+        await waitFrames(5);
+        if (!reached) break;
+      }
+      releaseMovement();
+      await waitFrames(4);
+      return Math.abs(targetX - sprite.x) <= 16 && grounded();
+    };
 
-    // The lobby gives Elias room for a short walking run-up before the first ascent. Later stairs
-    // begin on narrow platforms, so they jump first and add horizontal control after liftoff.
-    if (target.preMoveMs > 0) {
-      await page.keyboard.down('ArrowRight');
-      await page.waitForTimeout(target.preMoveMs);
-    }
+    const diagnostics: Array<Record<string, unknown>> = [];
+    let previousCenter: number | null = null;
 
-    let jumpStarted = false;
-    let lastJumpState: Record<string, unknown> = {};
-    for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
-      await page.keyboard.down('Space');
-      for (let sample = 0; sample < 14 && !jumpStarted; sample += 1) {
-        lastJumpState = await page.evaluate(async () => {
-          const entry = '/src/main.ts';
-          const { game } = await import(entry);
-          const scene = game.scene.getScene('GameScene') as any;
-          const body = scene.player.sprite.body;
-          const input = scene.inputController;
+    for (let index = 0; index < targets.length; index += 1) {
+      const target = targets[index];
+      releaseMovement();
+
+      if (!(await waitUntil(grounded, 120))) {
+        return { ok: false, failedAt: index, reason: 'not-grounded-before-jump', diagnostics };
+      }
+
+      // After each successful landing, walk to the middle of the support before the next jump.
+      // The first jump starts from the lobby at x=320 and uses a short natural walk run-up.
+      if (previousCenter !== null) {
+        const centered = await moveToX(previousCenter);
+        if (!centered) {
           return {
-            x: scene.player.sprite.x,
-            y: scene.player.sprite.y,
-            bottom: body.bottom,
-            velocityX: body.velocity.x,
-            velocityY: body.velocity.y,
-            blockedDown: body.blocked.down,
-            touchingDown: body.touching.down,
-            coyoteMs: scene.player.coyoteMs,
-            jumpBufferMs: scene.player.jumpBufferMs,
-            spaceIsDown: input.keys.jump.isDown,
-            fallbackJumpPending: input.fallbackJustPressed.has('jump'),
-            paused: scene.isPaused,
-            dialogueActive: scene.dialogueManager.isActive,
-            respawning: scene.isRespawning,
+            ok: false,
+            failedAt: index,
+            reason: 'could-not-center-on-support',
+            state: { x: sprite.x, bottom: bodyBottom(), velocityX: sprite.body.velocity.x },
+            diagnostics,
           };
-        });
-        if (Number(lastJumpState.velocityY) < -100) {
-          jumpStarted = true;
-          break;
         }
-        await page.waitForTimeout(40);
       }
+
+      await tap(target.key);
+      const timelineReady = await waitUntil(() => scene.timelineManager.current === target.timeline, 60);
+      await waitFrames(3);
+      if (!timelineReady || !grounded()) {
+        return {
+          ok: false,
+          failedAt: index,
+          reason: 'timeline-not-stable',
+          state: { timeline: scene.timelineManager.current, grounded: grounded(), bottom: bodyBottom() },
+          diagnostics,
+        };
+      }
+
+      // Five ground frames are enough to establish walking momentum without running off the
+      // narrow support. The final roof gap legitimately uses Shift/run.
+      emitKey('keydown', 'ArrowRight');
+      if (target.sprint) emitKey('keydown', 'ShiftLeft');
+      await waitFrames(5);
+      emitKey('keydown', 'Space');
+
+      const jumpStarted = await waitUntil(() => sprite.body.velocity.y < -100, 30);
       if (!jumpStarted) {
-        await page.keyboard.up('Space');
-        await page.waitForTimeout(60);
+        releaseMovement();
+        return {
+          ok: false,
+          failedAt: index,
+          reason: 'jump-did-not-start',
+          state: {
+            x: sprite.x,
+            bottom: bodyBottom(),
+            velocityX: sprite.body.velocity.x,
+            velocityY: sprite.body.velocity.y,
+            grounded: grounded(),
+            timeline: scene.timelineManager.current,
+          },
+          diagnostics,
+        };
       }
-    }
-    expect(
-      jumpStarted,
-      `jump toward hotel platform at x=${target.x}; state=${JSON.stringify(lastJumpState)}`,
-    ).toBe(true);
 
-    if (target.preMoveMs === 0) {
-      if (target.sprint) await page.keyboard.down('Shift');
-      await page.keyboard.down('ArrowRight');
-    }
+      const landed = await waitUntil(
+        () => grounded() && Math.abs(bodyBottom() - target.top) <= 1.5 && sprite.body.velocity.y >= 0,
+        120,
+      );
+      releaseMovement();
+      await waitFrames(4);
 
-    // The first ascent is already proven reachable with a normal walk-jump. After landing,
-    // walk to the middle of the 420..580 platform before attempting the next 80px ascent.
-    // This mirrors normal play and avoids making one jump both climb and perfectly position Elias.
-    if (!target.counterSteer) {
-      await expect.poll(readLanding, { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
-      await page.keyboard.up('ArrowRight');
-      await page.keyboard.up('Shift');
-      await page.keyboard.up('Space');
+      diagnostics.push({
+        targetX: target.x,
+        targetTop: target.top,
+        actualX: sprite.x,
+        actualBottom: bodyBottom(),
+        grounded: grounded(),
+        timeline: scene.timelineManager.current,
+      });
 
-      if (target.settleX > 0 && await readX() < target.settleX) {
-        await page.keyboard.down('ArrowRight');
-        await expect.poll(readX, { timeout: 2000, intervals: [30] }).toBeGreaterThanOrEqual(target.settleX);
-        await page.keyboard.up('ArrowRight');
-        await expect.poll(() => page.evaluate(async () => {
-          const entry = '/src/main.ts';
-          const { game } = await import(entry);
-          return Math.abs(game.scene.getScene('GameScene').player.sprite.body.velocity.x);
-        }), { timeout: 1000, intervals: [30] }).toBeLessThanOrEqual(10);
-        await expect.poll(readLanding, { timeout: 1000, intervals: [30] }).toEqual({ bottom: target.top, grounded: true });
+      if (!landed) {
+        return {
+          ok: false,
+          failedAt: index,
+          reason: 'missed-landing',
+          state: diagnostics[diagnostics.length - 1],
+          diagnostics,
+        };
       }
-      continue;
+
+      previousCenter = target.x;
     }
 
-    const brakeX = target.x - target.brakeLead;
-    await expect.poll(readX, { timeout: 4000, intervals: [30] }).toBeGreaterThan(brakeX);
+    releaseMovement();
+    return { ok: true, diagnostics };
+  }, route);
 
-    await page.keyboard.up('ArrowRight');
-    await page.keyboard.up('Shift');
-    await page.keyboard.down('ArrowLeft');
-    await page.keyboard.up('Space');
-
-    await expect.poll(() => page.evaluate(async () => {
-      const entry = '/src/main.ts';
-      const { game } = await import(entry);
-      return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
-    }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
-    await page.keyboard.up('ArrowLeft');
-
-    await expect.poll(readLanding, { timeout: 4000, intervals: [40] }).toEqual({ bottom: target.top, grounded: true });
-  }
+  expect(result, JSON.stringify(result, null, 2)).toMatchObject({ ok: true });
 });
