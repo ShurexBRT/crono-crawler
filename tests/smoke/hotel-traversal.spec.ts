@@ -8,14 +8,14 @@ import { dismissDialogue, seedContinueSave } from './support/playable';
 test.use({ trace: 'off' });
 
 const route = [
-  { x: 500, top: 1200, key: '2', timeline: 'present', runupMs: 100 },
-  { x: 665, top: 1120, key: '1', timeline: 'past', runupMs: 0 },
-  { x: 830, top: 1040, key: '1', timeline: 'past', runupMs: 0 },
-  { x: 1000, top: 960, key: '3', timeline: 'future', runupMs: 0 },
-  { x: 1160, top: 880, key: '3', timeline: 'future', runupMs: 0 },
-  { x: 1330, top: 800, key: '2', timeline: 'present', runupMs: 0 },
-  { x: 1490, top: 720, key: '2', timeline: 'present', runupMs: 0 },
-  { x: 1665, top: 640, key: '2', timeline: 'present', runupMs: 0 },
+  { x: 500, top: 1200, key: '2', timeline: 'present', runupMs: 100, brakeLead: 90 },
+  { x: 665, top: 1120, key: '1', timeline: 'past', runupMs: 0, brakeLead: 75 },
+  { x: 830, top: 1040, key: '1', timeline: 'past', runupMs: 0, brakeLead: 75 },
+  { x: 1000, top: 960, key: '3', timeline: 'future', runupMs: 0, brakeLead: 75 },
+  { x: 1160, top: 880, key: '3', timeline: 'future', runupMs: 0, brakeLead: 75 },
+  { x: 1330, top: 800, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
+  { x: 1490, top: 720, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
+  { x: 1665, top: 640, key: '2', timeline: 'present', runupMs: 0, brakeLead: 75 },
 ] as const;
 
 test('hotel stairs can be climbed with real jumps and timeline input', async ({ page }) => {
@@ -104,7 +104,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       await page.keyboard.down('ArrowRight');
     }
 
-    const brakeX = target.x - 75;
+    // The first stair starts near x=420. Begin counter-steering just before its left edge so
+    // Elias carries momentum onto the top instead of colliding with the vertical face. Later
+    // landings have more horizontal room, so their original 75px lead remains appropriate.
+    const brakeX = target.x - target.brakeLead;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
