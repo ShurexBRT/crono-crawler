@@ -53,29 +53,34 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // Use real running input and allow a short approach before jumping. A headless browser
-    // can occasionally deliver a key edge between Phaser UPDATE and POST_UPDATE, so retry
-    // the physical Space press if that one edge is missed. No game state is injected here.
     await page.keyboard.down('Shift');
     await page.keyboard.down('ArrowRight');
     await page.waitForTimeout(100);
 
+    // Poll through page.evaluate, the same path used by the rest of the stable gameplay
+    // suite. waitForFunction runs in a different browser evaluation context and proved
+    // unreliable for importing the live Vite module on GitHub's headless runner.
     let jumpStarted = false;
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
-      try {
-        await page.waitForFunction(async () => {
+      for (let sample = 0; sample < 14 && !jumpStarted; sample += 1) {
+        const velocityY = await page.evaluate(async () => {
           const entry = '/src/main.ts';
           const { game } = await import(entry);
-          return game.scene.getScene('GameScene').player.sprite.body.velocity.y < -100;
-        }, undefined, { timeout: 700, polling: 30 });
-        jumpStarted = true;
-      } catch {
+          return game.scene.getScene('GameScene').player.sprite.body.velocity.y;
+        });
+        if (velocityY < -100) {
+          jumpStarted = true;
+          break;
+        }
+        await page.waitForTimeout(40);
+      }
+      if (!jumpStarted) {
         await page.keyboard.up('Space');
         await page.waitForTimeout(60);
       }
     }
-    expect(jumpStarted).toBe(true);
+    expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
