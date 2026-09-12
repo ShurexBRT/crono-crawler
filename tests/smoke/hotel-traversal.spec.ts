@@ -38,8 +38,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
       return body.blocked.down || body.touching.down;
     })).toBe(true);
 
-    // Timeline changes can rebuild collision support. Confirm the requested timeline and
-    // that Elias has settled before starting the next physical jump.
     await page.keyboard.press(target.key, { delay: 60 });
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
@@ -57,8 +55,6 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     await page.keyboard.down('ArrowRight');
     await page.waitForTimeout(100);
 
-    // Poll through page.evaluate, the same path used by the rest of the stable gameplay
-    // suite. Retry a real Space edge if the headless runner delivers it between frames.
     let jumpStarted = false;
     for (let attempt = 0; attempt < 3 && !jumpStarted; attempt += 1) {
       await page.keyboard.down('Space');
@@ -81,10 +77,10 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
     }
     expect(jumpStarted, `jump toward hotel platform at x=${target.x}`).toBe(true);
 
-    // Brake while Elias is already over the left portion of the destination platform.
-    // Waiting for the platform centre leaves enough sprint inertia to carry him off its
-    // right edge before descent; that was a test-driving mistake, not a collision failure.
-    const brakeX = target.x - 55;
+    // Enter the left side of the landing zone, then use normal air-control to cancel the
+    // sprint momentum. The old test simply released Right and consistently sailed beyond
+    // the narrow stair, even though the same jump is controllable by a player.
+    const brakeX = target.x - 75;
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
       const { game } = await import(entry);
@@ -93,7 +89,15 @@ test('hotel stairs can be climbed with real jumps and timeline input', async ({ 
 
     await page.keyboard.up('ArrowRight');
     await page.keyboard.up('Shift');
+    await page.keyboard.down('ArrowLeft');
     await page.keyboard.up('Space');
+
+    await expect.poll(() => page.evaluate(async () => {
+      const entry = '/src/main.ts';
+      const { game } = await import(entry);
+      return game.scene.getScene('GameScene').player.sprite.body.velocity.x;
+    }), { timeout: 1200, intervals: [30] }).toBeLessThanOrEqual(40);
+    await page.keyboard.up('ArrowLeft');
 
     await expect.poll(() => page.evaluate(async () => {
       const entry = '/src/main.ts';
