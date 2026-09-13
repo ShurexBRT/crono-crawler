@@ -8,11 +8,25 @@ Forge is the work-truth layer for agent tasks. GitHub is code truth.
 
 1. Read the Forge ticket and acceptance criteria.
 2. Read this file and `.forge/project.json`.
-3. Inspect the current scene/system implementation before editing.
-4. Keep the ticket scope narrow and avoid overlapping active work.
-5. Do not move a ticket forward without evidence from the required role.
+3. Read the Forge product-direction state for CHR before planning broad gameplay, narrative, progression, UX or visual-direction work.
+4. Inspect the current scene/system implementation before editing.
+5. Keep the ticket scope narrow and avoid overlapping active work.
+6. Do not move a ticket forward without evidence from the required role.
 
-Until Forge Cloud is connected, GitHub issues/PRs are the temporary claim/handoff mechanism.
+## Product Direction Gate
+
+Chrono Crawler is currently treated as `needs_alignment` in Forge.
+
+Agents may still:
+
+- inspect and audit the current vertical slice;
+- fix clearly reproducible defects;
+- improve tests/build/reliability without changing product intent;
+- document technical debt and regression risks.
+
+Agents must **not** independently decide major questions such as overall game length, progression structure, combat expansion, art direction, narrative scope, platform/input strategy or which prototype mechanics should become final-product pillars.
+
+If a ticket depends on one of those choices, stop the dependent work and create a Forge decision request for the PM. Include the current implementation, the concrete question, viable options, trade-offs and a recommendation if evidence supports one. The PM will align the decision with the product owner and record the result before execution resumes.
 
 ## Product truth
 
@@ -28,7 +42,7 @@ Current implemented core includes:
 
 Do not casually replace these systems or turn the vertical slice into a different game genre.
 
-## Current non-goals unless ticketed
+## Current non-goals unless ticketed and product-approved
 
 - gamepad support;
 - touch controls;
@@ -62,13 +76,13 @@ Changes touching these require explicit regression thinking:
 ## Agent roles
 
 ### Planner
-Maps the requested behavior to the current scenes/systems, identifies puzzle/save/input risks and proposes the smallest implementation plan. Does not implement production code.
+Maps the requested behavior to the current scenes/systems, identifies puzzle/save/input risks and proposes the smallest implementation plan. If product intent is unclear, escalates instead of guessing. Does not implement production code.
 
 ### Builder
 Implements the approved scope. Must preserve existing puzzle semantics and save behavior unless the ticket explicitly changes them. Cannot approve itself.
 
 ### Reviewer
-Checks for regression in timeline logic, echo state, save state, scene lifecycle, Phaser object cleanup, input duplication and scope creep.
+Checks for regression in timeline logic, echo state, save state, scene lifecycle, Phaser object cleanup, input duplication, scope creep and unauthorized product-direction changes.
 
 ### QA
 Validates acceptance criteria plus neighboring puzzle/progression regression. Static code inspection is not a QA pass.
@@ -77,7 +91,7 @@ Validates acceptance criteria plus neighboring puzzle/progression regression. St
 Runs the real game and exercises the affected flow with actual controls. For gameplay tickets, runtime play evidence matters more than screenshots of code.
 
 ### Release
-Validates typecheck/build and GitHub Pages readiness. Release may not bypass failed gameplay QA.
+Validates typecheck/build and GitHub Pages readiness. Release may not bypass failed gameplay QA or an unresolved direction dependency.
 
 ## Validation gates
 
@@ -98,6 +112,7 @@ A Chrono Crawler ticket is done only when:
 - acceptance criteria are verified in runtime when applicable;
 - typecheck/build pass;
 - timeline/echo/checkpoint/save regressions were considered;
+- no unresolved product-direction decision is being silently assumed;
 - no unrelated mechanics were added;
 - Pages assumptions remain valid;
 - structured handoff evidence exists.
@@ -112,6 +127,8 @@ Changed/inspected:
 - ...
 Runtime/build validation:
 - ...
+Product-direction dependency:
+- none | decision request <topic>
 Findings/risks:
 - ...
 Next owner/action:
