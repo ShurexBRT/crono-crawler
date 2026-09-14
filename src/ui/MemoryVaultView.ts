@@ -1,5 +1,6 @@
 import { AssetPaths } from '../game/assets/manifest';
 import { MemoryVaultModel } from './MemoryVaultModel';
+import { vaultScrollDelta } from './MemoryVaultControls';
 
 const escape = (value: string): string => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
@@ -36,6 +37,7 @@ interface VaultActions { onClose: () => void; onRead: (id: string) => void; onTu
 export class MemoryVaultView {
   private readonly listeners = new AbortController();
   private frame = 0;
+  private lastPollAt?: number;
   private previousButtons = new Set<number>();
   private destroyed = false;
   private readonly book: HTMLElement;
@@ -61,7 +63,7 @@ export class MemoryVaultView {
     this.previousButtons = this.gamepadButtons();
     this.render();
     host.querySelector<HTMLButtonElement>('[data-action="vault-close"]')!.focus({ preventScroll: true });
-    this.frame = requestAnimationFrame(() => this.pollGamepad());
+    this.frame = requestAnimationFrame((time) => this.pollGamepad(time));
   }
 
   private render(): void {
@@ -135,8 +137,25 @@ export class MemoryVaultView {
     return pressed;
   }
 
-  private pollGamepad(): void {
+  private gamepadScrollAxis(): number {
+    const pad = Array.from(navigator.getGamepads?.() ?? []).find((candidate) => candidate?.connected);
+    return pad?.axes[3] ?? 0;
+  }
+
+  private scrollReadingPage(distance: number): void {
+    if (!distance) return;
+    const focused = document.activeElement instanceof HTMLElement ? document.activeElement.closest<HTMLElement>('.vault-page') : null;
+    const pages = Array.from(this.book.querySelectorAll<HTMLElement>('.vault-page'));
+    const page = focused ?? pages.find((candidate) => candidate.scrollHeight > candidate.clientHeight + 1);
+    // Desktop pages scroll independently; compact layouts have one continuous desk.
+    const target = page && page.scrollHeight > page.clientHeight + 1 ? page : this.host.querySelector<HTMLElement>('.vault-desk');
+    target?.scrollBy({ top: distance, behavior: 'instant' });
+  }
+
+  private pollGamepad(time = performance.now()): void {
     if (this.destroyed) return;
+    const elapsed = this.lastPollAt === undefined ? 0 : time - this.lastPollAt;
+    this.lastPollAt = time;
     const pressed = this.gamepadButtons();
     const previous = this.previousButtons;
     const edge = (index: number) => pressed.has(index) && !previous.has(index);
@@ -146,7 +165,10 @@ export class MemoryVaultView {
     else if (edge(5) || edge(15)) this.turn(this.model.index + 1);
     else if (edge(12) || edge(13)) this.moveFocus(edge(12) ? -1 : 1);
     else if (edge(0) && document.activeElement instanceof HTMLButtonElement) document.activeElement.click();
-    if (!this.destroyed) this.frame = requestAnimationFrame(() => this.pollGamepad());
+    if (!this.destroyed) {
+      this.scrollReadingPage(vaultScrollDelta(this.gamepadScrollAxis(), elapsed));
+      this.frame = requestAnimationFrame((nextTime) => this.pollGamepad(nextTime));
+    }
   }
 
   private close(): void {

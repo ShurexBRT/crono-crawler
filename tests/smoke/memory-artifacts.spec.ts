@@ -10,7 +10,7 @@ const viewports = [
 
 const representativeArtifacts = [
   memoryArtifacts[0],
-  memoryArtifacts[Math.floor(memoryArtifacts.length / 2)],
+  memoryArtifacts.find((artifact) => artifact.id === 'rain-lamp-letter')!,
   memoryArtifacts[memoryArtifacts.length - 1],
 ];
 

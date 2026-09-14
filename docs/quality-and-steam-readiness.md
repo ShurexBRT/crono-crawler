@@ -1,12 +1,12 @@
 # Quality Review And Steam Readiness
 
-Date: 2026-09-10. Status: CAMPAIGN ALPHA, NOT RELEASE APPROVED.
+Date: 2026-09-14. Status: DEPLOYED CAMPAIGN ALPHA, NOT STEAM RELEASE APPROVED.
 
 ## Evidence Boundary
 
 The current twelve-stage campaign has not been played end to end. Browser access was explicitly denied again on September 10 by this task's saved preference, despite the user's chat authorization and expanded filesystem permissions. No alternate browser or indirect browsing workaround was attempted. Existing screenshot locations contain no current locally reviewed in-game capture set. Source illustrations can be inspected locally, but they cannot prove in-game framing, animation, puzzle readability, or frame rate.
 
-The standard production build and 32 browser-independent checks pass. All 57 browser tests are discoverable, not locally executed. Main commits 59b87f6 and 5df763c were pushed. The normal Pages workflow passed its first 38 browser cases before the agent prematurely canceled the slow run; no visual review or full campaign completion is inferred from that partial CI result. Publication/deployment evidence is tracked in release-status.md, separately from local browser and full-campaign sign-off.
+The deployed main baseline d5d1db8 passed its production build, 32 system checks and all 58 CI browser cases, then deployed successfully in [run 34714792330](https://github.com/ShurexBRT/crono-crawler/actions/runs/34714792330). This includes renderer/pixel/layout assertions and the isolated hotel staircase route, not a continuous campaign completion or a manual aesthetic review. The new right-stick reading-scroll patch passes 34 local system checks and the build; 60 browser cases are discoverable. Detailed publication evidence is tracked in release-status.md.
 
 ## Findings
 
@@ -69,6 +69,7 @@ These are project acceptance targets, not Valve requirements:
 - Main menu, pause and options show a persistent save warning. Save Now does not play a success cue or claim success after a failed write.
 - Four added system tests pass. Three browser reliability cases were added but are not executed under the current permission restriction.
 - Memory Vault is now a persistent book. Eight more system checks cover source art, locked/read pages, escaped letters, bookmarks, legacy saves, retry after storage failure, and held/new gamepad button edges. Three new browser cases cover gameplay suspension, nested dialogue/pause and reload/focus loss; they are not locally executed.
+- The September 14 book update adds right-stick scrolling for long letters, dead-zone filtering, bounded frame timing and responsive letter coverage. It is not a claim of physical-controller certification.
 
 ## Steam Track
 
@@ -86,7 +87,7 @@ Steamworks account/app access, publisher details, agreements, pricing and public
 
 ## Next Execution Order
 
-1. Publish the existing checked alpha on current main and verify the normal Pages deployment, preserving remote history and user-owned files. Do not describe this as a finished Steam release.
+1. Existing alpha publication is verified. Publish subsequent checked fixes on current main, preserving remote history and user-owned files; do not describe this as a finished Steam release.
 2. Remove the saved local browser denial, execute the browser suite, inspect captures, complete the continuous campaign and fix the findings.
 3. Polish character contours/animation, tune levels and mix sound based on actual play evidence; publish verified focused updates.
 4. Validate controller flow, another browser, performance and an independent human playtest.

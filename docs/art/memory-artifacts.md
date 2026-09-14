@@ -26,6 +26,7 @@ The former colleague note at rain-lamp-letter is now Mara's pre-loss letter, as 
 - UIManager owns view lifecycle. The book suspends the underlying dialogue or pause DOM, restores it on close, and returns focus. Clearing or replacing an overlay destroys its handlers.
 - GameScene pauses Arcade Physics and simulation while the book is open. Closing resets input before resuming, while a prior pause or focus loss still requires explicit resume.
 - MemoryVaultModel owns ordered spreads, collection/read filtering and bookmark selection; MemoryVaultView renders live text, contained focus, keyboard and gamepad navigation.
+- Right-stick scrolling targets the focused desktop page or the compact continuous reading surface. MemoryVaultControls provides dead-zone and bounded frame-time math independently of DOM rendering.
 - Save v2 now additionally persists readMemoryFragmentIds and lastViewedMemoryId. Existing saves default to unread, and reading does not change the gameplay save timestamp.
 
 ## Art Delivery
@@ -43,10 +44,10 @@ The new 1536 x 1024 background at assets/ui/memory-vault-book.png is an original
 - PASS: TypeScript and standard Vite production build using npm run build.
 - PASS: browser-independent checks cover artifact mapping, PNG dimensions, image budget, both letters, escaped markup, locked pages, read/save migration, bookmark retry and gamepad button edges.
 - Earlier evidence: scripts/check-art.ps1 decoded 23 images. The September 10 invocation via Windows PowerShell was blocked by its script execution policy; it was not bypassed. The new book dimensions/checksum are checked separately in the system suite.
-- PASS: Playwright discovery, 57 tests in 17 files.
+- PASS: deployed baseline d5d1db8 completed all 58 CI browser tests. The new right-stick update expands discovery to 60 cases in 17 files; its release result is tracked in ../release-status.md.
 - NOT RUN: Browser rendering and keyboard playtests, because the existing task browser denial remains in effect. No screenshot approval is claimed.
 
-The memory-artifacts.spec.ts covers all nine book spreads at desktop, portrait and compact-landscape sizes with 125% text, scrolling/focus return, screenshots and failed-image fallback. memory-vault.spec.ts covers gameplay suspension, dialogue/pause preservation, bookmark reload and focus loss. The collection smoke test checks the popup reveal, frozen player/timeline, persisted unlock and clean resume. These browser cases are authored, not locally executed.
+The memory-artifacts.spec.ts checks navigation and text for all nine book spreads, then samples a drawing, Mara's letter and the final notebook across desktop, portrait and compact landscape with 125% text. memory-vault.spec.ts covers gameplay suspension, dialogue/pause preservation, bookmark reload, focus loss and virtual-controller reading scroll. The collection smoke test checks the popup reveal, frozen player/timeline, persisted unlock and clean resume. CI results are separate from local and physical-controller verification.
 
 To verify manually after browser access is enabled: collect the tutorial drawing; close with Escape and confirm gameplay resumes; open Memory Vault with J and inspect the drawing again; inspect Mara's letter and the photo strip at 125% text; revisit after reload; verify locked entries reveal no artwork. Open the book during dialogue and pause, then verify exact restoration. Finish by reviewing all nine spreads.
 

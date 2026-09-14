@@ -1,6 +1,6 @@
 # Campaign Release Candidate Status
 
-Updated September 10, 2026. This is an expanded, integrated campaign alpha, NOT a release-certified finished game. No full-campaign playtime estimate is validated.
+Updated September 14, 2026. This is an expanded, integrated campaign alpha, NOT a release-certified finished game. No full-campaign playtime estimate is validated.
 
 ## Implemented
 
@@ -25,15 +25,16 @@ Updated September 10, 2026. This is an expanded, integrated campaign alpha, NOT 
 | Check | Result |
 | --- | --- |
 | TypeScript + production build, npm run build | PASS |
-| Browser-independent system checks, npm run test:systems | PASS, 32 checks |
+| Browser-independent system checks, npm run test:systems | PASS, 34 checks |
 | Source PNG checks | Earlier decode/alpha pass on 23 images; new book header/dimensions/checksum covered by system tests |
 | PowerShell art-check rerun, September 10 | BLOCKED by Windows PowerShell script execution policy; no policy bypass |
-| Playwright test discovery, node node_modules/@playwright/test/cli.js test --list | PASS, 57 tests |
+| Playwright test discovery, node node_modules/@playwright/test/cli.js test --list | PASS, 60 tests |
 | Local Vite startup | Started on port 5173; recent rebuild/reload activity appears in server logs |
-| Actual browser smoke/visual execution | BLOCKED, not passed |
+| CI browser execution | PASS, 58 tests on d5d1db8 in 20.8 minutes; new right-stick cases pending |
+| Local browser / manual visual review | Saved browser denial not cleared; NOT PERFORMED |
 | Full keyboard traversal through the campaign | NOT PERFORMED |
-| Main publication | PUSHED: 59b87f6 (24 art assets/provenance) and 5df763c (campaign, book, tests) |
-| Production deploy | First run 34479518727 canceled before deployment; replacement run pending |
+| Main publication | Campaign/art/book changes and later release-gate fixes are on main; latest fetched baseline d5d1db8 |
+| Production deploy | SUCCESS: d5d1db8, workflow 34714792330, September 12 at 20:01 UTC |
 
 Source images were inspected as generated. That is NOT an in-game visual pass. Added browser coverage includes 24 stage/viewport combinations with three timeline screenshots each, actual renderer pixel sampling, HUD overlap, the memory journal, saved switches, ending, and eight real hotel staircase jumps. The staircase case intentionally isolates movement from story popups; it is not a full campaign playthrough.
 
@@ -45,7 +46,9 @@ Remote main was read at 56a4f2b4dfc344795c660ea7db94418dd183d4d3 and reconciled 
 
 Git access is now available. Fetch succeeded, the old local HEAD was verified as an ancestor of origin/main, and a mixed reset aligned local metadata to 56a4f2b without changing any working source or untracked files. Earlier Git/GitHub write denials are historical, not the current publication blocker.
 
-The Pages workflow now requires build, systems tests, and browser smoke tests before deployment and uploads playtest evidence. It is active on main. First run 34479518727 passed build, all 32 systems checks and its first 38 browser cases (including all 24 stage/viewport cases). The agent canceled it prematurely after mistaking slow software rendering for a stall. No browser failure preceded cancellation, and no new version deployed. CI now uses two isolated test workers, an explicit time limit and an early stop on repeated failures. CI screenshots have not been inspected as a workaround for the saved local browser denial.
+The Pages workflow requires build, systems tests, and browser smoke tests before deployment and uploads playtest evidence. Its first run 34479518727 was prematurely canceled by the agent after 38 passing cases; slow software rendering was not a stall. Subsequent main fixes stabilized the input path, isolated the hotel traversal from test-driver round trips, and split complete vault navigation from representative responsive captures.
+
+[Run 34714792330](https://github.com/ShurexBRT/crono-crawler/actions/runs/34714792330) passed all 58 browser tests and deployed d5d1db8 successfully. Deployment 6413799594 targets github-pages-main and [the live game](https://shurexbrt.github.io/crono-crawler/). This was verified from workflow logs and deployment metadata, not by opening the game. CI screenshots have not been inspected as a workaround for the saved local browser denial. Newer pushes now supersede older pending Pages runs; allow a healthy suite its documented 20-30 minute budget.
 
 User-owned .agents/, AGENTS.md, and docs/game-architecture.md were left untouched and must not be included accidentally in a release commit.
 
@@ -63,6 +66,8 @@ Suggested commit groups: finish the connected twelve-stage campaign; integrate c
 Details: docs/art/campaign-production-manifest.md and docs/art/campaign-asset-provenance.json.
 
 Memory Vault review fixes: fresh gamepad button edges now work; held buttons do not repeat; book padding follows the actual book width; save failure status refreshes when the suspended menu returns; reopening a page retries a failed bookmark write. Eight new browser-independent checks cover these model/save/input contracts and the book source asset. Three added browser scenarios are authored but not locally executed.
+
+September 14: right-stick reading scroll now targets the focused desktop page or the continuous compact reading surface, with a dead zone and bounded frame delta. Two new unit checks verify drift rejection and frame-rate-independent speed. Two browser cases exercise a virtual standard controller on desktop and portrait layouts; physical-controller verification remains outstanding. The three representative responsive spreads now include Mara's long letter rather than three image-only layouts. Current patch: build and 34 system checks pass; 60 browser cases are discoverable, awaiting the next release run.
 
 Dependency audit: the September 10 install reported two vulnerable development dependencies. A focused lockfile update changes PostCSS 8.5.15 to 8.5.28 and Nano ID 3.3.12 to 3.3.18 without changing Phaser or Vite. Production build and all 32 system checks still pass; npm audit reports zero known vulnerabilities for this lockfile. Relevant advisories: [PostCSS](https://github.com/advisories/GHSA-fxqj-rqcc-2cmp) and [Nano ID](https://github.com/advisories/GHSA-2v37-7h3g-55p8). This is an audit result, not a blanket security certification.
 

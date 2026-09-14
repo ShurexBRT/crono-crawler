@@ -1,6 +1,38 @@
 import { expect, test } from '@playwright/test';
 import { dismissDialogue, enterPlayableTutorial, seedContinueSave } from './support/playable';
 
+for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+  test(`right stick scrolls long vault letters at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      const axes = [0, 0, 0, 0];
+      Object.defineProperty(window, '__vaultTestAxes', { value: axes });
+      Object.defineProperty(navigator, 'getGamepads', { value: () => [{ connected: true, axes, buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, touched: false })) }] });
+      localStorage.setItem('chrono-crawler.save.v1', JSON.stringify({ collectedMemoryIds: ['rain-lamp-letter'], settings: { textScale: 1.25, reducedMotion: true } }));
+    });
+    await page.goto('/');
+    await page.locator('[data-action="journal"]').click();
+    await page.locator('[data-vault-entry="rain-lamp-letter"]').click();
+    const surface = page.locator(viewport.width > 860 ? '.vault-art-page' : '.vault-desk');
+    await expect.poll(() => surface.evaluate((node) => node.scrollHeight - node.clientHeight)).toBeGreaterThan(60);
+    await surface.evaluate((node) => { node.scrollTop = 0; });
+    const setAxis = (value: number) => page.evaluate((axis) => {
+      (window as unknown as { __vaultTestAxes: number[] }).__vaultTestAxes[3] = axis;
+    }, value);
+    await setAxis(1);
+    await expect.poll(() => surface.evaluate((node) => node.scrollTop)).toBeGreaterThan(60);
+    await setAxis(0);
+    const stoppedAt = await surface.evaluate((node) => node.scrollTop);
+    await page.waitForTimeout(100);
+    expect(await surface.evaluate((node) => node.scrollTop)).toBe(stoppedAt);
+    await setAxis(-1);
+    await expect.poll(() => surface.evaluate((node) => node.scrollTop)).toBeLessThan(5);
+    await setAxis(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+}
+
 test('the vault pauses gameplay and closes without replaying movement or timeline input', async ({ page }) => {
   await enterPlayableTutorial(page);
   await page.keyboard.press('KeyJ');

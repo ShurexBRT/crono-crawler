@@ -115,6 +115,8 @@ npm run preview
 
 Basic gamepad input is also supported through `InputController.ts`, but remapping UI is not implemented yet.
 
+Memory Vault: J opens the book during play, dialogue or pause. Left/right arrows turn spreads; Escape or J closes it. On a standard controller, View opens the book, shoulders or D-pad left/right turn spreads, D-pad up/down selects the reading page or buttons, and the right stick scrolls long entries. B/View/Start closes the book. Physical-controller verification remains outstanding.
+
 ## Mechanics
 
 Time shifting changes which objects are solid, visible, broken, overgrown, destroyed, hazardous, or active. Timeline changes are intended to affect traversal and silhouette, not only palette.

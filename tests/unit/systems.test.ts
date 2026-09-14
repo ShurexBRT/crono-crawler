@@ -15,6 +15,7 @@ import { renderMemoryArtifact } from '../../src/ui/MemoryArtifactView';
 import { watchFocusLoss } from '../../src/game/systems/FocusLossGuard';
 import { MemoryVaultModel } from '../../src/ui/MemoryVaultModel';
 import { MemoryVaultView, renderVaultPages } from '../../src/ui/MemoryVaultView';
+import { vaultScrollDelta } from '../../src/ui/MemoryVaultControls';
 
 let passed = 0;
 function check(name: string, test: () => void) {
@@ -259,6 +260,8 @@ check('vault gamepad polling consumes fresh edges without repeating held buttons
     const view = {
       destroyed: false, frame: 0, previousButtons: new Set([8]), model: { index: 2 },
       gamepadButtons: () => pressed,
+      gamepadScrollAxis: () => 0,
+      scrollReadingPage: () => {},
       turn: (page: number) => { actions.push(`page:${page}`); },
       moveFocus: (direction: number) => { actions.push(`focus:${direction}`); },
       close: () => { actions.push('close'); view.destroyed = true; },
@@ -274,6 +277,26 @@ check('vault gamepad polling consumes fresh edges without repeating held buttons
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'requestAnimationFrame', descriptor);
     else Reflect.deleteProperty(globalThis, 'requestAnimationFrame');
+  }
+});
+
+check('vault analog scrolling rejects drift and invalid input without jumping after a stalled frame', () => {
+  for (const axis of [0, .1, -.2, .22, -.22, Number.NaN, Infinity]) {
+    assert.equal(vaultScrollDelta(axis, 16), 0);
+  }
+  assert.equal(vaultScrollDelta(1, 0), 0);
+  assert.equal(vaultScrollDelta(1, -20), 0);
+  assert.equal(vaultScrollDelta(1, Number.NaN), 0);
+  assert.equal(vaultScrollDelta(1, 1000), 32);
+  assert.equal(vaultScrollDelta(-1, 50), -32);
+  assert.equal(vaultScrollDelta(9, 50), 32);
+  assert.ok(vaultScrollDelta(.6, 16) > 0 && vaultScrollDelta(.6, 16) < vaultScrollDelta(1, 16));
+});
+
+check('vault analog scroll speed is consistent at 30, 60 and 120 frames per second', () => {
+  for (const frames of [30, 60, 120]) {
+    const distance = frames * vaultScrollDelta(.61, 1000 / frames);
+    assert.ok(Math.abs(distance - 320) < .0001, `${frames} fps: ${distance}`);
   }
 });
 
